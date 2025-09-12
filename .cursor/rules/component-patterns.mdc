@@ -8,6 +8,12 @@ alwaysApply: false
 
 ## shadcn/ui Integration
 
+### Component Installation
+- **NEVER manually create UI components** - always use `npx shadcn@latest add [component-name]`
+- Use the official shadcn/ui CLI to install components
+- Available components: button, card, input, label, dialog, dropdown-menu, etc.
+- Example: `npx shadcn@latest add button card input`
+
 ### Component Usage
 - Always use shadcn/ui components when available
 - Extend shadcn components rather than creating from scratch
