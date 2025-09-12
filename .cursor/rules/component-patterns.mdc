@@ -1,0 +1,332 @@
+---
+description: Component patterns and UI standards for consistent development
+globs: ["**/components/**/*", "**/app/**/*"]
+alwaysApply: false
+---
+
+# Component Patterns & UI Standards
+
+## shadcn/ui Integration
+
+### Component Usage
+- Always use shadcn/ui components when available
+- Extend shadcn components rather than creating from scratch
+- Follow shadcn naming conventions
+- Use proper component composition
+
+### Custom Components
+```typescript
+// Extend shadcn components
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
+
+interface CustomButtonProps extends React.ComponentProps<typeof Button> {
+  variant?: 'primary' | 'secondary' | 'danger'
+}
+
+export function CustomButton({ 
+  className, 
+  variant = 'primary', 
+  ...props 
+}: CustomButtonProps) {
+  return (
+    <Button
+      className={cn(
+        variant === 'primary' && 'bg-blue-600 hover:bg-blue-700',
+        variant === 'secondary' && 'bg-gray-600 hover:bg-gray-700',
+        variant === 'danger' && 'bg-red-600 hover:bg-red-700',
+        className
+      )}
+      {...props}
+    />
+  )
+}
+```
+
+## Form Patterns
+
+### Form Structure
+```typescript
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+
+const formSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  email: z.string().email('Invalid email address'),
+})
+
+type FormData = z.infer<typeof formSchema>
+
+export function UserForm({ onSubmit }: { onSubmit: (data: FormData) => void }) {
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+    },
+  })
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Name</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <Button type="submit">Submit</Button>
+      </form>
+    </Form>
+  )
+}
+```
+
+## Loading States
+
+### Loading Components
+```typescript
+import { Skeleton } from '@/components/ui/skeleton'
+
+export function GameCardSkeleton() {
+  return (
+    <div className="border rounded-lg p-4 space-y-3">
+      <Skeleton className="h-4 w-3/4" />
+      <Skeleton className="h-4 w-1/2" />
+      <Skeleton className="h-8 w-full" />
+    </div>
+  )
+}
+
+export function LoadingSpinner({ size = 'default' }: { size?: 'sm' | 'default' | 'lg' }) {
+  const sizeClasses = {
+    sm: 'h-4 w-4',
+    default: 'h-6 w-6',
+    lg: 'h-8 w-8',
+  }
+  
+  return (
+    <div className={`animate-spin rounded-full border-2 border-gray-300 border-t-blue-600 ${sizeClasses[size]}`} />
+  )
+}
+```
+
+## Error States
+
+### Error Components
+```typescript
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { AlertCircle } from 'lucide-react'
+
+export function ErrorAlert({ 
+  title, 
+  message, 
+  onRetry 
+}: { 
+  title?: string
+  message: string
+  onRetry?: () => void 
+}) {
+  return (
+    <Alert variant="destructive">
+      <AlertCircle className="h-4 w-4" />
+      {title && <AlertTitle>{title}</AlertTitle>}
+      <AlertDescription>
+        {message}
+        {onRetry && (
+          <Button variant="outline" size="sm" onClick={onRetry} className="ml-2">
+            Retry
+          </Button>
+        )}
+      </AlertDescription>
+    </Alert>
+  )
+}
+```
+
+## Data Display
+
+### Table Components
+```typescript
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+
+interface DataTableProps<T> {
+  data: T[]
+  columns: {
+    key: keyof T
+    label: string
+    render?: (value: T[keyof T], row: T) => React.ReactNode
+  }[]
+}
+
+export function DataTable<T>({ data, columns }: DataTableProps<T>) {
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          {columns.map((column) => (
+            <TableHead key={String(column.key)}>{column.label}</TableHead>
+          ))}
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {data.map((row, index) => (
+          <TableRow key={index}>
+            {columns.map((column) => (
+              <TableCell key={String(column.key)}>
+                {column.render 
+                  ? column.render(row[column.key], row)
+                  : String(row[column.key])
+                }
+              </TableCell>
+            ))}
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  )
+}
+```
+
+## Real-time Components
+
+### Supabase Real-time
+```typescript
+import { useEffect, useState } from 'react'
+import { supabase } from '@/lib/supabase/client'
+
+export function useRealtimeSubscription<T>(
+  table: string,
+  filter?: string
+) {
+  const [data, setData] = useState<T[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    // Initial fetch
+    const fetchData = async () => {
+      const { data, error } = await supabase
+        .from(table)
+        .select('*')
+        .apply(filter ? { filter } : {})
+      
+      if (error) {
+        console.error('Error fetching data:', error)
+      } else {
+        setData(data || [])
+      }
+      setLoading(false)
+    }
+
+    fetchData()
+
+    // Set up real-time subscription
+    const subscription = supabase
+      .channel(`${table}_changes`)
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table 
+        }, 
+        (payload) => {
+          // Handle real-time updates
+          setData(prev => {
+            // Update logic based on event type
+            switch (payload.eventType) {
+              case 'INSERT':
+                return [...prev, payload.new as T]
+              case 'UPDATE':
+                return prev.map(item => 
+                  (item as any).id === payload.new.id ? payload.new as T : item
+                )
+              case 'DELETE':
+                return prev.filter(item => (item as any).id !== payload.old.id)
+              default:
+                return prev
+            }
+          })
+        }
+      )
+      .subscribe()
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [table, filter])
+
+  return { data, loading }
+}
+```
+
+## Responsive Design
+
+### Mobile-First Approach
+- Use Tailwind's mobile-first breakpoints
+- Design for mobile, then enhance for larger screens
+- Use responsive utilities: `sm:`, `md:`, `lg:`, `xl:`
+
+### Layout Patterns
+```typescript
+// Responsive grid
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+  {/* Grid items */}
+</div>
+
+// Responsive text
+<h1 className="text-2xl md:text-3xl lg:text-4xl font-bold">
+  Responsive Heading
+</h1>
+
+// Responsive spacing
+<div className="p-4 md:p-6 lg:p-8">
+  {/* Content */}
+</div>
+```
+
+## Accessibility
+
+### ARIA Labels
+- Use proper ARIA labels for interactive elements
+- Implement keyboard navigation
+- Ensure proper color contrast
+- Use semantic HTML elements
+
+### Focus Management
+```typescript
+import { useEffect, useRef } from 'react'
+
+export function Modal({ isOpen, onClose, children }: ModalProps) {
+  const dialogRef = useRef<HTMLDialogElement>(null)
+
+  useEffect(() => {
+    if (isOpen) {
+      dialogRef.current?.showModal()
+      // Focus management
+      const firstFocusable = dialogRef.current?.querySelector(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      ) as HTMLElement
+      firstFocusable?.focus()
+    } else {
+      dialogRef.current?.close()
+    }
+  }, [isOpen])
+
+  return (
+    <dialog ref={dialogRef} onClose={onClose}>
+      {children}
+    </dialog>
+  )
+}
+```

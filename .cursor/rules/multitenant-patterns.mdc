@@ -1,0 +1,576 @@
+---
+description: Multitenant architecture patterns and routing conventions
+globs: ["**/app/**/*", "**/middleware.ts", "**/lib/auth/**/*"]
+alwaysApply: false
+---
+
+# Multitenant Architecture Patterns
+
+## URL Structure & Routing
+
+### Route Organization
+```
+/[tenant]                    # Player pages
+├── /                        # Tenant homepage
+├── /games                   # Game listings
+├── /tables                  # Table status
+├── /tournaments             # Tournament schedule
+├── /waitlist                # Join waitlist
+├── /profile                 # Player profile
+└── /friends                 # Friends list
+
+/[tenant]/admin              # Operator pages
+├── /                        # Admin dashboard
+├── /games                   # Game management
+├── /tables                  # Table management
+├── /tournaments             # Tournament management
+├── /players                 # Player management
+├── /waitlist                # Waitlist management
+└── /settings                # Room settings
+```
+
+### Route Protection
+```typescript
+// middleware.ts
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
+
+export async function middleware(request: NextRequest) {
+  const res = NextResponse.next()
+  const supabase = createMiddlewareClient({ req: request, res })
+
+  // Get session
+  const { data: { session } } = await supabase.auth.getSession()
+
+  // Extract tenant from URL
+  const pathname = request.nextUrl.pathname
+  const pathSegments = pathname.split('/').filter(Boolean)
+  const tenant = pathSegments[0]
+  const isAdminRoute = pathSegments[1] === 'admin'
+
+  // Validate tenant exists
+  if (tenant && !isValidTenant(tenant)) {
+    return NextResponse.redirect(new URL('/404', request.url))
+  }
+
+  // Protect admin routes
+  if (isAdminRoute) {
+    if (!session) {
+      return NextResponse.redirect(new URL(`/${tenant}/login`, request.url))
+    }
+
+    // Check if user has admin/operator role for this tenant
+    const { data: user } = await supabase
+      .from('users')
+      .select('role, tenant_id')
+      .eq('id', session.user.id)
+      .single()
+
+    if (!user || user.tenant_id !== tenant || !['operator', 'admin'].includes(user.role)) {
+      return NextResponse.redirect(new URL(`/${tenant}`, request.url))
+    }
+  }
+
+  return res
+}
+
+export const config = {
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|api).*)',
+  ],
+}
+```
+
+## Tenant Context
+
+### Tenant Provider
+```typescript
+// lib/context/tenant-context.tsx
+'use client'
+
+import { createContext, useContext, useEffect, useState } from 'react'
+import { useParams } from 'next/navigation'
+import { supabase } from '@/lib/supabase/client'
+
+interface Tenant {
+  id: string
+  name: string
+  code: string
+  is_active: boolean
+}
+
+interface TenantContextType {
+  tenant: Tenant | null
+  loading: boolean
+  error: string | null
+}
+
+const TenantContext = createContext<TenantContextType | undefined>(undefined)
+
+export function TenantProvider({ children }: { children: React.ReactNode }) {
+  const params = useParams()
+  const tenantCode = params.tenant as string
+  const [tenant, setTenant] = useState<Tenant | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!tenantCode) {
+      setLoading(false)
+      return
+    }
+
+    const fetchTenant = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('tenants')
+          .select('*')
+          .eq('code', tenantCode)
+          .eq('is_active', true)
+          .single()
+
+        if (error) {
+          setError('Tenant not found')
+        } else {
+          setTenant(data)
+        }
+      } catch (err) {
+        setError('Failed to load tenant')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchTenant()
+  }, [tenantCode])
+
+  return (
+    <TenantContext.Provider value={{ tenant, loading, error }}>
+      {children}
+    </TenantContext.Provider>
+  )
+}
+
+export function useTenant() {
+  const context = useContext(TenantContext)
+  if (context === undefined) {
+    throw new Error('useTenant must be used within a TenantProvider')
+  }
+  return context
+}
+```
+
+### Tenant Layout
+```typescript
+// app/[tenant]/layout.tsx
+import { TenantProvider } from '@/lib/context/tenant-context'
+import { TenantHeader } from '@/components/tenant-header'
+import { TenantSidebar } from '@/components/tenant-sidebar'
+
+export default function TenantLayout({
+  children,
+  params,
+}: {
+  children: React.ReactNode
+  params: { tenant: string }
+}) {
+  return (
+    <TenantProvider>
+      <div className="min-h-screen bg-gray-50">
+        <TenantHeader />
+        <div className="flex">
+          <TenantSidebar />
+          <main className="flex-1 p-6">
+            {children}
+          </main>
+        </div>
+      </div>
+    </TenantProvider>
+  )
+}
+```
+
+## Authentication Patterns
+
+### Player Authentication
+```typescript
+// lib/auth/player-auth.ts
+import { supabase } from '@/lib/supabase/client'
+import type { User } from '@supabase/supabase-js'
+
+export interface PlayerUser extends User {
+  player: {
+    id: string
+    phone_number: string
+    alias: string
+    email?: string
+  }
+}
+
+export async function getPlayerUser(): Promise<PlayerUser | null> {
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (!user) return null
+
+  // Get player profile
+  const { data: playerProfile } = await supabase
+    .from('players')
+    .select('*')
+    .eq('id', user.id)
+    .single()
+
+  if (!playerProfile) return null
+
+  return {
+    ...user,
+    player: playerProfile,
+  }
+}
+
+export async function requirePlayerAuth(): Promise<PlayerUser> {
+  const user = await getPlayerUser()
+  
+  if (!user) {
+    throw new Error('Player authentication required')
+  }
+  
+  return user
+}
+```
+
+### Operator Authentication
+```typescript
+// lib/auth/operator-auth.ts
+import { supabase } from '@/lib/supabase/client'
+import type { User } from '@supabase/supabase-js'
+
+export interface OperatorUser extends User {
+  operator: {
+    id: string
+    email: string
+    first_name: string
+    last_name: string
+    tenant_id: string
+    role: 'admin' | 'supervisor' | 'dealer'
+    tenant: {
+      id: string
+      name: string
+      code: string
+    }
+  }
+}
+
+export async function getOperatorUser(tenantCode: string): Promise<OperatorUser | null> {
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (!user) return null
+
+  // Get operator profile with tenant info
+  const { data: operatorProfile } = await supabase
+    .from('operators')
+    .select(`
+      *,
+      tenant:tenants(*)
+    `)
+    .eq('id', user.id)
+    .eq('tenant.code', tenantCode)
+    .single()
+
+  if (!operatorProfile) return null
+
+  return {
+    ...user,
+    operator: operatorProfile,
+  }
+}
+
+export async function requireOperatorAuth(tenantCode: string): Promise<OperatorUser> {
+  const user = await getOperatorUser(tenantCode)
+  
+  if (!user) {
+    throw new Error('Operator authentication required')
+  }
+  
+  return user
+}
+
+export async function requireAdminAuth(tenantCode: string): Promise<OperatorUser> {
+  const user = await requireOperatorAuth(tenantCode)
+  
+  if (!['admin', 'supervisor'].includes(user.operator.role)) {
+    throw new Error('Admin access required')
+  }
+  
+  return user
+}
+```
+
+### Login Component
+```typescript
+// components/auth/tenant-login.tsx
+'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase/client'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { useTenant } from '@/lib/context/tenant-context'
+
+export function TenantLogin() {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const router = useRouter()
+  const { tenant } = useTenant()
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+
+      if (error) {
+        setError(error.message)
+      } else {
+        // Redirect to tenant homepage
+        router.push(`/${tenant?.code}`)
+      }
+    } catch (err) {
+      setError('An unexpected error occurred')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <form onSubmit={handleLogin} className="space-y-4">
+      <div>
+        <Input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+      </div>
+      <div>
+        <Input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+      </div>
+      {error && (
+        <div className="text-red-600 text-sm">{error}</div>
+      )}
+      <Button type="submit" disabled={loading} className="w-full">
+        {loading ? 'Signing in...' : 'Sign In'}
+      </Button>
+    </form>
+  )
+}
+```
+
+## Data Isolation
+
+### Tenant-Scoped Queries
+```typescript
+// lib/supabase/tenant-queries.ts
+import { supabase } from './client'
+
+export class TenantQueryBuilder {
+  constructor(private tenantId: string) {}
+
+  // Games
+  games() {
+    return supabase
+      .from('games')
+      .select('*')
+      .eq('tenant_id', this.tenantId)
+      .eq('is_active', true)
+  }
+
+  // Tables
+  tables() {
+    return supabase
+      .from('tables')
+      .select('*')
+      .eq('tenant_id', this.tenantId)
+  }
+
+  // Users
+  users() {
+    return supabase
+      .from('users')
+      .select('*')
+      .eq('tenant_id', this.tenantId)
+      .eq('is_active', true)
+  }
+
+  // Waitlist entries
+  waitlistEntries() {
+    return supabase
+      .from('waitlist_entries')
+      .select('*')
+      .eq('tenant_id', this.tenantId)
+  }
+
+  // Tournaments
+  tournaments() {
+    return supabase
+      .from('tournaments')
+      .select('*')
+      .eq('tenant_id', this.tenantId)
+  }
+}
+
+// Usage in components
+export function useTenantQueries(tenantId: string) {
+  return new TenantQueryBuilder(tenantId)
+}
+```
+
+### Server Actions with Tenant Context
+```typescript
+// app/[tenant]/admin/games/actions.ts
+'use server'
+
+import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
+import { requireAdminAuth } from '@/lib/auth/tenant-auth'
+import { GameService } from '@/lib/supabase/queries'
+
+export async function createGame(
+  tenantCode: string,
+  formData: FormData
+) {
+  // Verify admin access
+  const user = await requireAdminAuth(tenantCode)
+  
+  const gameData = {
+    name: formData.get('name') as string,
+    game_type: formData.get('game_type') as string,
+    buy_in: parseFloat(formData.get('buy_in') as string),
+    max_players: parseInt(formData.get('max_players') as string),
+    tenant_id: user.tenant_id,
+  }
+
+  try {
+    await GameService.createGame(gameData)
+    revalidatePath(`/${tenantCode}/admin/games`)
+  } catch (error) {
+    throw new Error('Failed to create game')
+  }
+}
+
+export async function updateGame(
+  tenantCode: string,
+  gameId: string,
+  formData: FormData
+) {
+  // Verify admin access
+  const user = await requireAdminAuth(tenantCode)
+  
+  const updates = {
+    name: formData.get('name') as string,
+    buy_in: parseFloat(formData.get('buy_in') as string),
+    max_players: parseInt(formData.get('max_players') as string),
+  }
+
+  try {
+    await GameService.updateGame(gameId, updates)
+    revalidatePath(`/${tenantCode}/admin/games`)
+  } catch (error) {
+    throw new Error('Failed to update game')
+  }
+}
+```
+
+## Navigation Components
+
+### Tenant Navigation
+```typescript
+// components/tenant-header.tsx
+'use client'
+
+import Link from 'next/link'
+import { useTenant } from '@/lib/context/tenant-context'
+import { useAuth } from '@/lib/auth/use-auth'
+import { Button } from '@/components/ui/button'
+
+export function TenantHeader() {
+  const { tenant } = useTenant()
+  const { user, signOut } = useAuth()
+
+  return (
+    <header className="bg-white shadow-sm border-b">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          <div className="flex items-center">
+            <Link href={`/${tenant?.code}`} className="text-xl font-bold">
+              {tenant?.name}
+            </Link>
+          </div>
+          
+          <nav className="hidden md:flex space-x-8">
+            <Link href={`/${tenant?.code}/games`}>Games</Link>
+            <Link href={`/${tenant?.code}/tables`}>Tables</Link>
+            <Link href={`/${tenant?.code}/tournaments`}>Tournaments</Link>
+            {user?.role === 'operator' || user?.role === 'admin' ? (
+              <Link href={`/${tenant?.code}/admin`}>Admin</Link>
+            ) : null}
+          </nav>
+          
+          <div className="flex items-center space-x-4">
+            {user ? (
+              <>
+                <span>Welcome, {user.display_name}</span>
+                <Button variant="outline" onClick={signOut}>
+                  Sign Out
+                </Button>
+              </>
+            ) : (
+              <Link href={`/${tenant?.code}/login`}>
+                <Button>Sign In</Button>
+              </Link>
+            )}
+          </div>
+        </div>
+      </div>
+    </header>
+  )
+}
+```
+
+## Error Handling
+
+### Tenant-Specific Error Pages
+```typescript
+// app/[tenant]/not-found.tsx
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
+
+export default function NotFound() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">404</h1>
+        <p className="text-gray-600 mb-8">This page doesn't exist in this poker room.</p>
+        <Link href="/">
+          <Button>Go Home</Button>
+        </Link>
+      </div>
+    </div>
+  )
+}
+```
