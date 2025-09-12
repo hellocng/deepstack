@@ -47,10 +47,8 @@ const nextConfig = {
     ]
   },
   
-  // Experimental features
-  experimental: {
-    serverComponentsExternalPackages: ['@supabase/supabase-js'],
-  },
+  // External packages for server components
+  serverExternalPackages: ['@supabase/supabase-js'],
 }
 
 module.exports = nextConfig

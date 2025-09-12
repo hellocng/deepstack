@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Phone, Users, MapPin, Clock, Star } from 'lucide-react'
+import { Phone, Users, MapPin, Clock } from 'lucide-react'
 
 export default function HomePage() {
   return (
@@ -128,7 +128,7 @@ export default function HomePage() {
                   </div>
                   <div>
                     <p className="text-white font-medium">Mike Johnson</p>
-                    <p className="text-white/60 text-sm">Playing at Lucky's Casino</p>
+                    <p className="text-white/60 text-sm">Playing at Lucky&apos;s Casino</p>
                   </div>
                 </div>
               </CardContent>
