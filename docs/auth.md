@@ -1,4 +1,4 @@
-# Authentication & Authorization Guide
+# DeepStack Authentication & Authorization Guide
 
 ## Overview
 

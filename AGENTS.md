@@ -1,4 +1,4 @@
-# Poker Room Management System - Agent Instructions
+# DeepStack - Agent Instructions
 
 ## Project Overview
 This is a multitenant poker room management application built with Next.js, Supabase, and shadcn/ui. The system allows operators to manage games, tables, waitlists, and tournaments, while players can join waitlists, view games, and connect with friends.

@@ -1,4 +1,4 @@
-# Poker Room Management System
+# DeepStack
 
 A comprehensive multitenant poker room management application built with Next.js, Supabase, and shadcn/ui.
 

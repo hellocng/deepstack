@@ -1,4 +1,4 @@
-# Contributing Guidelines
+# DeepStack Contributing Guidelines
 
 ## Overview
 

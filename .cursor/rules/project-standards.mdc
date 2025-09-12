@@ -4,7 +4,7 @@ globs: ["**/*"]
 alwaysApply: true
 ---
 
-# Poker Room Management - Project Standards
+# DeepStack - Project Standards
 
 ## Tech Stack & Architecture
 - **Framework**: Next.js 14+ with App Router

@@ -1,4 +1,4 @@
-# Database Schema & Design
+# DeepStack Database Schema & Design
 
 ## Overview
 

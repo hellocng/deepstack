@@ -4,7 +4,7 @@ globs: ["**/app/**/*", "**/middleware.ts", "**/lib/auth/**/*"]
 alwaysApply: false
 ---
 
-# Multitenant Architecture Patterns
+# DeepStack - Multitenant Architecture Patterns
 
 ## URL Structure & Routing
 

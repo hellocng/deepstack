@@ -4,7 +4,7 @@ globs: ["**/lib/supabase/**/*", "**/app/api/**/*", "**/types/**/*"]
 alwaysApply: false
 ---
 
-# Database Patterns & Supabase Best Practices
+# DeepStack - Database Patterns & Supabase Best Practices
 
 ## Database Schema Conventions
 

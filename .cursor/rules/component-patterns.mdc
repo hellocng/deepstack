@@ -4,7 +4,7 @@ globs: ["**/components/**/*", "**/app/**/*"]
 alwaysApply: false
 ---
 
-# Component Patterns & UI Standards
+# DeepStack - Component Patterns & UI Standards
 
 ## shadcn/ui Integration
 
