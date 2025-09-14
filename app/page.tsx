@@ -8,24 +8,12 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Users, MapPin, Clock } from 'lucide-react'
-import { ThemeToggle } from '@/components/theme-toggle'
 
 export default function HomePage() {
   return (
-    <div className='min-h-screen bg-background'>
-      {/* Header */}
-      <header className='container mx-auto px-4 py-6'>
-        <div className='flex items-center justify-between'>
-          <div></div>
-          <div className='flex items-center space-x-2'>
-            <ThemeToggle />
-            <Button variant='outline'>Sign In</Button>
-          </div>
-        </div>
-      </header>
-
+    <div>
       {/* Hero Section */}
-      <main className='container mx-auto px-4 py-12'>
+      <div className='container mx-auto px-4 py-12'>
         <div className='text-center mb-16'>
           <div className='mb-16'>
             <h1 className='font-bold text-foreground mb-8'>
@@ -50,7 +38,7 @@ export default function HomePage() {
 
         {/* Features Grid */}
         <div className='grid md:grid-cols-3 gap-8 mb-16'>
-          <Card>
+          <Card className='hover:shadow-none hover:cursor-default'>
             <CardHeader>
               <div className='w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4'>
                 <MapPin className='w-6 h-6 text-primary' />
@@ -63,7 +51,7 @@ export default function HomePage() {
             </CardHeader>
           </Card>
 
-          <Card>
+          <Card className='hover:shadow-none hover:cursor-default'>
             <CardHeader>
               <div className='w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4'>
                 <Clock className='w-6 h-6 text-primary' />
@@ -76,7 +64,7 @@ export default function HomePage() {
             </CardHeader>
           </Card>
 
-          <Card>
+          <Card className='hover:shadow-none hover:cursor-default'>
             <CardHeader>
               <div className='w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4'>
                 <Users className='w-6 h-6 text-primary' />
@@ -88,24 +76,7 @@ export default function HomePage() {
             </CardHeader>
           </Card>
         </div>
-      </main>
-
-      {/* Footer */}
-      <footer className='container mx-auto px-4 py-8 mt-16'>
-        <div className='text-center text-muted-foreground'>
-          <p>
-            Developed by{' '}
-            <a
-              href='https://hellocng.com'
-              target='_blank'
-              rel='noopener noreferrer'
-              className='font-bold text-foreground hover:text-primary transition-colors'
-            >
-              hellocng
-            </a>
-          </p>
-        </div>
-      </footer>
+      </div>
     </div>
   )
 }
