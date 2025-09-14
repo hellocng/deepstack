@@ -9,37 +9,54 @@ This application provides a complete solution for managing poker rooms, includin
 ## 🏗️ Architecture
 
 ### Tech Stack
-- **Frontend**: Next.js 14+ with App Router
+
+- **Frontend**: Next.js 15.1.0 with App Router
 - **Backend**: Supabase (PostgreSQL, Auth, Real-time)
-- **Authentication**: Supabase OAuth
-- **UI Components**: shadcn/ui with Tailwind CSS
+- **Authentication**:
+  - Players: Phone-based OTP authentication
+  - Operators: Email/password authentication
+- **UI Components**: shadcn/ui with Tailwind CSS 4.1.13
+- **Language**: TypeScript (strict mode)
 - **Deployment**: Vercel (recommended)
 
 ### Multitenant Structure
+
 ```
 /[tenant]          # Player-facing pages
 /[tenant]/admin    # Operator management pages
 ```
 
-## 👥 User Roles
+## 👥 User Roles & Authentication
 
 ### Players
-- Sign up for waitlists
-- View available games and tables
-- See friends online
-- Join games when available
-- View tournament schedules
+
+- **Authentication**: Phone-based OTP (can visit any tenant)
+- **Capabilities**:
+  - Sign up for waitlists
+  - View available games and tables
+  - See friends online
+  - Join games when available
+  - View tournament schedules
+  - Connect with friends across different poker rooms
 
 ### Operators
-- Manage games and tables
-- Handle waitlists
-- Organize tournaments
-- Monitor player activity
-- Access admin dashboard
+
+- **Authentication**: Email/password (tenant-specific)
+- **Roles**:
+  - **Admin**: Full system access including operator management
+  - **Supervisor**: Can manage games, tables, tournaments, view player activity
+  - **Dealer**: Can manage tables and basic operations
+- **Capabilities**:
+  - Manage games and tables
+  - Handle waitlists
+  - Organize tournaments
+  - Monitor player activity
+  - Access admin dashboard
 
 ## 🚀 Features
 
 ### Core Features
+
 - [ ] **Multitenant Architecture**: Support for multiple poker rooms
 - [ ] **User Authentication**: OAuth integration with Supabase
 - [ ] **Game Management**: Create, update, and manage poker games
@@ -50,6 +67,7 @@ This application provides a complete solution for managing poker rooms, includin
 - [ ] **Real-time Updates**: Live status updates using Supabase real-time
 
 ### Admin Features
+
 - [ ] **Dashboard**: Overview of room activity
 - [ ] **Game Controls**: Start/stop games, manage tables
 - [ ] **Player Management**: View player profiles and history
@@ -85,30 +103,36 @@ This application provides a complete solution for managing poker rooms, includin
 ## 🛠️ Getting Started
 
 ### Prerequisites
-- Node.js 18+ 
+
+- Node.js 18+
 - npm or yarn
 - Supabase account
 - Vercel account (for deployment)
+- TypeScript knowledge (strict mode enabled)
 
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone <repository-url>
    cd poker-room-management
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Set up environment variables**
+
    ```bash
    cp .env.example .env.local
    ```
-   
+
    Fill in your Supabase credentials:
+
    ```env
    NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
@@ -121,6 +145,7 @@ This application provides a complete solution for managing poker rooms, includin
    - Configure OAuth providers in Supabase dashboard
 
 5. **Run the development server**
+
    ```bash
    npm run dev
    ```
@@ -139,36 +164,45 @@ This application provides a complete solution for managing poker rooms, includin
 ## 🔧 Development
 
 ### Code Style
-- Use TypeScript for all new files
+
+- Use TypeScript for all new files with strict mode
 - Follow the established component patterns
 - Use shadcn/ui components when possible
 - Implement proper error handling
 - Write comprehensive tests
+- Use Tailwind CSS 4 with proper class naming
+- Follow the patterns defined in `.cursor/rules/`
 
 ### Database
+
 - Use Supabase migrations for schema changes
 - Follow naming conventions (snake_case for tables/columns)
 - Implement proper RLS (Row Level Security) policies
 
 ### Authentication
+
 - Use Supabase Auth for all authentication
+- Players: Phone-based OTP authentication (global, can visit any tenant)
+- Operators: Email/password authentication (tenant-specific)
 - Implement proper role-based access control
 - Secure admin routes with middleware
+- Follow the patterns in `.cursor/rules/multitenant-patterns.mdc`
 
 ## 🚀 Deployment
 
 ### Vercel (Recommended)
+
 1. Connect your GitHub repository to Vercel
 2. Set environment variables in Vercel dashboard
 3. Deploy automatically on push to main branch
 
 ### Environment Variables
+
 ```env
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
-NEXTAUTH_SECRET=
-NEXTAUTH_URL=
+# Note: NEXTAUTH_* variables not needed with Supabase Auth
 ```
 
 ## 🤝 Contributing

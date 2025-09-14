@@ -7,6 +7,7 @@ The poker room management system uses Next.js API routes with Supabase for backe
 ## Authentication
 
 ### Supabase Auth Integration
+
 All API routes use Supabase authentication. The user must be authenticated and have access to the specified tenant.
 
 ```typescript
@@ -17,33 +18,36 @@ import { NextRequest } from 'next/server'
 
 export async function getAuthenticatedUser(request: NextRequest) {
   const supabase = createRouteHandlerClient({ cookies })
-  
-  const { data: { user }, error } = await supabase.auth.getUser()
-  
+
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser()
+
   if (error || !user) {
     throw new Error('Unauthorized')
   }
-  
+
   return user
 }
 
 export async function requireTenantAccess(
-  request: NextRequest, 
+  request: NextRequest,
   tenantCode: string
 ) {
   const user = await getAuthenticatedUser(request)
   const supabase = createRouteHandlerClient({ cookies })
-  
+
   const { data: userData } = await supabase
-    .from('users')
+    .from('operators')
     .select('tenant_id, role')
-    .eq('id', user.id)
+    .eq('auth_id', user.id)
     .single()
-  
+
   if (!userData || userData.tenant_id !== tenantCode) {
     throw new Error('Access denied')
   }
-  
+
   return { user, userData }
 }
 ```
@@ -51,6 +55,7 @@ export async function requireTenantAccess(
 ## API Routes Structure
 
 ### Route Organization
+
 ```
 app/api/
 ├── auth/
@@ -79,16 +84,20 @@ app/api/
 ## Games API
 
 ### GET /api/[tenant]/games
+
 Get all games for a tenant.
 
 **Parameters:**
+
 - `tenant` (path): Tenant code
 
 **Query Parameters:**
+
 - `active` (optional): Filter by active status (default: true)
 - `game_type` (optional): Filter by game type
 
 **Response:**
+
 ```typescript
 interface Game {
   id: string
@@ -112,14 +121,17 @@ interface Game {
 ```
 
 **Example:**
+
 ```bash
 GET /api/royal/games?active=true&game_type=texas_holdem
 ```
 
 ### POST /api/[tenant]/games
+
 Create a new game (Admin/Operator only).
 
 **Request Body:**
+
 ```typescript
 interface CreateGameRequest {
   name: string
@@ -132,6 +144,7 @@ interface CreateGameRequest {
 ```
 
 **Response:**
+
 ```typescript
 {
   "data": Game,
@@ -140,9 +153,11 @@ interface CreateGameRequest {
 ```
 
 ### PUT /api/[tenant]/games/[id]
+
 Update a game (Admin/Operator only).
 
 **Request Body:**
+
 ```typescript
 interface UpdateGameRequest {
   name?: string
@@ -155,9 +170,11 @@ interface UpdateGameRequest {
 ```
 
 ### DELETE /api/[tenant]/games/[id]
+
 Delete a game (Admin/Operator only).
 
 **Response:**
+
 ```typescript
 {
   "message": "Game deleted successfully"
@@ -167,13 +184,16 @@ Delete a game (Admin/Operator only).
 ## Tables API
 
 ### GET /api/[tenant]/tables
+
 Get all tables for a tenant.
 
 **Query Parameters:**
+
 - `status` (optional): Filter by table status
 - `game_id` (optional): Filter by game ID
 
 **Response:**
+
 ```typescript
 interface Table {
   id: string
@@ -200,9 +220,11 @@ interface TableSeat {
 ```
 
 ### POST /api/[tenant]/tables
+
 Create a new table (Admin/Operator only).
 
 **Request Body:**
+
 ```typescript
 interface CreateTableRequest {
   name: string
@@ -212,15 +234,19 @@ interface CreateTableRequest {
 ```
 
 ### PUT /api/[tenant]/tables/[id]
+
 Update a table (Admin/Operator only).
 
 ### GET /api/[tenant]/tables/[id]/seats
+
 Get seats for a specific table.
 
 ### POST /api/[tenant]/tables/[id]/seats
+
 Assign a player to a seat (Admin/Operator only).
 
 **Request Body:**
+
 ```typescript
 interface AssignSeatRequest {
   seat_number: number
@@ -231,13 +257,16 @@ interface AssignSeatRequest {
 ## Waitlist API
 
 ### GET /api/[tenant]/waitlist
+
 Get waitlist entries for a tenant.
 
 **Query Parameters:**
+
 - `game_id` (optional): Filter by game ID
 - `status` (optional): Filter by status
 
 **Response:**
+
 ```typescript
 interface WaitlistEntry {
   id: string
@@ -255,9 +284,11 @@ interface WaitlistEntry {
 ```
 
 ### POST /api/[tenant]/waitlist
+
 Join the waitlist for a game.
 
 **Request Body:**
+
 ```typescript
 interface JoinWaitlistRequest {
   game_id: string
@@ -266,9 +297,11 @@ interface JoinWaitlistRequest {
 ```
 
 ### PUT /api/[tenant]/waitlist/[id]
+
 Update waitlist entry status (Admin/Operator only).
 
 **Request Body:**
+
 ```typescript
 interface UpdateWaitlistRequest {
   status: 'waiting' | 'called' | 'seated' | 'cancelled'
@@ -277,18 +310,22 @@ interface UpdateWaitlistRequest {
 ```
 
 ### DELETE /api/[tenant]/waitlist/[id]
+
 Remove from waitlist.
 
 ## Tournaments API
 
 ### GET /api/[tenant]/tournaments
+
 Get tournaments for a tenant.
 
 **Query Parameters:**
+
 - `status` (optional): Filter by tournament status
 - `upcoming` (optional): Get only upcoming tournaments
 
 **Response:**
+
 ```typescript
 interface Tournament {
   id: string
@@ -297,7 +334,12 @@ interface Tournament {
   buy_in: number
   max_players: number
   start_time: string
-  status: 'scheduled' | 'registering' | 'in_progress' | 'completed' | 'cancelled'
+  status:
+    | 'scheduled'
+    | 'registering'
+    | 'in_progress'
+    | 'completed'
+    | 'cancelled'
   prize_pool: number
   rake?: string
   description?: string
@@ -319,9 +361,11 @@ interface TournamentEntry {
 ```
 
 ### POST /api/[tenant]/tournaments
+
 Create a new tournament (Admin/Operator only).
 
 **Request Body:**
+
 ```typescript
 interface CreateTournamentRequest {
   name: string
@@ -335,20 +379,25 @@ interface CreateTournamentRequest {
 ```
 
 ### POST /api/[tenant]/tournaments/[id]/register
+
 Register for a tournament.
 
 ### PUT /api/[tenant]/tournaments/[id]/checkin
+
 Check in for a tournament.
 
 ## Users API
 
 ### GET /api/[tenant]/players
+
 Get players (Admin/Operator only).
 
 **Query Parameters:**
+
 - `active` (optional): Filter by active status
 
 **Response:**
+
 ```typescript
 interface Player {
   id: string
@@ -364,6 +413,7 @@ interface Player {
 
 interface Operator {
   id: string
+  auth_id: string
   email: string
   first_name: string
   last_name: string
@@ -379,12 +429,15 @@ interface Operator {
 ```
 
 ### GET /api/[tenant]/players/[id]
+
 Get a specific player.
 
 ### PUT /api/[tenant]/players/[id]
+
 Update player profile.
 
 **Request Body:**
+
 ```typescript
 interface UpdatePlayerRequest {
   alias?: string
@@ -396,19 +449,24 @@ interface UpdatePlayerRequest {
 ## Operators API
 
 ### GET /api/[tenant]/operators
+
 Get operators for a tenant (Admin only).
 
 **Query Parameters:**
+
 - `role` (optional): Filter by operator role
 - `active` (optional): Filter by active status
 
 ### GET /api/[tenant]/operators/[id]
+
 Get a specific operator.
 
 ### POST /api/[tenant]/operators
+
 Create a new operator (Admin only).
 
 **Request Body:**
+
 ```typescript
 interface CreateOperatorRequest {
   email: string
@@ -421,9 +479,11 @@ interface CreateOperatorRequest {
 ```
 
 ### PUT /api/[tenant]/operators/[id]
+
 Update operator profile (Admin only).
 
 **Request Body:**
+
 ```typescript
 interface UpdateOperatorRequest {
   first_name?: string
@@ -438,27 +498,34 @@ interface UpdateOperatorRequest {
 ## Real-time API
 
 ### WebSocket Connection
+
 The system uses Supabase real-time for live updates.
 
 **Connection:**
+
 ```typescript
 import { supabase } from '@/lib/supabase/client'
 
 // Subscribe to table updates
 const subscription = supabase
   .channel('table_updates')
-  .on('postgres_changes', {
-    event: '*',
-    schema: 'public',
-    table: 'tables',
-    filter: `tenant_id=eq.${tenantId}`
-  }, (payload) => {
-    console.log('Table update:', payload)
-  })
+  .on(
+    'postgres_changes',
+    {
+      event: '*',
+      schema: 'public',
+      table: 'tables',
+      filter: `tenant_id=eq.${tenantId}`,
+    },
+    (payload) => {
+      console.log('Table update:', payload)
+    }
+  )
   .subscribe()
 ```
 
 **Channels:**
+
 - `table_updates`: Table status changes
 - `waitlist_updates`: Waitlist changes
 - `tournament_updates`: Tournament updates
@@ -467,6 +534,7 @@ const subscription = supabase
 ## Error Handling
 
 ### Error Response Format
+
 ```typescript
 interface ErrorResponse {
   error: {
@@ -479,6 +547,7 @@ interface ErrorResponse {
 ```
 
 ### Common Error Codes
+
 - `400`: Bad Request
 - `401`: Unauthorized
 - `403`: Forbidden
@@ -488,6 +557,7 @@ interface ErrorResponse {
 - `500`: Internal Server Error
 
 ### Example Error Response
+
 ```json
 {
   "error": {
@@ -501,6 +571,7 @@ interface ErrorResponse {
 ## Rate Limiting
 
 ### Implementation
+
 ```typescript
 // lib/rate-limit.ts
 import { NextRequest } from 'next/server'
@@ -524,7 +595,7 @@ export function rateLimit(
   }
 
   const current = rateLimitMap.get(ip)
-  
+
   if (!current) {
     rateLimitMap.set(ip, { count: 1, resetTime: now })
     return { success: true, remaining: limit - 1 }
@@ -542,6 +613,7 @@ export function rateLimit(
 ## API Testing
 
 ### Test Setup
+
 ```typescript
 // __tests__/api/games.test.ts
 import { createMocks } from 'node-mocks-http'
@@ -551,7 +623,7 @@ describe('/api/[tenant]/games', () => {
   it('should return games for a tenant', async () => {
     const { req, res } = createMocks({
       method: 'GET',
-      query: { tenant: 'royal' }
+      query: { tenant: 'royal' },
     })
 
     await handler(req, res)
@@ -563,6 +635,7 @@ describe('/api/[tenant]/games', () => {
 ```
 
 ### Postman Collection
+
 ```json
 {
   "info": {
@@ -604,6 +677,7 @@ describe('/api/[tenant]/games', () => {
 ## Security Considerations
 
 ### Input Validation
+
 ```typescript
 import { z } from 'zod'
 
@@ -611,7 +685,7 @@ const createGameSchema = z.object({
   name: z.string().min(1).max(100),
   game_type: z.enum(['texas_holdem', 'omaha', 'seven_card_stud']),
   buy_in: z.number().positive(),
-  max_players: z.number().int().min(2).max(10)
+  max_players: z.number().int().min(2).max(10),
 })
 
 export function validateCreateGame(data: unknown) {
@@ -620,6 +694,7 @@ export function validateCreateGame(data: unknown) {
 ```
 
 ### CORS Configuration
+
 ```typescript
 // next.config.js
 module.exports = {
@@ -628,9 +703,18 @@ module.exports = {
       {
         source: '/api/:path*',
         headers: [
-          { key: 'Access-Control-Allow-Origin', value: process.env.ALLOWED_ORIGINS || '*' },
-          { key: 'Access-Control-Allow-Methods', value: 'GET, POST, PUT, DELETE, OPTIONS' },
-          { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Authorization' },
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: process.env.ALLOWED_ORIGINS || '*',
+          },
+          {
+            key: 'Access-Control-Allow-Methods',
+            value: 'GET, POST, PUT, DELETE, OPTIONS',
+          },
+          {
+            key: 'Access-Control-Allow-Headers',
+            value: 'Content-Type, Authorization',
+          },
         ],
       },
     ]
@@ -639,11 +723,12 @@ module.exports = {
 ```
 
 ### API Key Authentication (Optional)
+
 ```typescript
 // For external API access
 export function validateApiKey(request: NextRequest) {
   const apiKey = request.headers.get('x-api-key')
-  
+
   if (!apiKey || apiKey !== process.env.API_KEY) {
     throw new Error('Invalid API key')
   }

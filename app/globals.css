@@ -1,25 +1,49 @@
-@import "tailwindcss";
+@import 'tailwindcss';
+@plugin 'tailwindcss-animate';
+
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --color-poker-green: #0F5132;
+  --color-poker-green: #0f5132;
   --color-poker-green-light: #198754;
   --color-poker-green-dark: #0a3622;
-  --color-poker-gold: #FFD700;
+  --color-poker-gold: #ffd700;
   --color-poker-gold-dark: #b8860b;
-  --color-poker-red: #DC2626;
+  --color-poker-red: #dc2626;
   --color-poker-red-dark: #a71e2a;
   --color-poker-blue: #0d6efd;
   --color-poker-blue-dark: #0a58ca;
-  
+
   --color-table-available: #198754;
   --color-table-occupied: #dc3545;
   --color-table-maintenance: #ffc107;
   --color-table-closed: #6c757d;
-  
+
   --color-game-holdem: #0d6efd;
   --color-game-omaha: #6f42c1;
   --color-game-stud: #fd7e14;
   --color-game-draw: #20c997;
+
+  /* Map CSS variables to Tailwind colors */
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
 }
 
 @layer base {
@@ -44,14 +68,14 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
     --radius: 0.5rem;
-    
+
     /* Poker-themed CSS variables */
-    --poker-green: #0F5132;
+    --poker-green: #0f5132;
     --poker-green-light: #198754;
     --poker-green-dark: #0a3622;
-    --poker-gold: #FFD700;
+    --poker-gold: #ffd700;
     --poker-gold-dark: #b8860b;
-    --poker-red: #DC2626;
+    --poker-red: #dc2626;
     --poker-red-dark: #a71e2a;
     --poker-blue: #0d6efd;
     --poker-blue-dark: #0a58ca;
@@ -82,9 +106,10 @@
 
 @layer base {
   * {
-    @apply border-border;
+    border-color: hsl(var(--border));
   }
   body {
-    @apply bg-background text-foreground;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
   }
 }
