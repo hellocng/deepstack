@@ -19,8 +19,11 @@ interface FriendCardProps {
   tenant: Tenant
 }
 
-export function FriendCard({ friend, tenant: _tenant }: FriendCardProps) {
-  const formatLastSeen = (lastLogin?: string) => {
+export function FriendCard({
+  friend,
+  tenant: _tenant,
+}: FriendCardProps): JSX.Element {
+  const formatLastSeen = (lastLogin?: string): string => {
     if (!lastLogin) return 'Never'
 
     const now = new Date()

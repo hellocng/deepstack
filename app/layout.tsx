@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { Navigation } from '@/components/navigation'
 import { Footer } from '@/components/footer'
+import { PlayerAuthProvider } from '@/lib/auth/player-auth-context'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -17,7 +18,7 @@ export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
-}) {
+}): JSX.Element {
   return (
     <html
       lang='en'
@@ -50,11 +51,15 @@ export default function RootLayout({
         />
       </head>
       <body className={inter.className}>
-        <div className='min-h-screen bg-background flex flex-col'>
-          <Navigation />
-          <main className='flex-1 container mx-auto px-4 py-6'>{children}</main>
-          <Footer />
-        </div>
+        <PlayerAuthProvider>
+          <div className='min-h-screen bg-background flex flex-col'>
+            <Navigation />
+            <main className='flex-1 container mx-auto px-4 py-6'>
+              {children}
+            </main>
+            <Footer />
+          </div>
+        </PlayerAuthProvider>
       </body>
     </html>
   )

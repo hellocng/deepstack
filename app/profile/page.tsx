@@ -1,0 +1,160 @@
+'use client'
+
+import { useState } from 'react'
+import { usePlayerAuth } from '@/lib/auth/player-auth-context'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
+import { useRouter } from 'next/navigation'
+import { formatPhoneNumber } from '@/lib/utils'
+import { ArrowLeft, User } from 'lucide-react'
+
+export default function ProfilePage(): JSX.Element {
+  const { player, loading } = usePlayerAuth()
+  const router = useRouter()
+  const [alias, setAlias] = useState(player?.alias || '')
+  const [originalAlias, setOriginalAlias] = useState(player?.alias || '')
+  const [saving, setSaving] = useState(false)
+
+  const handleSaveAlias = async (): Promise<void> => {
+    if (!player) return
+
+    setSaving(true)
+    try {
+      // TODO: Implement alias update API call
+      // Saving alias
+      setOriginalAlias(alias)
+    } catch (_error) {
+      // Error saving alias
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleCancel = (): void => {
+    setAlias(originalAlias)
+  }
+
+  const hasChanges = alias !== originalAlias
+
+  if (loading) {
+    return (
+      <div className='container mx-auto px-4 py-8'>
+        <div className='max-w-2xl mx-auto'>
+          <div className='animate-pulse space-y-4'>
+            <div className='h-8 bg-muted rounded w-1/3'></div>
+            <div className='h-32 bg-muted rounded'></div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!player) {
+    return (
+      <div className='container mx-auto px-4 py-8'>
+        <div className='max-w-2xl mx-auto text-center'>
+          <h1 className='text-2xl font-bold mb-4'>Not signed in</h1>
+          <p className='text-muted-foreground mb-4'>
+            Please sign in to view your profile.
+          </p>
+          <Button onClick={() => router.push('/signin')}>Sign In</Button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className='container mx-auto px-4 py-8'>
+      <div className='max-w-2xl mx-auto space-y-6'>
+        {/* Back Button */}
+        <Button
+          variant='ghost'
+          size='sm'
+          onClick={() => router.back()}
+        >
+          <ArrowLeft className='h-4 w-4 mr-2' />
+          Back
+        </Button>
+
+        {/* Header */}
+        <div>
+          <h1 className='text-3xl font-bold'>Profile</h1>
+          <p className='text-muted-foreground'>Manage your account settings</p>
+        </div>
+
+        {/* Profile Information */}
+        <Card>
+          <CardHeader>
+            <CardTitle className='flex items-center space-x-2'>
+              <User className='h-5 w-5' />
+              <span>Profile Information</span>
+            </CardTitle>
+            <CardDescription>Update your profile details</CardDescription>
+          </CardHeader>
+          <CardContent className='space-y-4'>
+            {/* Phone Number (Read-only) */}
+            <div className='space-y-2'>
+              <Label htmlFor='phone'>Phone Number</Label>
+              <Input
+                id='phone'
+                value={formatPhoneNumber(player.phone_number)}
+                disabled
+                className='bg-muted'
+              />
+              <p className='text-sm text-muted-foreground'>
+                Phone number cannot be changed
+              </p>
+            </div>
+
+            <Separator />
+
+            {/* Alias (Editable) */}
+            <div className='space-y-2'>
+              <div className='flex items-center justify-between'>
+                <Label htmlFor='alias'>Alias</Label>
+                {hasChanges && (
+                  <div className='flex space-x-2'>
+                    <Button
+                      size='sm'
+                      onClick={handleSaveAlias}
+                      disabled={saving || !alias.trim()}
+                    >
+                      {saving ? 'Saving...' : 'Save'}
+                    </Button>
+                    <Button
+                      size='sm'
+                      variant='outline'
+                      onClick={handleCancel}
+                      disabled={saving}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                )}
+              </div>
+              <Input
+                id='alias'
+                value={alias}
+                onChange={(e) => setAlias(e.target.value)}
+                placeholder='Enter your alias'
+                maxLength={20}
+              />
+              <p className='text-sm text-muted-foreground'>
+                Your alias is how other players will see you
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  )
+}

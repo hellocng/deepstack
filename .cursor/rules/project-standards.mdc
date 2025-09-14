@@ -196,9 +196,17 @@ export function UserProfile({ user, onUpdate }: UserProfileProps) {
 - Do not run build commands as part of routine code changes
 - Let the user control when to test builds and linting
 
+### ESLint Migration
+
+- **Migrate from `next lint` to ESLint CLI** - `next lint` is deprecated in Next.js 15+ and will be removed in Next.js 16
+- Use migration command: `npx @next/codemod@canary next-lint-to-eslint-cli .`
+- After migration, use `npx eslint .` instead of `npm run lint`
+- Follow the ESLint configuration standards in `.cursor/rules/eslint-config.mdc`
+
 ## UI Components
 
-- **DO NOT install shadcn/ui components using `npx shadcn-ui@latest add`**
-- Only use existing shadcn/ui components that are already in the project
-- Create custom components using Tailwind CSS classes instead of installing new shadcn components
-- If a component is needed, implement it manually using existing patterns and Tailwind CSS
+- **Use `npx shadcn-ui@latest add [component-name]` to add new shadcn/ui components**
+- Prefer using shadcn/ui components over custom implementations when available
+- Only create custom components when shadcn/ui doesn't provide the needed functionality
+- When adding components, use the latest version: `npx shadcn-ui@latest add [component-name]`
+- Customize shadcn components using Tailwind CSS classes as needed

@@ -32,12 +32,12 @@ export function WaitlistCard({
   game,
   entries,
   tenant: _tenant,
-}: WaitlistCardProps) {
-  const formatStakes = (smallBlind: number, bigBlind: number) => {
+}: WaitlistCardProps): JSX.Element {
+  const formatStakes = (smallBlind: number, bigBlind: number): string => {
     return `$${smallBlind}/${bigBlind}`
   }
 
-  const getGameTypeDisplay = (gameType: string) => {
+  const getGameTypeDisplay = (gameType: string): string => {
     const types: Record<string, string> = {
       texas_holdem: "Texas Hold'em",
       omaha: 'Omaha',
@@ -49,7 +49,7 @@ export function WaitlistCard({
     return types[gameType] || gameType
   }
 
-  const formatWaitTime = (createdAt: string) => {
+  const formatWaitTime = (createdAt: string): string => {
     const now = new Date()
     const created = new Date(createdAt)
     const diffMs = now.getTime() - created.getTime()

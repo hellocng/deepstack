@@ -18,19 +18,22 @@ interface GameCardProps {
   tenant: Tenant
 }
 
-export function GameCard({ game, tenant: _tenant }: GameCardProps) {
-  const formatStakes = (smallBlind: number, bigBlind: number) => {
+export function GameCard({
+  game,
+  tenant: _tenant,
+}: GameCardProps): JSX.Element {
+  const formatStakes = (smallBlind: number, bigBlind: number): string => {
     return `$${smallBlind}/${bigBlind}`
   }
 
-  const formatBuyIn = (min: number, max: number) => {
+  const formatBuyIn = (min: number, max: number): string => {
     if (min === max) {
       return `$${min}`
     }
     return `$${min}-$${max}`
   }
 
-  const getGameTypeDisplay = (gameType: string) => {
+  const getGameTypeDisplay = (gameType: string): string => {
     const types: Record<string, string> = {
       texas_holdem: "Texas Hold'em",
       omaha: 'Omaha',

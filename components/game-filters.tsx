@@ -18,7 +18,7 @@ export function GameFilters({
   onTypeChange,
   onStakesChange,
   onClearFilters,
-}: GameFiltersProps) {
+}: GameFiltersProps): JSX.Element {
   const gameTypes = [
     { value: 'texas_holdem', label: "Texas Hold'em" },
     { value: 'omaha', label: 'Omaha' },

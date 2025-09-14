@@ -1,0 +1,149 @@
+---
+description: ESLint configuration and linting standards for the poker room management app
+globs: ['**/*.{js,jsx,ts,tsx}']
+alwaysApply: true
+---
+
+# ESLint Configuration & Standards
+
+## Migration from Next.js Lint
+
+- **Migrate from `next lint` to ESLint CLI** - `next lint` is deprecated and will be removed in Next.js 16
+- Use the migration command: `npx @next/codemod@canary next-lint-to-eslint-cli .`
+- After migration, use `npx eslint .` instead of `npm run lint`
+- Update package.json scripts to use ESLint CLI directly
+
+## ESLint Rules & Standards
+
+### TypeScript Rules
+
+- Use `@typescript-eslint/no-unused-vars` to catch unused variables
+- Prefix unused parameters with underscore: `_tenantId`, `_playerId`
+- Use `@typescript-eslint/explicit-function-return-type` for public functions
+- Enable `@typescript-eslint/no-explicit-any` to prevent `any` types
+
+### React Rules
+
+- Use `react-hooks/exhaustive-deps` to ensure proper dependency arrays
+- Enable `react/jsx-key` to require keys in lists
+- Use `react/no-unescaped-entities` to prevent unescaped characters
+
+### Next.js Rules
+
+- Use `next/no-img-element` to prefer Next.js Image component
+- Enable `next/no-html-link-for-pages` for proper internal linking
+- Use `next/no-page-custom-font` for font optimization
+
+### Code Quality Rules
+
+- Enable `no-console` in production builds
+- Use `prefer-const` for immutable variables
+- Enable `no-var` to prefer `let`/`const`
+- Use `eqeqeq` to require strict equality
+
+## Configuration Files
+
+### .eslintrc.json Structure
+
+```json
+{
+  "extends": [
+    "next/core-web-vitals",
+    "next/typescript",
+    "@typescript-eslint/recommended",
+    "prettier"
+  ],
+  "rules": {
+    "@typescript-eslint/no-unused-vars": [
+      "warn",
+      { "argsIgnorePattern": "^_" }
+    ],
+    "@typescript-eslint/explicit-function-return-type": "warn",
+    "no-console": "warn",
+    "prefer-const": "error"
+  }
+}
+```
+
+### Package.json Scripts
+
+```json
+{
+  "scripts": {
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
+    "lint:check": "eslint . --ext .js,.jsx,.ts,.tsx --max-warnings 0"
+  }
+}
+```
+
+## Best Practices
+
+### Unused Variables
+
+- Prefix unused parameters with underscore: `_tenantId`, `_playerId`, `_tenant`
+- Remove unused imports and variables
+- Use ESLint disable comments sparingly and with justification
+
+### Error Handling
+
+- Use proper TypeScript types instead of `any`
+- Implement proper error boundaries in React components
+- Use try-catch blocks for async operations
+
+### Performance
+
+- Use React.memo for expensive components
+- Implement proper dependency arrays in useEffect
+- Avoid unnecessary re-renders
+
+## Integration with Development Workflow
+
+### Pre-commit Hooks
+
+- Run ESLint on staged files
+- Fix auto-fixable issues automatically
+- Block commits with linting errors
+
+### CI/CD Pipeline
+
+- Run full ESLint check on all files
+- Fail builds with linting errors
+- Generate linting reports
+
+### IDE Integration
+
+- Configure ESLint extension in VS Code
+- Enable auto-fix on save
+- Show linting errors inline
+
+## Migration Steps
+
+1. **Run the migration command**: `npx @next/codemod@canary next-lint-to-eslint-cli .`
+2. **Update package.json scripts** to use ESLint CLI
+3. **Review and update .eslintrc.json** configuration
+4. **Fix any new linting errors** introduced by stricter rules
+5. **Update CI/CD pipelines** to use new linting commands
+6. **Test the new setup** with `npx eslint .`
+
+## Common Issues & Solutions
+
+### Unused Variables
+
+- **Problem**: Parameters defined but not used
+- **Solution**: Prefix with underscore or remove if truly unnecessary
+
+### Missing Return Types
+
+- **Problem**: Functions without explicit return types
+- **Solution**: Add TypeScript return type annotations
+
+### Console Statements
+
+- **Problem**: Console.log statements in production code
+- **Solution**: Use proper logging library or remove debug statements
+
+### Import/Export Issues
+
+- **Problem**: Unused imports or incorrect export patterns
+- **Solution**: Remove unused imports, use proper export syntax

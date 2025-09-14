@@ -3,13 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { 
-  Home, 
-  Gamepad2, 
-  Users, 
-  Clock, 
-  User 
-} from 'lucide-react'
+import { Home, Gamepad2, Users, Clock, User } from 'lucide-react'
 import { Tenant } from '@/types'
 
 interface TenantNavigationProps {
@@ -44,19 +38,22 @@ const navigation = [
   },
 ]
 
-export function TenantNavigation({ tenant }: TenantNavigationProps) {
+export function TenantNavigation({
+  tenant,
+}: TenantNavigationProps): JSX.Element {
   const pathname = usePathname()
   const basePath = `/${tenant.code}`
 
   return (
-    <nav className="border-b bg-background">
-      <div className="container mx-auto px-4">
-        <div className="flex space-x-8">
+    <nav className='border-b bg-background'>
+      <div className='container mx-auto px-4'>
+        <div className='flex space-x-8'>
           {navigation.map((item) => {
             const href = `${basePath}${item.href}`
-            const isActive = pathname === href || 
+            const isActive =
+              pathname === href ||
               (item.href !== '' && pathname.startsWith(href))
-            
+
             return (
               <Link
                 key={item.name}
@@ -68,7 +65,7 @@ export function TenantNavigation({ tenant }: TenantNavigationProps) {
                     : 'text-muted-foreground'
                 )}
               >
-                <item.icon className="h-4 w-4" />
+                <item.icon className='h-4 w-4' />
                 <span>{item.name}</span>
               </Link>
             )

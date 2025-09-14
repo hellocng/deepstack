@@ -14,12 +14,12 @@ interface GamesPageProps {
   }
 }
 
-export default async function GamesPage({ 
-  params, 
-  searchParams 
-}: GamesPageProps) {
+export default async function GamesPage({
+  params,
+  searchParams,
+}: GamesPageProps): Promise<JSX.Element> {
   const supabase = await createClient()
-  
+
   // Get tenant information
   const { data: tenant } = await supabase
     .from('tenants')
@@ -35,7 +35,8 @@ export default async function GamesPage({
   // Build query for games at this specific tenant only
   let query = supabase
     .from('games')
-    .select(`
+    .select(
+      `
       *,
       tables(
         id,
@@ -43,7 +44,8 @@ export default async function GamesPage({
         seat_count,
         status
       )
-    `)
+    `
+    )
     .eq('tenant_id', tenant.id)
     .eq('is_active', true)
 
@@ -55,23 +57,26 @@ export default async function GamesPage({
   const { data: games, error } = await query
 
   if (error) {
-    console.error('Error fetching games:', error)
+    // Error fetching games
     return <div>Error loading games</div>
   }
 
   return (
-    <div className="space-y-6">
+    <div className='space-y-6'>
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className='flex items-center justify-between'>
         <div>
-          <h1 className="text-3xl font-bold">Available Games</h1>
-          <p className="text-muted-foreground">
+          <h1 className='text-3xl font-bold'>Available Games</h1>
+          <p className='text-muted-foreground'>
             Find and join poker games at {tenant.name}
           </p>
         </div>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm">
-            <Filter className="h-4 w-4 mr-2" />
+        <div className='flex items-center space-x-2'>
+          <Button
+            variant='outline'
+            size='sm'
+          >
+            <Filter className='h-4 w-4 mr-2' />
             Filters
           </Button>
         </div>
@@ -82,21 +87,24 @@ export default async function GamesPage({
 
       {/* Games Grid */}
       {games && games.length > 0 ? (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className='grid md:grid-cols-2 lg:grid-cols-3 gap-6'>
           {games.map((game) => (
-            <GameCard 
-              key={game.id} 
-              game={game} 
+            <GameCard
+              key={game.id}
+              game={game}
               tenant={tenant}
             />
           ))}
         </div>
       ) : (
-        <div className="text-center py-12">
-          <div className="text-muted-foreground mb-4">
-            <Plus className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <h3 className="text-lg font-medium">No games available</h3>
-            <p>Check back later for new games or contact the room for more information.</p>
+        <div className='text-center py-12'>
+          <div className='text-muted-foreground mb-4'>
+            <Plus className='h-12 w-12 mx-auto mb-4 opacity-50' />
+            <h3 className='text-lg font-medium'>No games available</h3>
+            <p>
+              Check back later for new games or contact the room for more
+              information.
+            </p>
           </div>
         </div>
       )}

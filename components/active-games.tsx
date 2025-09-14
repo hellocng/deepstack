@@ -9,7 +9,9 @@ interface ActiveGamesProps {
   tenantId: string
 }
 
-export function ActiveGames({ tenantId: _tenantId }: ActiveGamesProps) {
+export function ActiveGames({
+  tenantId: _tenantId,
+}: ActiveGamesProps): JSX.Element {
   // This would fetch real data in a real implementation
   const activeGames = [
     {

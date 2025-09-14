@@ -9,7 +9,7 @@ interface QuickActionsProps {
   tenant: Tenant
 }
 
-export function QuickActions({ tenant }: QuickActionsProps) {
+export function QuickActions({ tenant }: QuickActionsProps): JSX.Element {
   const actions = [
     {
       title: 'Browse Games',

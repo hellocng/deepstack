@@ -9,7 +9,9 @@ interface WaitlistPageProps {
   }
 }
 
-export default async function WaitlistPage({ params }: WaitlistPageProps) {
+export default async function WaitlistPage({
+  params,
+}: WaitlistPageProps): Promise<JSX.Element> {
   const supabase = await createClient()
 
   // Get tenant information
@@ -49,7 +51,7 @@ export default async function WaitlistPage({ params }: WaitlistPageProps) {
     .order('position', { ascending: true })
 
   if (error) {
-    console.error('Error fetching waitlist:', error)
+    // Error fetching waitlist
     return <div>Error loading waitlist</div>
   }
 

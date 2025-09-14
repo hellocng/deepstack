@@ -11,14 +11,16 @@ interface AddFriendDialogProps {
   children: React.ReactNode
 }
 
-export function AddFriendDialog({ children }: AddFriendDialogProps) {
+export function AddFriendDialog({
+  children,
+}: AddFriendDialogProps): JSX.Element {
   const [isOpen, setIsOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<
     Array<{ id: string; alias: string; avatar: string | null }>
   >([])
 
-  const handleSearch = async () => {
+  const handleSearch = async (): Promise<void> => {
     // This would search for players in a real implementation
     // For now, we'll show placeholder results
     setSearchResults([
@@ -28,9 +30,9 @@ export function AddFriendDialog({ children }: AddFriendDialogProps) {
     ])
   }
 
-  const handleAddFriend = async (playerId: string) => {
+  const handleAddFriend = async (_playerId: string): Promise<void> => {
     // This would send a friend request in a real implementation
-    console.log('Adding friend:', playerId)
+    // Adding friend
     setIsOpen(false)
     setSearchQuery('')
     setSearchResults([])

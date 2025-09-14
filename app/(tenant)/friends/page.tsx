@@ -5,12 +5,15 @@ import { Button } from '@/components/ui/button'
 import { Plus, Users } from 'lucide-react'
 
 interface FriendsPageProps {
-  params: {
+  params: Promise<{
     tenant: string
-  }
+  }>
 }
 
-export default async function FriendsPage({ params }: FriendsPageProps) {
+export default async function FriendsPage({
+  params,
+}: FriendsPageProps): Promise<JSX.Element> {
+  const { tenant } = await params
   const supabase = await createClient()
 
   // Get tenant information
@@ -53,7 +56,7 @@ export default async function FriendsPage({ params }: FriendsPageProps) {
     .eq('status', 'accepted')
 
   if (error) {
-    console.error('Error fetching friends:', error)
+    // Error fetching friends
     return <div>Error loading friends</div>
   }
 

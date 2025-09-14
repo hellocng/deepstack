@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Users, MapPin, Clock } from 'lucide-react'
 
-export function FriendActivity() {
+export function FriendActivity(): JSX.Element {
   // This would fetch real data in a real implementation
   const friendActivity = [
     {
@@ -35,7 +35,7 @@ export function FriendActivity() {
     },
   ]
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string): string => {
     switch (status) {
       case 'playing':
         return 'bg-green-500'
@@ -48,7 +48,7 @@ export function FriendActivity() {
     }
   }
 
-  const getStatusText = (status: string) => {
+  const getStatusText = (status: string): string => {
     switch (status) {
       case 'playing':
         return 'Playing'

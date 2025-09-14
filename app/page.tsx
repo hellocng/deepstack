@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/card'
 import { Users, MapPin, Clock } from 'lucide-react'
 
-export default function HomePage() {
+export default function HomePage(): JSX.Element {
   return (
     <div>
       {/* Hero Section */}

@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 
-export function ThemeToggle() {
+export function ThemeToggle(): JSX.Element {
   const [theme, setTheme] = React.useState<'light' | 'dark' | 'system'>(
     'system'
   )
@@ -60,7 +60,7 @@ export function ThemeToggle() {
     if (!mounted || theme !== 'system') return
 
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-    const handleChange = () => {
+    const handleChange = (): void => {
       const root = window.document.documentElement
       const newTheme = mediaQuery.matches ? 'dark' : 'light'
       root.classList.remove('light', 'dark')
@@ -68,7 +68,7 @@ export function ThemeToggle() {
     }
 
     mediaQuery.addEventListener('change', handleChange)
-    return () => mediaQuery.removeEventListener('change', handleChange)
+    return (): void => mediaQuery.removeEventListener('change', handleChange)
   }, [theme, mounted])
 
   // Prevent hydration mismatch

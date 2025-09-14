@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tenant } from '@/types'
-import { MapPin, Users, Clock, Gamepad2, ExternalLink } from 'lucide-react'
+import { MapPin, Users, Gamepad2, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 
@@ -27,7 +27,7 @@ interface RoomCardProps {
   }
 }
 
-export function RoomCard({ tenant }: RoomCardProps) {
+export function RoomCard({ tenant }: RoomCardProps): JSX.Element {
   // Remove duplicates from games and tables arrays
   const uniqueGames =
     tenant.games?.filter(
@@ -57,7 +57,7 @@ export function RoomCard({ tenant }: RoomCardProps) {
     .map((game) => game.game_type)
     .filter((type, index, array) => array.indexOf(type) === index)
 
-  const getGameTypeDisplay = (gameType: string) => {
+  const getGameTypeDisplay = (gameType: string): string => {
     const types: Record<string, string> = {
       texas_holdem: "Texas Hold'em",
       omaha: 'Omaha',
@@ -69,7 +69,7 @@ export function RoomCard({ tenant }: RoomCardProps) {
     return types[gameType] || gameType
   }
 
-  const formatStakes = (smallBlind: number, bigBlind: number) => {
+  const _formatStakes = (smallBlind: number, bigBlind: number): string => {
     return `$${smallBlind}/${bigBlind}`
   }
 

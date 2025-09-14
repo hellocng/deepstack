@@ -13,9 +13,9 @@ interface TenantLayoutProps {
 export default async function TenantLayout({
   children,
   params,
-}: TenantLayoutProps) {
+}: TenantLayoutProps): Promise<JSX.Element> {
   const supabase = await createClient()
-  
+
   // Get tenant information
   const { data: tenant, error } = await supabase
     .from('tenants')
@@ -29,12 +29,10 @@ export default async function TenantLayout({
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className='min-h-screen bg-background'>
       <TenantHeader tenant={tenant} />
       <TenantNavigation tenant={tenant} />
-      <main className="container mx-auto px-4 py-6">
-        {children}
-      </main>
+      <main className='container mx-auto px-4 py-6'>{children}</main>
     </div>
   )
 }

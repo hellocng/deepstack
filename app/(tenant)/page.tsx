@@ -10,9 +10,11 @@ interface TenantPageProps {
   }
 }
 
-export default async function TenantPage({ params }: TenantPageProps) {
+export default async function TenantPage({
+  params,
+}: TenantPageProps): Promise<JSX.Element> {
   const supabase = await createClient()
-  
+
   // Get tenant information
   const { data: tenant } = await supabase
     .from('tenants')
@@ -26,11 +28,11 @@ export default async function TenantPage({ params }: TenantPageProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className='space-y-6'>
       {/* Welcome Section */}
-      <div className="text-center py-8">
-        <h1 className="text-3xl font-bold mb-2">Welcome to {tenant.name}</h1>
-        <p className="text-muted-foreground">
+      <div className='text-center py-8'>
+        <h1 className='text-3xl font-bold mb-2'>Welcome to {tenant.name}</h1>
+        <p className='text-muted-foreground'>
           Find games, join waitlists, and connect with friends
         </p>
       </div>
@@ -42,10 +44,10 @@ export default async function TenantPage({ params }: TenantPageProps) {
       <QuickActions tenant={tenant} />
 
       {/* Main Content Grid */}
-      <div className="grid lg:grid-cols-2 gap-6">
+      <div className='grid lg:grid-cols-2 gap-6'>
         {/* Active Games */}
         <ActiveGames tenantId={tenant.id} />
-        
+
         {/* Friend Activity */}
         <FriendActivity />
       </div>

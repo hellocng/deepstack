@@ -7,7 +7,9 @@ interface DashboardStatsProps {
   tenantId: string
 }
 
-export function DashboardStats({ tenantId: _tenantId }: DashboardStatsProps) {
+export function DashboardStats({
+  tenantId: _tenantId,
+}: DashboardStatsProps): JSX.Element {
   // This would fetch real data in a real implementation
   const stats = {
     activeGames: 8,

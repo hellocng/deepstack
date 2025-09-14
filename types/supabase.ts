@@ -1,4 +1,3 @@
-// Generated Supabase types
 export type Json =
   | string
   | number
@@ -66,7 +65,6 @@ export type Database = {
           id: string
           is_active: boolean | null
           max_buy_in: number
-          max_players: number
           min_buy_in: number
           name: string
           rake: string | null
@@ -82,7 +80,6 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           max_buy_in: number
-          max_players: number
           min_buy_in: number
           name: string
           rake?: string | null
@@ -98,7 +95,6 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           max_buy_in?: number
-          max_players?: number
           min_buy_in?: number
           name?: string
           rake?: string | null
@@ -172,71 +168,45 @@ export type Database = {
           },
         ]
       }
-      players: {
-        Row: {
-          alias: string
-          avatar_url: string | null
-          created_at: string | null
-          email: string | null
-          id: string
-          is_active: boolean | null
-          last_login: string | null
-          phone_number: string
-          updated_at: string | null
-        }
-        Insert: {
-          alias: string
-          avatar_url?: string | null
-          created_at?: string | null
-          email?: string | null
-          id?: string
-          is_active?: boolean | null
-          last_login?: string | null
-          phone_number: string
-          updated_at?: string | null
-        }
-        Update: {
-          alias?: string
-          avatar_url?: string | null
-          created_at?: string | null
-          email?: string | null
-          id?: string
-          is_active?: boolean | null
-          last_login?: string | null
-          phone_number?: string
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      table_seats: {
+      player_sessions: {
         Row: {
           created_at: string | null
+          end_time: string | null
           id: string
-          is_occupied: boolean | null
           player_id: string | null
           seat_number: number
+          start_time: string | null
           table_id: string | null
           updated_at: string | null
         }
         Insert: {
           created_at?: string | null
+          end_time?: string | null
           id?: string
-          is_occupied?: boolean | null
           player_id?: string | null
           seat_number: number
+          start_time?: string | null
           table_id?: string | null
           updated_at?: string | null
         }
         Update: {
           created_at?: string | null
+          end_time?: string | null
           id?: string
-          is_occupied?: boolean | null
           player_id?: string | null
           seat_number?: number
+          start_time?: string | null
           table_id?: string | null
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: 'player_sessions_table_id_fkey'
+            columns: ['table_id']
+            isOneToOne: false
+            referencedRelation: 'table_sessions'
+            referencedColumns: ['id']
+          },
           {
             foreignKeyName: 'table_seats_player_id_fkey'
             columns: ['player_id']
@@ -244,11 +214,85 @@ export type Database = {
             referencedRelation: 'players'
             referencedColumns: ['id']
           },
+        ]
+      }
+      players: {
+        Row: {
+          alias: string | null
+          auth_id: string | null
+          avatar_url: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          last_login: string | null
+          phone_number: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          alias?: string | null
+          auth_id?: string | null
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          last_login?: string | null
+          phone_number?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          alias?: string | null
+          auth_id?: string | null
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          last_login?: string | null
+          phone_number?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      table_sessions: {
+        Row: {
+          created_at: string | null
+          end_time: string | null
+          id: string
+          start_time: string
+          table_id: string
+          tenant_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          end_time?: string | null
+          id?: string
+          start_time?: string
+          table_id: string
+          tenant_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          end_time?: string | null
+          id?: string
+          start_time?: string
+          table_id?: string
+          tenant_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
           {
-            foreignKeyName: 'table_seats_table_id_fkey'
+            foreignKeyName: 'table_sessions_table_id_fkey'
             columns: ['table_id']
             isOneToOne: false
             referencedRelation: 'tables'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'table_sessions_tenant_id_fkey'
+            columns: ['tenant_id']
+            isOneToOne: false
+            referencedRelation: 'tenants'
             referencedColumns: ['id']
           },
         ]
@@ -256,7 +300,6 @@ export type Database = {
       tables: {
         Row: {
           created_at: string | null
-          current_players: number | null
           game_id: string | null
           id: string
           name: string
@@ -267,7 +310,6 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
-          current_players?: number | null
           game_id?: string | null
           id?: string
           name: string
@@ -278,7 +320,6 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
-          current_players?: number | null
           game_id?: string | null
           id?: string
           name?: string
@@ -529,7 +570,54 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      end_table_session: {
+        Args: { session_uuid: string }
+        Returns: boolean
+      }
+      get_available_seats_at_table: {
+        Args: { table_uuid: string }
+        Returns: number
+      }
+      get_available_seats_at_table_session: {
+        Args: { session_uuid: string }
+        Returns: number
+      }
+      get_current_players_at_table: {
+        Args: { table_uuid: string }
+        Returns: number
+      }
+      get_current_players_at_table_session: {
+        Args: { session_uuid: string }
+        Returns: number
+      }
+      get_table_session_duration: {
+        Args: { session_uuid: string }
+        Returns: unknown
+      }
+      get_user_tenant_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      is_table_session_active: {
+        Args: { session_uuid: string }
+        Returns: boolean
+      }
+      is_user_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      start_new_table_session: {
+        Args: { table_uuid: string; tenant_uuid: string }
+        Returns: string
+      }
+      table_has_space: {
+        Args: { table_uuid: string }
+        Returns: boolean
+      }
+      table_session_has_space: {
+        Args: { session_uuid: string }
+        Returns: boolean
+      }
     }
     Enums: {
       friendship_status: 'pending' | 'accepted' | 'blocked'
@@ -541,7 +629,7 @@ export type Database = {
         | 'razz'
         | 'stud_hi_lo'
       operator_role: 'admin' | 'supervisor' | 'dealer'
-      table_status: 'available' | 'occupied' | 'maintenance' | 'closed'
+      table_status: 'open' | 'closed'
       tournament_entry_status:
         | 'registered'
         | 'checked_in'
@@ -691,7 +779,7 @@ export const Constants = {
         'stud_hi_lo',
       ],
       operator_role: ['admin', 'supervisor', 'dealer'],
-      table_status: ['available', 'occupied', 'maintenance', 'closed'],
+      table_status: ['open', 'closed'],
       tournament_entry_status: [
         'registered',
         'checked_in',
@@ -709,87 +797,3 @@ export const Constants = {
     },
   },
 } as const
-
-// Convenience type aliases for easier usage
-export type Player = Tables<'players'>
-export type Operator = Tables<'operators'>
-export type Tenant = Tables<'tenants'>
-export type Game = Tables<'games'>
-export type Table = Tables<'tables'>
-export type TableSeat = Tables<'table_seats'>
-export type WaitlistEntry = Tables<'waitlist_entries'>
-export type Tournament = Tables<'tournaments'>
-export type TournamentEntry = Tables<'tournament_entries'>
-export type Friendship = Tables<'friendships'>
-
-// Insert types
-export type PlayerInsert = TablesInsert<'players'>
-export type OperatorInsert = TablesInsert<'operators'>
-export type TenantInsert = TablesInsert<'tenants'>
-export type GameInsert = TablesInsert<'games'>
-export type TableInsert = TablesInsert<'tables'>
-export type TableSeatInsert = TablesInsert<'table_seats'>
-export type WaitlistEntryInsert = TablesInsert<'waitlist_entries'>
-export type TournamentInsert = TablesInsert<'tournaments'>
-export type TournamentEntryInsert = TablesInsert<'tournament_entries'>
-export type FriendshipInsert = TablesInsert<'friendships'>
-
-// Update types
-export type PlayerUpdate = TablesUpdate<'players'>
-export type OperatorUpdate = TablesUpdate<'operators'>
-export type TenantUpdate = TablesUpdate<'tenants'>
-export type GameUpdate = TablesUpdate<'games'>
-export type TableUpdate = TablesUpdate<'tables'>
-export type TableSeatUpdate = TablesUpdate<'table_seats'>
-export type WaitlistEntryUpdate = TablesUpdate<'waitlist_entries'>
-export type TournamentUpdate = TablesUpdate<'tournaments'>
-export type TournamentEntryUpdate = TablesUpdate<'tournament_entries'>
-export type FriendshipUpdate = TablesUpdate<'friendships'>
-
-// Enum types
-export type OperatorRole = Enums<'operator_role'>
-export type GameType = Enums<'game_type'>
-export type TableStatus = Enums<'table_status'>
-export type WaitlistStatus = Enums<'waitlist_status'>
-export type TournamentStatus = Enums<'tournament_status'>
-export type TournamentEntryStatus = Enums<'tournament_entry_status'>
-export type FriendshipStatus = Enums<'friendship_status'>
-
-// API Response types
-export interface ApiResponse<T = unknown> {
-  data?: T
-  error?: string
-  message?: string
-}
-
-// Form types
-export interface PhoneAuthForm {
-  phoneNumber: string
-}
-
-export interface OTPForm {
-  otp: string
-}
-
-export interface PlayerProfileForm {
-  alias: string
-  email?: string
-}
-
-// Component props
-export interface TenantCardProps {
-  tenant: Tenant
-  playerCount?: number
-  activeGames?: number
-}
-
-export interface GameCardProps {
-  game: Game
-  waitlistCount?: number
-  availableTables?: number
-}
-
-export interface FriendActivityProps {
-  friend: Player & { currentLocation?: string }
-  isOnline: boolean
-}
