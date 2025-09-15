@@ -2,41 +2,41 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Tenant } from '@/types'
+import { Room } from '@/types'
 import { Gamepad2, Clock, Users, MapPin } from 'lucide-react'
 
 interface QuickActionsProps {
-  tenant: Tenant
+  room: Room
 }
 
-export function QuickActions({ tenant }: QuickActionsProps): JSX.Element {
+export function QuickActions({ room }: QuickActionsProps): JSX.Element {
   const actions = [
     {
       title: 'Browse Games',
       description: 'Find available poker games',
       icon: Gamepad2,
-      href: `/${tenant.code}/games`,
+      href: `/${room.code}/games`,
       variant: 'default' as const,
     },
     {
       title: 'Join Waitlist',
       description: 'Get on a waitlist for your favorite game',
       icon: Clock,
-      href: `/${tenant.code}/waitlist`,
+      href: `/${room.code}/waitlist`,
       variant: 'outline' as const,
     },
     {
       title: 'Find Friends',
       description: 'See where your friends are playing',
       icon: Users,
-      href: `/${tenant.code}/friends`,
+      href: `/${room.code}/friends`,
       variant: 'outline' as const,
     },
     {
       title: 'View Tables',
       description: 'See current table status',
       icon: MapPin,
-      href: `/${tenant.code}/tables`,
+      href: `/${room.code}/tables`,
       variant: 'outline' as const,
     },
   ]

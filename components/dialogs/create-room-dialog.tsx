@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog'
 import { RoomForm } from '@/components/forms/room-form'
 import { createClient } from '@/lib/supabase/client'
+import { TablesInsert } from '@/types/supabase'
 import { toast } from 'sonner'
 
 interface CreateRoomDialogProps {
@@ -65,7 +66,7 @@ export function CreateRoomDialog({
             phone: formData.phone || null,
             is_active: true,
           },
-        ] as any)
+        ] as TablesInsert<'rooms'>[])
         .select()
         .single()
 

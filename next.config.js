@@ -49,11 +49,6 @@ const nextConfig = {
 
   // External packages for server components
   serverExternalPackages: ['@supabase/supabase-js'],
-
-  // Temporarily disable TypeScript checking during build
-  typescript: {
-    ignoreBuildErrors: true,
-  },
 }
 
 module.exports = nextConfig

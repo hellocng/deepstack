@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Tenant } from '@/types'
+import { Room } from '@/types'
 import { User } from 'lucide-react'
 
 interface WaitlistCardProps {
@@ -25,13 +25,13 @@ interface WaitlistCardProps {
       avatar_url?: string
     }
   }>
-  tenant: Tenant
+  room: Room
 }
 
 export function WaitlistCard({
   game,
   entries,
-  tenant: _tenant,
+  room: _room,
 }: WaitlistCardProps): JSX.Element {
   const formatStakes = (smallBlind: number, bigBlind: number): string => {
     return `$${smallBlind}/${bigBlind}`
@@ -87,7 +87,7 @@ export function WaitlistCard({
             >
               <div className='flex items-center space-x-3'>
                 <div className='flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-medium'>
-                  {waitlistEntries.indexOf(entry) + 1}
+                  {entries.indexOf(entry) + 1}
                 </div>
                 <Avatar className='h-8 w-8'>
                   <AvatarImage src={entry.players.avatar_url} />

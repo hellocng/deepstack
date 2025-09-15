@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
-import { Tables } from '@/types/supabase'
+import { Tables, TablesUpdate } from '@/types/supabase'
 import {
   Building2,
   Users,
@@ -71,7 +71,7 @@ export function RoomManagementDialog({
         .update({
           is_active: !room.is_active,
           updated_at: new Date().toISOString(),
-        } as any)
+        } as TablesUpdate<'rooms'>)
         .eq('id', room.id)
 
       if (error) {

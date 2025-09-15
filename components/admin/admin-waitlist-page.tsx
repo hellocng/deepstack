@@ -9,8 +9,8 @@ import { Badge } from '@/components/ui/badge'
 
 type WaitlistEntry = Tables<'waitlist_entries'> & {
   players: {
-    alias: string
-    phone_number: string
+    alias: string | null
+    phone_number: string | null
   } | null
   games: {
     name: string

@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Game, Tenant } from '@/types'
+import { Game, Room } from '@/types'
 import { Users, Clock, DollarSign, Play } from 'lucide-react'
 
 interface GameCardProps {
@@ -15,13 +15,10 @@ interface GameCardProps {
       status: string
     }>
   }
-  tenant: Tenant
+  room: Room
 }
 
-export function GameCard({
-  game,
-  tenant: _tenant,
-}: GameCardProps): JSX.Element {
+export function GameCard({ game, room: _room }: GameCardProps): JSX.Element {
   const formatStakes = (smallBlind: number, bigBlind: number): string => {
     return `$${smallBlind}/${bigBlind}`
   }

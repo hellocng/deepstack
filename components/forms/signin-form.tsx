@@ -62,7 +62,7 @@ export function SignInForm(): JSX.Element {
   const [error, setError] = useState('')
   const [_needsAlias, setNeedsAlias] = useState(false)
 
-  const { sendOTP, verifyOTP } = useUser()
+  const { sendOTP, verifyOTP, updateUser } = useUser()
   const router = useRouter()
 
   const phoneForm = useForm<PhoneFormData>({
@@ -147,17 +147,8 @@ export function SignInForm(): JSX.Element {
     setError('')
 
     try {
-      // Update the player's alias in the database
-      const { createClient } = await import('@/lib/supabase/client')
-      const supabase = createClient()
-
-      const { error } = await supabase
-        .from('players')
-        .update({ alias: data.alias } as any)
-        .eq('phone_number', phoneNumber)
-
-      if (error) throw error
-
+      // Update the player's alias using the user context
+      await updateUser({ alias: data.alias })
       router.push('/')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to set alias')

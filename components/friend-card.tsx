@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Tenant } from '@/types'
+import { Room } from '@/types'
 import { MapPin, MessageCircle, MoreHorizontal } from 'lucide-react'
 
 interface FriendCardProps {
@@ -16,12 +16,12 @@ interface FriendCardProps {
     friendshipId: string
     status: string
   }
-  tenant: Tenant
+  room: Room
 }
 
 export function FriendCard({
   friend,
-  tenant: _tenant,
+  room: _room,
 }: FriendCardProps): JSX.Element {
   const formatLastSeen = (lastLogin?: string): string => {
     if (!lastLogin) return 'Never'

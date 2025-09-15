@@ -213,10 +213,17 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'table_seats_player_id_fkey'
+            foreignKeyName: 'player_sessions_player_id_fkey'
             columns: ['player_id']
             isOneToOne: false
             referencedRelation: 'players'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'player_sessions_table_id_fkey'
+            columns: ['table_id']
+            isOneToOne: false
+            referencedRelation: 'tables'
             referencedColumns: ['id']
           },
         ]
@@ -530,29 +537,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      end_table_session: {
-        Args: { session_uuid: string }
-        Returns: boolean
-      }
       get_available_seats_at_table: {
         Args: { table_uuid: string }
-        Returns: number
-      }
-      get_available_seats_at_table_session: {
-        Args: { session_uuid: string }
         Returns: number
       }
       get_current_players_at_table: {
         Args: { table_uuid: string }
         Returns: number
-      }
-      get_current_players_at_table_session: {
-        Args: { session_uuid: string }
-        Returns: number
-      }
-      get_table_session_duration: {
-        Args: { session_uuid: string }
-        Returns: unknown
       }
       get_user_room_id: {
         Args: Record<PropertyKey, never>
@@ -562,24 +553,12 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
-      is_table_session_active: {
-        Args: { session_uuid: string }
-        Returns: boolean
-      }
       is_user_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
-      start_new_table_session: {
-        Args: { table_uuid: string; tenant_uuid: string }
-        Returns: string
-      }
       table_has_space: {
         Args: { table_uuid: string }
-        Returns: boolean
-      }
-      table_session_has_space: {
-        Args: { session_uuid: string }
         Returns: boolean
       }
     }
@@ -590,7 +569,7 @@ export type Database = {
         | 'omaha'
         | 'seven_card_stud'
         | 'five_card_draw'
-        | 'razz'
+        | 'razr'
         | 'stud_hi_lo'
       operator_role: 'admin' | 'supervisor' | 'dealer' | 'superadmin'
       table_status: 'open' | 'closed'
@@ -739,7 +718,7 @@ export const Constants = {
         'omaha',
         'seven_card_stud',
         'five_card_draw',
-        'razz',
+        'razr',
         'stud_hi_lo',
       ],
       operator_role: ['admin', 'supervisor', 'dealer', 'superadmin'],

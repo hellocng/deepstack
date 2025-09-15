@@ -48,7 +48,7 @@ export default async function RoomPage({
       <DashboardStats tenantId={roomData.id} />
 
       {/* Quick Actions */}
-      <QuickActions tenant={roomData} />
+      <QuickActions room={roomData} />
 
       {/* Main Content Grid */}
       <div className='grid lg:grid-cols-2 gap-6'>

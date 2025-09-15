@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/client'
-import { Database } from '@/types/supabase'
+import { TablesInsert, Database } from '@/types/supabase'
 import {
   Dialog,
   DialogContent,
@@ -129,21 +129,20 @@ export function CreateOperatorDialog({
       }
 
       // Create the operator record
-      const operatorData: Database['public']['Tables']['operators']['Insert'] =
-        {
-          email: data.email,
-          first_name: data.firstName,
-          last_name: data.lastName,
-          phone_number: data.phoneNumber || null,
-          role: data.role,
-          room_id: data.role === 'superadmin' ? null : data.roomId,
-          auth_id: authData.user.id,
-          is_active: true,
-        }
+      const operatorData: TablesInsert<'operators'> = {
+        email: data.email,
+        first_name: data.firstName,
+        last_name: data.lastName,
+        phone_number: data.phoneNumber || null,
+        role: data.role,
+        room_id: data.role === 'superadmin' ? null : data.roomId,
+        auth_id: authData.user.id,
+        is_active: true,
+      }
 
       const { error: operatorError } = await supabase
         .from('operators')
-        .insert(operatorData as any)
+        .insert(operatorData as TablesInsert<'operators'>)
 
       if (operatorError) {
         // If operator creation fails, we should clean up the auth user

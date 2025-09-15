@@ -126,7 +126,7 @@ export function Navigation(): JSX.Element {
             </div>
             <div className='flex items-center gap-4'>
               {shouldShowSignIn && (
-                <div className='w-16 h-8 rounded bg-muted animate-pulse' />
+                <div className='w-20 h-8 rounded bg-muted animate-pulse' />
               )}
             </div>
           </div>
@@ -152,7 +152,7 @@ export function Navigation(): JSX.Element {
           <div className='flex items-center gap-4'>
             {!isSignInPage && (
               <>
-                {loading ? (
+                {loading && user ? (
                   <div className='w-8 h-8 rounded-full bg-muted animate-pulse' />
                 ) : user ? (
                   <DropdownMenu>

@@ -11,7 +11,7 @@ import {
 import { RoomForm } from '@/components/forms/room-form'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
-import { Tables } from '@/types/supabase'
+import { Tables, TablesUpdate } from '@/types/supabase'
 
 type Room = Tables<'rooms'>
 
@@ -75,7 +75,7 @@ export function EditRoomDialog({
           address: formData.address || null,
           phone: formData.phone || null,
           updated_at: new Date().toISOString(),
-        } as any)
+        } as TablesUpdate<'rooms'>)
         .eq('id', room.id)
 
       if (error) {

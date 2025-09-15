@@ -8,7 +8,7 @@ import {
   useCallback,
 } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Tables } from '@/types/supabase'
+import { Tables, TablesUpdate, TablesInsert } from '@/types/supabase'
 
 type Room = Tables<'rooms'>
 type Player = Tables<'players'>
@@ -163,7 +163,7 @@ export function UserProvider({
   }
 
   const updateUser = async (
-    updates: Partial<Player> | Partial<Operator>
+    updates: TablesUpdate<'players'> | TablesUpdate<'operators'>
   ): Promise<void> => {
     if (!user) return
 
@@ -171,7 +171,7 @@ export function UserProvider({
       if (user.type === 'player') {
         const { error } = await supabase
           .from('players')
-          .update(updates as any)
+          .update(updates as TablesUpdate<'players'>)
           .eq('id', user.profile.id)
 
         if (error) throw error
@@ -184,7 +184,7 @@ export function UserProvider({
       } else if (user.type === 'operator') {
         const { error } = await supabase
           .from('operators')
-          .update(updates as any)
+          .update(updates as TablesUpdate<'operators'>)
           .eq('id', user.profile.id)
 
         if (error) throw error
@@ -242,6 +242,7 @@ export function UserProvider({
           type: 'player',
           profile: existingPlayer,
         })
+        setLoading(false)
         return !existingPlayer.alias // Return true if alias needs to be set
       } else {
         // New player - create profile
@@ -251,7 +252,7 @@ export function UserProvider({
             auth_id: data.user.id,
             phone_number: phoneNumber,
             preferences: {},
-          } as any)
+          } as TablesInsert<'players'>)
           .select()
           .single()
 
@@ -261,10 +262,12 @@ export function UserProvider({
           type: 'player',
           profile: newPlayer,
         })
+        setLoading(false)
         return true // New player needs to set alias
       }
     }
 
+    setLoading(false)
     return false
   }
 

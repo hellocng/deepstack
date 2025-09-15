@@ -23,17 +23,17 @@ interface DashboardStats {
 
 interface GameData {
   id: string
-  is_active: boolean
+  is_active: boolean | null
 }
 
 interface TableData {
   id: string
-  status: string
+  status: string | null
 }
 
 interface TournamentData {
   id: string
-  status: string
+  status: string | null
 }
 
 export function AdminDashboard(): JSX.Element {
@@ -93,7 +93,8 @@ export function AdminDashboard(): JSX.Element {
         setStats({
           totalGames: gamesResult.data?.length || 0,
           activeGames:
-            gamesResult.data?.filter((g: GameData) => g.is_active).length || 0,
+            gamesResult.data?.filter((g: GameData) => g.is_active === true)
+              .length || 0,
           totalTables: tablesResult.data?.length || 0,
           activeTables:
             tablesResult.data?.filter((t: TableData) => t.status === 'open')

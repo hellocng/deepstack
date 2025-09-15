@@ -3,13 +3,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Tenant } from '@/types'
+import { Room } from '@/types'
 import { MapPin, Users, Gamepad2, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 
 interface RoomCardProps {
-  tenant: Tenant & {
+  room: Room & {
     games?: Array<{
       id: string
       name: string
@@ -27,15 +27,15 @@ interface RoomCardProps {
   }
 }
 
-export function RoomCard({ tenant }: RoomCardProps): JSX.Element {
+export function RoomCard({ room }: RoomCardProps): JSX.Element {
   // Remove duplicates from games and tables arrays
   const uniqueGames =
-    tenant.games?.filter(
+    room.games?.filter(
       (game, index, array) => array.findIndex((g) => g.id === game.id) === index
     ) || []
 
   const uniqueTables =
-    tenant.tables?.filter(
+    room.tables?.filter(
       (table, index, array) =>
         array.findIndex((t) => t.id === table.id) === index
     ) || []
@@ -88,10 +88,10 @@ export function RoomCard({ tenant }: RoomCardProps): JSX.Element {
       <CardHeader>
         <div className='flex items-start justify-between'>
           <div className='flex items-center space-x-3'>
-            {tenant.logo_url ? (
+            {room.logo_url ? (
               <Image
-                src={tenant.logo_url}
-                alt={tenant.name}
+                src={room.logo_url}
+                alt={room.name}
                 width={48}
                 height={48}
                 className='h-12 w-12 rounded'
@@ -99,13 +99,13 @@ export function RoomCard({ tenant }: RoomCardProps): JSX.Element {
             ) : (
               <div className='h-12 w-12 rounded bg-primary flex items-center justify-center'>
                 <span className='text-primary-foreground font-bold text-lg'>
-                  {tenant.name.charAt(0)}
+                  {room.name.charAt(0)}
                 </span>
               </div>
             )}
             <div>
-              <CardTitle className='text-lg'>{tenant.name}</CardTitle>
-              <p className='text-sm text-muted-foreground'>{tenant.code}</p>
+              <CardTitle className='text-lg'>{room.name}</CardTitle>
+              <p className='text-sm text-muted-foreground'>{room.code}</p>
             </div>
           </div>
           <Badge
@@ -119,10 +119,10 @@ export function RoomCard({ tenant }: RoomCardProps): JSX.Element {
 
       <CardContent className='space-y-4'>
         {/* Location */}
-        {tenant.address && (
+        {room.address && (
           <div className='flex items-center space-x-2 text-sm text-muted-foreground'>
             <MapPin className='h-4 w-4' />
-            <span className='truncate'>{tenant.address}</span>
+            <span className='truncate'>{room.address}</span>
           </div>
         )}
 
@@ -188,9 +188,9 @@ export function RoomCard({ tenant }: RoomCardProps): JSX.Element {
         )}
 
         {/* Description */}
-        {tenant.description && (
+        {room.description && (
           <p className='text-sm text-muted-foreground line-clamp-2'>
-            {tenant.description}
+            {room.description}
           </p>
         )}
 
@@ -200,7 +200,7 @@ export function RoomCard({ tenant }: RoomCardProps): JSX.Element {
             className='flex-1'
             asChild
           >
-            <Link href={`/${tenant.code}`}>
+            <Link href={`/${room.code}`}>
               <ExternalLink className='h-4 w-4 mr-2' />
               Visit Room
             </Link>
