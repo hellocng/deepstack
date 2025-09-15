@@ -6,6 +6,7 @@ import {
   useEffect,
   useState,
   useCallback,
+  useMemo,
 } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Tables, TablesUpdate, TablesInsert } from '@/types/supabase'
@@ -33,6 +34,7 @@ interface UserContextType {
   error: string | null
   signOut: () => Promise<void>
   updateUser: (updates: Partial<Player> | Partial<Operator>) => Promise<void>
+  refreshUser: () => Promise<void>
   sendOTP: (phoneNumber: string) => Promise<void>
   verifyOTP: (phoneNumber: string, token: string) => Promise<boolean>
 }
@@ -47,7 +49,7 @@ export function UserProvider({
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   const loadUserProfile = useCallback(
     async (authId: string): Promise<void> => {
@@ -78,7 +80,10 @@ export function UserProvider({
           return
         }
 
-        // If not an operator, try to load as player
+        // If operator query failed due to RLS policies (user is not an operator),
+        // continue to try loading as player
+
+        // Try to load as player
         const { data: player, error: playerError } = await supabase
           .from('players')
           .select('*')
@@ -118,6 +123,7 @@ export function UserProvider({
 
       if (user && !error) {
         await loadUserProfile(user.id)
+        setLoading(false)
       } else {
         setUser(null)
         setLoading(false)
@@ -139,6 +145,7 @@ export function UserProvider({
 
         if (user && !error) {
           await loadUserProfile(user.id)
+          setLoading(false)
         } else {
           setUser(null)
           setLoading(false)
@@ -150,7 +157,7 @@ export function UserProvider({
     })
 
     return (): void => subscription.unsubscribe()
-  }, [loadUserProfile, supabase.auth])
+  }, [loadUserProfile, supabase])
 
   const signOut = async (): Promise<void> => {
     try {
@@ -198,6 +205,19 @@ export function UserProvider({
     } catch (_err) {
       // Error updating user
       setError('Failed to update user profile')
+    }
+  }
+
+  const refreshUser = async (): Promise<void> => {
+    if (!user || !user.profile.auth_id) return
+
+    try {
+      setLoading(true)
+      await loadUserProfile(user.profile.auth_id)
+    } catch (_error) {
+      setError('Failed to refresh user profile')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -279,6 +299,7 @@ export function UserProvider({
         error,
         signOut,
         updateUser,
+        refreshUser,
         sendOTP,
         verifyOTP,
       }}

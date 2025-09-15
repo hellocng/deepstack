@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { usePlayer } from '@/lib/auth/user-context'
+import { useState, useEffect } from 'react'
+import { usePlayer, useUser } from '@/lib/auth/user-context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -20,6 +20,7 @@ import { ThemeSettings } from '@/components/theme-settings'
 
 export default function ProfilePage(): JSX.Element {
   const player = usePlayer()
+  const { refreshUser } = useUser()
   const loading = !player
   const router = useRouter()
   const [alias, setAlias] = useState(player?.profile.alias || '')
@@ -28,16 +29,39 @@ export default function ProfilePage(): JSX.Element {
   )
   const [saving, setSaving] = useState(false)
 
+  // Update alias state when player data loads
+  useEffect(() => {
+    if (player?.profile.alias) {
+      setAlias(player.profile.alias)
+      setOriginalAlias(player.profile.alias)
+    }
+  }, [player?.profile.alias])
+
   const handleSaveAlias = async (): Promise<void> => {
     if (!player) return
 
     setSaving(true)
     try {
-      // TODO: Implement alias update API call
-      // Saving alias
+      const { createClient } = await import('@/lib/supabase/client')
+      const supabase = createClient()
+
+      const { error } = await supabase
+        .from('players')
+        .update({ alias: alias.trim() })
+        .eq('id', player.profile.id)
+
+      if (error) {
+        // Error saving alias - you could add a toast notification here
+        return
+      }
+
+      // Update the local state
       setOriginalAlias(alias)
+      // Refresh user data to get the latest profile
+      await refreshUser()
+      // You could add a success toast notification here
     } catch (_error) {
-      // Error saving alias
+      // Error saving alias - you could add an error toast notification here
     } finally {
       setSaving(false)
     }

@@ -106,7 +106,7 @@ export function Navigation(): JSX.Element {
     pathname === '/admin/signin' ||
     pathname === '/superadmin/signin'
   const isRootPage = pathname === '/'
-  const shouldShowSignIn = !isSignInPage && !user
+  const _shouldShowSignIn = !isSignInPage && !user
 
   // Prevent hydration mismatch
   if (!mounted) {
@@ -125,9 +125,7 @@ export function Navigation(): JSX.Element {
               )}
             </div>
             <div className='flex items-center gap-4'>
-              {shouldShowSignIn && (
-                <div className='w-20 h-8 rounded bg-muted animate-pulse' />
-              )}
+              {/* No skeleton during hydration - wait for mount */}
             </div>
           </div>
         </div>
@@ -150,11 +148,9 @@ export function Navigation(): JSX.Element {
             )}
           </div>
           <div className='flex items-center gap-4'>
-            {!isSignInPage && (
+            {!isSignInPage && !loading && (
               <>
-                {loading && user ? (
-                  <div className='w-8 h-8 rounded-full bg-muted animate-pulse' />
-                ) : user ? (
+                {user ? (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button

@@ -40,12 +40,21 @@ export default function RootLayout({
                   const theme = localStorage.getItem('theme');
                   const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
                   
-                  if (theme === 'dark' || (!theme && systemPrefersDark)) {
+                  if (theme === 'dark') {
                     document.documentElement.classList.add('dark');
                     document.documentElement.classList.remove('light');
-                  } else {
+                  } else if (theme === 'light') {
                     document.documentElement.classList.add('light');
                     document.documentElement.classList.remove('dark');
+                  } else {
+                    // Default to system preference (no theme saved or theme is 'system')
+                    if (systemPrefersDark) {
+                      document.documentElement.classList.add('dark');
+                      document.documentElement.classList.remove('light');
+                    } else {
+                      document.documentElement.classList.add('light');
+                      document.documentElement.classList.remove('dark');
+                    }
                   }
                 } catch (e) {
                   // Fallback to light mode
