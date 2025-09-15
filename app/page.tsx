@@ -38,7 +38,7 @@ export default function HomePage(): JSX.Element {
 
         {/* Features Grid */}
         <div className='grid md:grid-cols-3 gap-8 mb-16'>
-          <Card className='hover:shadow-none hover:cursor-default'>
+          <Card>
             <CardHeader>
               <div className='w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4'>
                 <MapPin className='w-6 h-6 text-primary' />
@@ -51,7 +51,7 @@ export default function HomePage(): JSX.Element {
             </CardHeader>
           </Card>
 
-          <Card className='hover:shadow-none hover:cursor-default'>
+          <Card>
             <CardHeader>
               <div className='w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4'>
                 <Clock className='w-6 h-6 text-primary' />
@@ -64,7 +64,7 @@ export default function HomePage(): JSX.Element {
             </CardHeader>
           </Card>
 
-          <Card className='hover:shadow-none hover:cursor-default'>
+          <Card>
             <CardHeader>
               <div className='w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4'>
                 <Users className='w-6 h-6 text-primary' />

@@ -12,6 +12,7 @@ interface PlayerAuthContextType {
   sendOTP: (phoneNumber: string) => Promise<void>
   verifyOTP: (phoneNumber: string, token: string) => Promise<boolean>
   signOut: () => Promise<void>
+  updatePlayer: (updates: Partial<Player>) => Promise<void>
 }
 
 const PlayerAuthContext = createContext<PlayerAuthContextType | undefined>(
@@ -183,6 +184,25 @@ export function PlayerAuthProvider({
     setPlayer(null)
   }
 
+  const updatePlayer = async (updates: Partial<Player>): Promise<void> => {
+    if (!player) return
+
+    try {
+      const { error } = await supabase
+        .from('players')
+        .update(updates)
+        .eq('id', player.id)
+
+      if (error) throw error
+
+      // Update local player state
+      setPlayer({ ...player, ...updates })
+    } catch (error) {
+      console.error('Error updating player:', error)
+      throw error
+    }
+  }
+
   return (
     <PlayerAuthContext.Provider
       value={{
@@ -191,6 +211,7 @@ export function PlayerAuthProvider({
         sendOTP,
         verifyOTP,
         signOut,
+        updatePlayer,
       }}
     >
       {children}

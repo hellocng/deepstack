@@ -1,19 +1,17 @@
 export function Footer(): JSX.Element {
   return (
-    <footer className='container mx-auto px-4 py-8 mt-16'>
-      <div className='text-center text-muted-foreground'>
-        <p>
-          Developed by{' '}
-          <a
-            href='https://hellocng.com'
-            target='_blank'
-            rel='noopener noreferrer'
-            className='font-bold text-foreground hover:text-primary transition-colors'
-          >
-            hellocng
-          </a>
-        </p>
-      </div>
+    <footer className='w-full flex items-center justify-center border-t border-border mx-auto text-center text-xs gap-8 py-8 bg-background'>
+      <p className='text-muted-foreground'>
+        Developed by{' '}
+        <a
+          href='https://hellocng.com'
+          target='_blank'
+          className='font-bold hover:underline text-foreground'
+          rel='noreferrer'
+        >
+          hellocng
+        </a>
+      </p>
     </footer>
   )
 }

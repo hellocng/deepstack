@@ -221,6 +221,7 @@ export type Database = {
           alias: string | null
           auth_id: string | null
           avatar_url: string | null
+          color_theme: string | null
           created_at: string | null
           email: string | null
           id: string
@@ -232,6 +233,7 @@ export type Database = {
           alias?: string | null
           auth_id?: string | null
           avatar_url?: string | null
+          color_theme?: string | null
           created_at?: string | null
           email?: string | null
           id?: string
@@ -243,6 +245,7 @@ export type Database = {
           alias?: string | null
           auth_id?: string | null
           avatar_url?: string | null
+          color_theme?: string | null
           created_at?: string | null
           email?: string | null
           id?: string

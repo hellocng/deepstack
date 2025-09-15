@@ -1,7 +1,6 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { ThemeToggle } from '@/components/theme-toggle'
 import { User, LogOut, Bell } from 'lucide-react'
 import { Tenant } from '@/types'
 import Link from 'next/link'
@@ -52,7 +51,6 @@ export function TenantHeader({ tenant }: TenantHeaderProps): JSX.Element {
             >
               <Bell className='h-4 w-4' />
             </Button>
-            <ThemeToggle />
             <Button
               variant='ghost'
               size='sm'

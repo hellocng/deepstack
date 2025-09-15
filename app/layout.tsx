@@ -4,6 +4,7 @@ import './globals.css'
 import { Navigation } from '@/components/navigation'
 import { Footer } from '@/components/footer'
 import { PlayerAuthProvider } from '@/lib/auth/player-auth-context'
+import { ThemeProvider } from '@/components/theme-provider'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -52,13 +53,15 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <PlayerAuthProvider>
-          <div className='min-h-screen bg-background flex flex-col'>
-            <Navigation />
-            <main className='flex-1 container mx-auto px-4 py-6'>
-              {children}
-            </main>
-            <Footer />
-          </div>
+          <ThemeProvider>
+            <div className='min-h-screen bg-background flex flex-col'>
+              <Navigation />
+              <main className='flex-1 container mx-auto px-4 py-6 pt-24'>
+                {children}
+              </main>
+              <Footer />
+            </div>
+          </ThemeProvider>
         </PlayerAuthProvider>
       </body>
     </html>

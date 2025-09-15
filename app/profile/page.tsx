@@ -16,6 +16,7 @@ import { Separator } from '@/components/ui/separator'
 import { useRouter } from 'next/navigation'
 import { formatPhoneNumber } from '@/lib/utils'
 import { ArrowLeft, User } from 'lucide-react'
+import { ThemeSettings } from '@/components/theme-settings'
 
 export default function ProfilePage(): JSX.Element {
   const { player, loading } = usePlayerAuth()
@@ -75,20 +76,23 @@ export default function ProfilePage(): JSX.Element {
   return (
     <div className='container mx-auto px-4 py-8'>
       <div className='max-w-2xl mx-auto space-y-6'>
-        {/* Back Button */}
-        <Button
-          variant='ghost'
-          size='sm'
-          onClick={() => router.back()}
-        >
-          <ArrowLeft className='h-4 w-4 mr-2' />
-          Back
-        </Button>
-
-        {/* Header */}
-        <div>
-          <h1 className='text-3xl font-bold'>Profile</h1>
-          <p className='text-muted-foreground'>Manage your account settings</p>
+        {/* Header with Back Button */}
+        <div className='flex items-center gap-2'>
+          <Button
+            variant='ghost'
+            size='icon'
+            className='h-8 w-8'
+            onClick={() => router.back()}
+            aria-label='Back'
+          >
+            <ArrowLeft className='h-4 w-4' />
+          </Button>
+          <div>
+            <h1 className='text-2xl font-bold tracking-tight'>Profile</h1>
+            <p className='text-muted-foreground'>
+              Manage your account settings
+            </p>
+          </div>
         </div>
 
         {/* Profile Information */}
@@ -111,7 +115,7 @@ export default function ProfilePage(): JSX.Element {
                 className='bg-muted'
               />
               <p className='text-sm text-muted-foreground'>
-                Phone number cannot be changed
+                Your phone number is not visible to other players.
               </p>
             </div>
 
@@ -119,8 +123,18 @@ export default function ProfilePage(): JSX.Element {
 
             {/* Alias (Editable) */}
             <div className='space-y-2'>
+              <Label htmlFor='alias'>Alias</Label>
+              <Input
+                id='alias'
+                value={alias}
+                onChange={(e) => setAlias(e.target.value)}
+                placeholder='Enter your alias'
+                maxLength={20}
+              />
               <div className='flex items-center justify-between'>
-                <Label htmlFor='alias'>Alias</Label>
+                <p className='text-sm text-muted-foreground'>
+                  Your alias is how other players will see you
+                </p>
                 {hasChanges && (
                   <div className='flex space-x-2'>
                     <Button
@@ -141,19 +155,18 @@ export default function ProfilePage(): JSX.Element {
                   </div>
                 )}
               </div>
-              <Input
-                id='alias'
-                value={alias}
-                onChange={(e) => setAlias(e.target.value)}
-                placeholder='Enter your alias'
-                maxLength={20}
-              />
-              <p className='text-sm text-muted-foreground'>
-                Your alias is how other players will see you
-              </p>
             </div>
           </CardContent>
         </Card>
+
+        {/* Theme Settings */}
+        <ThemeSettings
+          player={player}
+          onThemeChange={(theme) => {
+            // Theme change is handled by the ThemeSettings component
+            // This callback can be used for additional actions if needed
+          }}
+        />
       </div>
     </div>
   )
