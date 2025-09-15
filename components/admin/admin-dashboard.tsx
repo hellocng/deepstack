@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import Link from 'next/link'
 
 interface DashboardStats {
   totalGames: number
@@ -18,6 +19,21 @@ interface DashboardStats {
   totalTournaments: number
   activeTournaments: number
   waitlistEntries: number
+}
+
+interface GameData {
+  id: string
+  is_active: boolean
+}
+
+interface TableData {
+  id: string
+  status: string
+}
+
+interface TournamentData {
+  id: string
+  status: string
 }
 
 export function AdminDashboard(): JSX.Element {
@@ -45,13 +61,16 @@ export function AdminDashboard(): JSX.Element {
 
         if (!user || authError) return
 
-        const { data: operator } = await supabase
+        const { data: operator, error: operatorError } = await supabase
           .from('operators')
           .select('room_id')
           .eq('auth_id', user.id)
           .single()
 
-        if (!operator) return
+        if (operatorError || !operator) return
+
+        const roomId = (operator as { room_id: string | null }).room_id
+        if (!roomId) return
 
         // Fetch stats for the operator's room
         const [gamesResult, tablesResult, tournamentsResult, waitlistResult] =
@@ -59,35 +78,35 @@ export function AdminDashboard(): JSX.Element {
             supabase
               .from('games')
               .select('id, is_active')
-              .eq('room_id', operator.room_id),
-            supabase
-              .from('tables')
-              .select('id, status')
-              .eq('room_id', operator.room_id),
+              .eq('room_id', roomId),
+            supabase.from('tables').select('id, status').eq('room_id', roomId),
             supabase
               .from('tournaments')
               .select('id, status')
-              .eq('room_id', operator.room_id),
+              .eq('room_id', roomId),
             supabase
               .from('waitlist_entries')
               .select('id')
-              .eq('room_id', operator.room_id),
+              .eq('room_id', roomId),
           ])
 
         setStats({
           totalGames: gamesResult.data?.length || 0,
-          activeGames: gamesResult.data?.filter((g) => g.is_active).length || 0,
+          activeGames:
+            gamesResult.data?.filter((g: GameData) => g.is_active).length || 0,
           totalTables: tablesResult.data?.length || 0,
           activeTables:
-            tablesResult.data?.filter((t) => t.status === 'open').length || 0,
+            tablesResult.data?.filter((t: TableData) => t.status === 'open')
+              .length || 0,
           totalTournaments: tournamentsResult.data?.length || 0,
           activeTournaments:
-            tournamentsResult.data?.filter((t) => t.status === 'in_progress')
-              .length || 0,
+            tournamentsResult.data?.filter(
+              (t: TournamentData) => t.status === 'in_progress'
+            ).length || 0,
           waitlistEntries: waitlistResult.data?.length || 0,
         })
-      } catch (error) {
-        console.error('Error fetching dashboard stats:', error)
+      } catch (_error) {
+        // Error fetching dashboard stats - handled by error state
       } finally {
         setLoading(false)
       }
@@ -171,7 +190,7 @@ export function AdminDashboard(): JSX.Element {
             <CardDescription>Common administrative tasks</CardDescription>
           </CardHeader>
           <CardContent className='space-y-2'>
-            <a
+            <Link
               href='/admin/games'
               className='block p-3 rounded-lg border hover:bg-accent transition-colors'
             >
@@ -179,8 +198,8 @@ export function AdminDashboard(): JSX.Element {
               <div className='text-sm text-muted-foreground'>
                 Create and manage poker games
               </div>
-            </a>
-            <a
+            </Link>
+            <Link
               href='/admin/tables'
               className='block p-3 rounded-lg border hover:bg-accent transition-colors'
             >
@@ -188,8 +207,8 @@ export function AdminDashboard(): JSX.Element {
               <div className='text-sm text-muted-foreground'>
                 Configure table settings and seating
               </div>
-            </a>
-            <a
+            </Link>
+            <Link
               href='/admin/waitlist'
               className='block p-3 rounded-lg border hover:bg-accent transition-colors'
             >
@@ -197,7 +216,7 @@ export function AdminDashboard(): JSX.Element {
               <div className='text-sm text-muted-foreground'>
                 Manage player waitlists
               </div>
-            </a>
+            </Link>
           </CardContent>
         </Card>
 

@@ -227,7 +227,7 @@ const colorThemes = {
   // Add more themes as needed - keeping it concise for now
 }
 
-export function useColorTheme(colorTheme: string = 'neutral') {
+export function useColorTheme(colorTheme: string = 'neutral'): void {
   useEffect(() => {
     // Only apply custom color themes if it's not the default neutral theme
     // This prevents interference with the default light/dark mode CSS variables
@@ -235,7 +235,7 @@ export function useColorTheme(colorTheme: string = 'neutral') {
       return
     }
 
-    const applyTheme = () => {
+    const applyTheme = (): void => {
       const root = document.documentElement
       const isDark = document.documentElement.classList.contains('dark')
 
@@ -285,14 +285,14 @@ export function useColorTheme(colorTheme: string = 'neutral') {
     applyTheme()
 
     // Add a listener for theme changes from the navigation component
-    const handleThemeChange = () => {
+    const handleThemeChange = (): void => {
       setTimeout(applyTheme, 100)
     }
 
     document.addEventListener('theme-change', handleThemeChange)
     document.addEventListener('color-theme-change', handleThemeChange)
 
-    return () => {
+    return (): void => {
       document.removeEventListener('theme-change', handleThemeChange)
       document.removeEventListener('color-theme-change', handleThemeChange)
     }

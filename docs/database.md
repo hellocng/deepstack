@@ -135,10 +135,9 @@ CREATE TABLE waitlist_entries (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   player_id UUID REFERENCES players(id) ON DELETE CASCADE,
   game_id UUID REFERENCES games(id) ON DELETE CASCADE,
-  position INTEGER NOT NULL,
   status waitlist_status DEFAULT 'waiting',
   notes TEXT,
-  tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
+  room_id UUID REFERENCES rooms(id) ON DELETE CASCADE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -318,7 +317,7 @@ CREATE INDEX idx_player_sessions_active ON player_sessions(table_id, end_time) W
 CREATE INDEX idx_waitlist_entries_tenant_id ON waitlist_entries(tenant_id);
 CREATE INDEX idx_waitlist_entries_game_id ON waitlist_entries(game_id);
 CREATE INDEX idx_waitlist_entries_player_id ON waitlist_entries(player_id);
-CREATE INDEX idx_waitlist_entries_position ON waitlist_entries(game_id, position);
+CREATE INDEX idx_waitlist_entries_created_at ON waitlist_entries(game_id, created_at);
 
 CREATE INDEX idx_tournaments_tenant_id ON tournaments(tenant_id);
 CREATE INDEX idx_tournaments_start_time ON tournaments(start_time);
@@ -721,30 +720,8 @@ CREATE TRIGGER update_friendships_updated_at BEFORE UPDATE ON friendships
 ### Waitlist Position Management
 
 ```sql
-CREATE OR REPLACE FUNCTION update_waitlist_positions()
-RETURNS TRIGGER AS $$
-BEGIN
-    -- Update positions when entries are added/removed
-    IF TG_OP = 'INSERT' THEN
-        UPDATE waitlist_entries
-        SET position = position + 1
-        WHERE game_id = NEW.game_id
-        AND position >= NEW.position
-        AND id != NEW.id;
-    ELSIF TG_OP = 'DELETE' THEN
-        UPDATE waitlist_entries
-        SET position = position - 1
-        WHERE game_id = OLD.game_id
-        AND position > OLD.position;
-    END IF;
-
-    RETURN COALESCE(NEW, OLD);
-END;
-$$ language 'plpgsql';
-
-CREATE TRIGGER update_waitlist_positions_trigger
-    AFTER INSERT OR DELETE ON waitlist_entries
-    FOR EACH ROW EXECUTE FUNCTION update_waitlist_positions();
+-- Waitlist entries are now ordered chronologically by created_at
+-- No need for position management functions or triggers
 ```
 
 ## Sample Data

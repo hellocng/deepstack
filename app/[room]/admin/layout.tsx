@@ -2,12 +2,13 @@
 
 import { useRouter } from 'next/navigation'
 import { useUser, useOperator } from '@/lib/auth/user-context'
+import Link from 'next/link'
 
-interface AdminLayoutProps {
+export default function AdminLayout({
+  children,
+}: {
   children: React.ReactNode
-}
-
-export function AdminLayout({ children }: AdminLayoutProps): JSX.Element {
+}): JSX.Element | null {
   const { loading } = useUser()
   const operator = useOperator()
   const router = useRouter()
@@ -34,43 +35,43 @@ export function AdminLayout({ children }: AdminLayoutProps): JSX.Element {
       <header className='border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60'>
         <div className='w-full max-w-7xl mx-auto px-4 flex h-14 items-center'>
           <div className='mr-4 flex'>
-            <a
+            <Link
               className='mr-6 flex items-center space-x-2'
               href='/admin'
             >
               <span className='font-bold'>Admin</span>
-            </a>
+            </Link>
             <nav className='flex items-center space-x-6 text-sm font-medium'>
-              <a
+              <Link
                 className='transition-colors hover:text-foreground/80 text-foreground/60'
                 href='/admin'
               >
                 Dashboard
-              </a>
-              <a
+              </Link>
+              <Link
                 className='transition-colors hover:text-foreground/80 text-foreground/60'
                 href='/admin/games'
               >
                 Games
-              </a>
-              <a
+              </Link>
+              <Link
                 className='transition-colors hover:text-foreground/80 text-foreground/60'
                 href='/admin/tables'
               >
                 Tables
-              </a>
-              <a
+              </Link>
+              <Link
                 className='transition-colors hover:text-foreground/80 text-foreground/60'
                 href='/admin/tournaments'
               >
                 Tournaments
-              </a>
-              <a
+              </Link>
+              <Link
                 className='transition-colors hover:text-foreground/80 text-foreground/60'
                 href='/admin/waitlist'
               >
                 Waitlist
-              </a>
+              </Link>
             </nav>
           </div>
           <div className='ml-auto flex items-center space-x-4'>

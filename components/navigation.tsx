@@ -101,10 +101,12 @@ export function Navigation(): JSX.Element {
     router.push('/')
   }
 
-  const isSignInPage = pathname === '/signin' || pathname === '/admin/signin'
-  const isSuperAdminPage = pathname.startsWith('/superadmin')
+  const isSignInPage =
+    pathname === '/signin' ||
+    pathname === '/admin/signin' ||
+    pathname === '/superadmin/signin'
   const isRootPage = pathname === '/'
-  const shouldShowSignIn = !isSignInPage && !isSuperAdminPage && !user
+  const shouldShowSignIn = !isSignInPage && !user
 
   // Prevent hydration mismatch
   if (!mounted) {
@@ -148,7 +150,7 @@ export function Navigation(): JSX.Element {
             )}
           </div>
           <div className='flex items-center gap-4'>
-            {!isSignInPage && !isSuperAdminPage && (
+            {!isSignInPage && (
               <>
                 {loading ? (
                   <div className='w-8 h-8 rounded-full bg-muted animate-pulse' />

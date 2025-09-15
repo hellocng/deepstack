@@ -270,15 +270,14 @@ Get waitlist entries for a tenant.
 ```typescript
 interface WaitlistEntry {
   id: string
-  user_id: string
+  player_id: string
   game_id: string
-  position: number
   status: 'waiting' | 'called' | 'seated' | 'cancelled'
   notes?: string
-  tenant_id: string
+  room_id: string
   created_at: string
   updated_at: string
-  user: User
+  player: Player
   game: Game
 }
 ```

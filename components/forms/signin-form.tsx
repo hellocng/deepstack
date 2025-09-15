@@ -60,6 +60,7 @@ export function SignInForm(): JSX.Element {
   const [phoneNumber, setPhoneNumber] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [_needsAlias, setNeedsAlias] = useState(false)
 
   const { sendOTP, verifyOTP } = useUser()
   const router = useRouter()
@@ -152,7 +153,7 @@ export function SignInForm(): JSX.Element {
 
       const { error } = await supabase
         .from('players')
-        .update({ alias: data.alias })
+        .update({ alias: data.alias } as any)
         .eq('phone_number', phoneNumber)
 
       if (error) throw error

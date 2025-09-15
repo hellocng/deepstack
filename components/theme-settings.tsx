@@ -22,6 +22,7 @@ import { useUser } from '@/lib/auth/user-context'
 import { Tables } from '@/types/supabase'
 import {
   PlayerPreferences,
+  ColorTheme,
   getPreference,
   setPreference,
   DEFAULT_PREFERENCES,
@@ -90,19 +91,21 @@ export function ThemeSettings({
       const updatedPreferences = setPreference(
         currentPreferences,
         'color_theme',
-        theme as any
+        theme as ColorTheme
       )
 
       // Update the player's preferences using the auth context
-      await updateUser({ preferences: updatedPreferences } as any)
+      await updateUser({
+        preferences: updatedPreferences as import('@/types/supabase').Json,
+      })
 
       // Update original theme on success
       setOriginalTheme(theme)
 
       // Notify parent component
       onThemeChange?.(theme)
-    } catch (error) {
-      console.error('Error updating theme:', error)
+    } catch (_error) {
+      // Error updating theme - handled by error state
       // Revert on error
       setSelectedTheme(originalTheme)
     } finally {

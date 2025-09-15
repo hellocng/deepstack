@@ -113,7 +113,7 @@ export default function ProfilePage(): JSX.Element {
               <Label htmlFor='phone'>Phone Number</Label>
               <Input
                 id='phone'
-                value={formatPhoneNumber(player.profile.phone_number)}
+                value={formatPhoneNumber(player.profile.phone_number || '')}
                 disabled
                 className='bg-muted'
               />
@@ -164,7 +164,7 @@ export default function ProfilePage(): JSX.Element {
 
         {/* Theme Settings */}
         <ThemeSettings
-          player={player}
+          player={player.profile}
           onThemeChange={(_theme) => {
             // Theme change is handled by the ThemeSettings component
             // This callback can be used for additional actions if needed

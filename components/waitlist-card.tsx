@@ -87,7 +87,7 @@ export function WaitlistCard({
             >
               <div className='flex items-center space-x-3'>
                 <div className='flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-medium'>
-                  {entry.position}
+                  {waitlistEntries.indexOf(entry) + 1}
                 </div>
                 <Avatar className='h-8 w-8'>
                   <AvatarImage src={entry.players.avatar_url} />

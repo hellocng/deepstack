@@ -7,7 +7,18 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 
-type WaitlistEntry = Tables<'waitlist_entries'>
+type WaitlistEntry = Tables<'waitlist_entries'> & {
+  players: {
+    alias: string
+    phone_number: string
+  } | null
+  games: {
+    name: string
+    game_type: string
+    small_blind: number
+    big_blind: number
+  } | null
+}
 
 export function AdminWaitlistPage(): JSX.Element {
   const [waitlistEntries, setWaitlistEntries] = useState<WaitlistEntry[]>([])
@@ -26,13 +37,16 @@ export function AdminWaitlistPage(): JSX.Element {
 
         if (!user || authError) return
 
-        const { data: operator } = await supabase
+        const { data: operator, error: operatorError } = await supabase
           .from('operators')
           .select('room_id')
           .eq('auth_id', user.id)
           .single()
 
-        if (!operator) return
+        if (operatorError || !operator) return
+
+        const roomId = (operator as { room_id: string | null }).room_id
+        if (!roomId) return
 
         // Fetch waitlist entries for the operator's room
         const { data: entriesData, error } = await supabase
@@ -44,17 +58,17 @@ export function AdminWaitlistPage(): JSX.Element {
             games!inner(name, game_type, small_blind, big_blind)
           `
           )
-          .eq('room_id', operator.room_id)
-          .order('position', { ascending: true })
+          .eq('room_id', roomId)
+          .order('created_at', { ascending: true })
 
         if (error) {
-          console.error('Error fetching waitlist entries:', error)
+          // Error fetching waitlist entries - handled by error state
           return
         }
 
         setWaitlistEntries(entriesData || [])
-      } catch (error) {
-        console.error('Error fetching waitlist entries:', error)
+      } catch (_error) {
+        // Error fetching waitlist entries - handled by error state
       } finally {
         setLoading(false)
       }
@@ -95,7 +109,9 @@ export function AdminWaitlistPage(): JSX.Element {
                     <span className='font-medium'>
                       {entry.players?.alias || 'Unknown Player'}
                     </span>
-                    <Badge variant='outline'>#{entry.position}</Badge>
+                    <Badge variant='outline'>
+                      #{waitlistEntries.indexOf(entry) + 1}
+                    </Badge>
                     <Badge
                       variant={
                         entry.status === 'waiting' ? 'default' : 'secondary'

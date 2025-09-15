@@ -5,6 +5,7 @@ import { Navigation } from '@/components/navigation'
 import { Footer } from '@/components/footer'
 import { UserProvider } from '@/lib/auth/user-context'
 import { ThemeProvider } from '@/components/theme-provider'
+import { Toaster } from 'sonner'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -66,6 +67,7 @@ export default function RootLayout({
               </main>
               <Footer />
             </div>
+            <Toaster />
           </ThemeProvider>
         </UserProvider>
       </body>

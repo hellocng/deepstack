@@ -77,7 +77,7 @@ export function FriendActivity(): JSX.Element {
           >
             <div className='relative'>
               <Avatar className='h-10 w-10'>
-                <AvatarImage src={friend.avatar} />
+                <AvatarImage src={friend.avatar || undefined} />
                 <AvatarFallback>
                   {friend.name.charAt(0).toUpperCase()}
                 </AvatarFallback>

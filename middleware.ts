@@ -13,7 +13,7 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
         get(name: string) {
           return req.cookies.get(name)?.value
         },
-        set(name: string, value: string, options: any) {
+        set(name: string, value: string, options: Record<string, unknown>) {
           req.cookies.set({
             name,
             value,
@@ -25,7 +25,7 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
             ...options,
           })
         },
-        remove(name: string, options: any) {
+        remove(name: string, options: Record<string, unknown>) {
           req.cookies.set({
             name,
             value: '',

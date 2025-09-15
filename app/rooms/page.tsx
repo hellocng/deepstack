@@ -51,13 +51,15 @@ export default function RoomsPage(): JSX.Element {
     const mockRooms: RoomWithGames[] = [
       {
         id: '1',
+        code: 'the-card-room',
         name: 'The Card Room',
         description:
           'Premium poker room with 20+ tables and professional dealers',
         address: '123 Main St, Downtown',
         phone: '555-0123',
-        website: 'https://thecardroom.com',
-        image_url: null,
+        contact_email: 'info@thecardroom.com',
+        logo_url: null,
+        website_url: 'https://thecardroom.com',
         is_active: true,
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-01-01T00:00:00Z',
@@ -102,12 +104,14 @@ export default function RoomsPage(): JSX.Element {
       },
       {
         id: '2',
+        code: 'lucky-7-casino',
         name: 'Lucky 7 Casino',
         description: 'Full service casino with dedicated poker room',
         address: '456 Casino Blvd, Entertainment District',
         phone: '555-0456',
-        website: 'https://lucky7casino.com',
-        image_url: null,
+        contact_email: 'info@lucky7casino.com',
+        logo_url: null,
+        website_url: 'https://lucky7casino.com',
         is_active: true,
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-01-01T00:00:00Z',
@@ -140,12 +144,14 @@ export default function RoomsPage(): JSX.Element {
       },
       {
         id: '3',
+        code: 'players-club',
         name: 'Players Club',
         description: 'Members-only poker club with high-stakes games',
         address: '789 Club Ave, Uptown',
         phone: '555-0789',
-        website: 'https://playersclub.com',
-        image_url: null,
+        contact_email: 'info@playersclub.com',
+        logo_url: null,
+        website_url: 'https://playersclub.com',
         is_active: true,
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-01-01T00:00:00Z',
@@ -300,11 +306,11 @@ export default function RoomsPage(): JSX.Element {
                       <span>{room.phone}</span>
                     </div>
                   )}
-                  {room.website && (
+                  {room.website_url && (
                     <div className='flex items-center gap-1'>
                       <Globe className='h-4 w-4' />
                       <a
-                        href={room.website}
+                        href={room.website_url}
                         target='_blank'
                         rel='noopener noreferrer'
                         className='hover:underline'

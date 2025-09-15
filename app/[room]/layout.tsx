@@ -3,35 +3,36 @@ import { createClient } from '@/lib/supabase/server'
 import { TenantHeader } from '@/components/tenant-header'
 import { TenantNavigation } from '@/components/tenant-navigation'
 
-interface TenantLayoutProps {
+interface RoomLayoutProps {
   children: React.ReactNode
-  params: {
-    tenant: string
-  }
+  params: Promise<{
+    room: string
+  }>
 }
 
-export default async function TenantLayout({
+export default async function RoomLayout({
   children,
   params,
-}: TenantLayoutProps): Promise<JSX.Element> {
+}: RoomLayoutProps): Promise<JSX.Element> {
   const supabase = await createClient()
+  const resolvedParams = await params
 
-  // Get tenant information
-  const { data: tenant, error } = await supabase
-    .from('tenants')
+  // Get room information
+  const { data: room, error } = await supabase
+    .from('rooms')
     .select('*')
-    .eq('code', params.tenant)
+    .eq('code', resolvedParams.room)
     .eq('is_active', true)
     .single()
 
-  if (error || !tenant) {
+  if (error || !room) {
     notFound()
   }
 
   return (
     <div className='min-h-screen bg-background'>
-      <TenantHeader tenant={tenant} />
-      <TenantNavigation tenant={tenant} />
+      <TenantHeader tenant={room} />
+      <TenantNavigation tenant={room} />
       <main className='w-full max-w-7xl mx-auto px-4 py-6'>{children}</main>
     </div>
   )

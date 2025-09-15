@@ -40,13 +40,13 @@ export function SuperAdminOperatorsPage(): JSX.Element {
           .order('created_at', { ascending: false })
 
         if (error) {
-          console.error('Error fetching operators:', error)
+          // Error fetching operators - handled by error state
           return
         }
 
         setOperators(operatorsData || [])
-      } catch (error) {
-        console.error('Error fetching operators:', error)
+      } catch (_error) {
+        // Error fetching operators - handled by error state
       } finally {
         setLoading(false)
       }

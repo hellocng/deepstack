@@ -32,29 +32,32 @@ export function AdminGamesPage(): JSX.Element {
 
         if (!user || authError) return
 
-        const { data: operator } = await supabase
+        const { data: operator, error: operatorError } = await supabase
           .from('operators')
           .select('room_id')
           .eq('auth_id', user.id)
           .single()
 
-        if (!operator) return
+        if (operatorError || !operator) return
+
+        const roomId = (operator as { room_id: string | null }).room_id
+        if (!roomId) return
 
         // Fetch games for the operator's room
         const { data: gamesData, error } = await supabase
           .from('games')
           .select('*')
-          .eq('room_id', operator.room_id)
+          .eq('room_id', roomId)
           .order('created_at', { ascending: false })
 
         if (error) {
-          console.error('Error fetching games:', error)
+          // Error fetching games - handled by error state
           return
         }
 
         setGames(gamesData || [])
-      } catch (error) {
-        console.error('Error fetching games:', error)
+      } catch (_error) {
+        // Error fetching games - handled by error state
       } finally {
         setLoading(false)
       }

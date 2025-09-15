@@ -1,6 +1,12 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState } from 'react'
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+} from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Tables } from '@/types/supabase'
 
@@ -42,6 +48,65 @@ export function UserProvider({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const supabase = createClient()
+
+  const loadUserProfile = useCallback(
+    async (authId: string): Promise<void> => {
+      try {
+        setError(null)
+
+        // First, try to load as operator
+        const { data: operator, error: operatorError } = await supabase
+          .from('operators')
+          .select(
+            `
+          *,
+          room:rooms(*)
+        `
+          )
+          .eq('auth_id', authId)
+          .eq('is_active', true)
+          .single()
+
+        if (operator && !operatorError) {
+          // User is an operator
+          setUser({
+            type: 'operator',
+            profile: operator,
+            room: operator.room as Room | null,
+          })
+          setLoading(false)
+          return
+        }
+
+        // If not an operator, try to load as player
+        const { data: player, error: playerError } = await supabase
+          .from('players')
+          .select('*')
+          .eq('auth_id', authId)
+          .single()
+
+        if (player && !playerError) {
+          // User is a player
+          setUser({
+            type: 'player',
+            profile: player,
+          })
+          setLoading(false)
+          return
+        }
+
+        // If neither operator nor player found, set user to null
+        // This might be a new user who hasn't completed profile setup
+        setUser(null)
+        setLoading(false)
+      } catch (_err) {
+        // Error loading user profile
+        setError('Failed to load user profile')
+        setLoading(false)
+      }
+    },
+    [supabase]
+  )
 
   useEffect(() => {
     // Get initial user (authenticated via server)
@@ -85,63 +150,7 @@ export function UserProvider({
     })
 
     return (): void => subscription.unsubscribe()
-  }, [])
-
-  const loadUserProfile = async (authId: string): Promise<void> => {
-    try {
-      setError(null)
-
-      // First, try to load as operator
-      const { data: operator, error: operatorError } = await supabase
-        .from('operators')
-        .select(
-          `
-          *,
-          room:rooms(*)
-        `
-        )
-        .eq('auth_id', authId)
-        .eq('is_active', true)
-        .single()
-
-      if (operator && !operatorError) {
-        // User is an operator
-        setUser({
-          type: 'operator',
-          profile: operator,
-          room: operator.room,
-        })
-        setLoading(false)
-        return
-      }
-
-      // If not an operator, try to load as player
-      const { data: player, error: playerError } = await supabase
-        .from('players')
-        .select('*')
-        .eq('auth_id', authId)
-        .single()
-
-      if (player && !playerError) {
-        // User is a player
-        setUser({
-          type: 'player',
-          profile: player,
-        })
-        setLoading(false)
-        return
-      }
-
-      // If neither operator nor player found, set user to null
-      // This might be a new user who hasn't completed profile setup
-      setUser(null)
-      setLoading(false)
-    } catch (_err) {
-      // Error loading user profile
-      setError('Failed to load user profile')
-      setLoading(false)
-    }
-  }
+  }, [loadUserProfile, supabase.auth])
 
   const signOut = async (): Promise<void> => {
     try {
@@ -162,7 +171,7 @@ export function UserProvider({
       if (user.type === 'player') {
         const { error } = await supabase
           .from('players')
-          .update(updates as Partial<Player>)
+          .update(updates as any)
           .eq('id', user.profile.id)
 
         if (error) throw error
@@ -170,12 +179,12 @@ export function UserProvider({
         // Update local state
         setUser({
           ...user,
-          profile: { ...user.profile, ...updates },
+          profile: { ...user.profile, ...updates } as Player,
         })
       } else if (user.type === 'operator') {
         const { error } = await supabase
           .from('operators')
-          .update(updates as Partial<Operator>)
+          .update(updates as any)
           .eq('id', user.profile.id)
 
         if (error) throw error
@@ -183,7 +192,7 @@ export function UserProvider({
         // Update local state
         setUser({
           ...user,
-          profile: { ...user.profile, ...updates },
+          profile: { ...user.profile, ...updates } as Operator,
         })
       }
     } catch (_err) {
@@ -242,7 +251,7 @@ export function UserProvider({
             auth_id: data.user.id,
             phone_number: phoneNumber,
             preferences: {},
-          })
+          } as any)
           .select()
           .single()
 

@@ -1,19 +1,15 @@
-import { FlatCompat } from '@eslint/eslintrc'
-import js from '@eslint/js'
-import typescript from '@typescript-eslint/eslint-plugin'
-import typescriptParser from '@typescript-eslint/parser'
-import path from 'path'
-import { fileURLToPath } from 'url'
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+const { FlatCompat } = require('@eslint/eslintrc')
+const js = require('@eslint/js')
+const typescript = require('@typescript-eslint/eslint-plugin')
+const typescriptParser = require('@typescript-eslint/parser')
+const path = require('path')
 
 const compat = new FlatCompat({
   baseDirectory: __dirname,
   recommendedConfig: js.configs.recommended,
 })
 
-export default [
+module.exports = [
   ...compat.extends('next/core-web-vitals', 'next/typescript'),
   {
     files: ['**/*.{js,jsx,ts,tsx}'],
@@ -59,6 +55,7 @@ export default [
       'build/**',
       'coverage/**',
       '*.config.js',
+      '*.config.cjs',
       '*.config.ts',
       'next-env.d.ts',
     ],

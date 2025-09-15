@@ -477,7 +477,6 @@ export type Database = {
           id: string
           notes: string | null
           player_id: string | null
-          position: number
           room_id: string | null
           status: Database['public']['Enums']['waitlist_status'] | null
           updated_at: string | null
@@ -488,7 +487,6 @@ export type Database = {
           id?: string
           notes?: string | null
           player_id?: string | null
-          position: number
           room_id?: string | null
           status?: Database['public']['Enums']['waitlist_status'] | null
           updated_at?: string | null
@@ -499,7 +497,6 @@ export type Database = {
           id?: string
           notes?: string | null
           player_id?: string | null
-          position?: number
           room_id?: string | null
           status?: Database['public']['Enums']['waitlist_status'] | null
           updated_at?: string | null
@@ -524,45 +521,6 @@ export type Database = {
             columns: ['room_id']
             isOneToOne: false
             referencedRelation: 'rooms'
-            referencedColumns: ['id']
-          },
-        ]
-      }
-      waitlists: {
-        Row: {
-          game_id: string
-          id: string
-          joined_at: string | null
-          player_id: string
-          position: number
-        }
-        Insert: {
-          game_id: string
-          id?: string
-          joined_at?: string | null
-          player_id: string
-          position: number
-        }
-        Update: {
-          game_id?: string
-          id?: string
-          joined_at?: string | null
-          player_id?: string
-          position?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: 'waitlists_game_id_fkey'
-            columns: ['game_id']
-            isOneToOne: false
-            referencedRelation: 'games'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'waitlists_player_id_fkey'
-            columns: ['player_id']
-            isOneToOne: false
-            referencedRelation: 'players'
             referencedColumns: ['id']
           },
         ]

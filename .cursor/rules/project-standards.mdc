@@ -29,6 +29,7 @@ alwaysApply: true
 - **Authentication**: Supabase OAuth
 - **UI**: shadcn/ui with Tailwind CSS
 - **Language**: TypeScript (strict mode)
+- **Forms**: React Hook Form with Zod validation
 
 ## Code Style & Conventions
 
@@ -136,10 +137,63 @@ export function UserProfile({ user, onUpdate }: UserProfileProps) {
 
 ### Form Validation
 
-- Use Zod for schema validation
+- **Use React Hook Form for all forms** - Required for all form implementations
+- **Use Zod for schema validation** - Required for form validation schemas
 - Implement client-side and server-side validation
 - Show validation errors inline
 - Prevent form submission on validation errors
+- Use `@hookform/resolvers/zod` for React Hook Form + Zod integration
+- Follow the pattern: define Zod schema, use with `useForm` hook, apply to form fields
+
+### Form Implementation Pattern
+
+```typescript
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+
+// 1. Define Zod schema
+const formSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  email: z.string().email('Invalid email address'),
+  phone: z.string().min(10, 'Phone number must be at least 10 digits')
+})
+
+type FormData = z.infer<typeof formSchema>
+
+// 2. Use React Hook Form with Zod resolver
+export function MyForm() {
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      phone: ''
+    }
+  })
+
+  const onSubmit = (data: FormData) => {
+    // Handle form submission
+  }
+
+  return (
+    <form onSubmit={form.handleSubmit(onSubmit)}>
+      {/* Form fields with proper error handling */}
+    </form>
+  )
+}
+```
+
+### Form Best Practices
+
+- Always define Zod schemas for form validation
+- Use TypeScript types inferred from Zod schemas
+- Implement proper error handling and display
+- Use controlled components with React Hook Form
+- Provide meaningful validation error messages
+- Handle form submission states (loading, success, error)
+- Use `form.reset()` to clear forms after successful submission
+- Implement proper accessibility attributes for form fields
 
 ## Performance
 

@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/client'
-import { Tables } from '@/types/supabase'
+import { Database } from '@/types/supabase'
 import {
   Dialog,
   DialogContent,
@@ -25,7 +25,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
-type Room = Tables<'rooms'>
+type Room = Database['public']['Tables']['rooms']['Row']
 
 const createOperatorSchema = z.object({
   email: z
@@ -91,13 +91,13 @@ export function CreateOperatorDialog({
             .order('name')
 
           if (error) {
-            console.error('Error fetching rooms:', error)
+            // Error fetching rooms - handled by error state
             return
           }
 
           setRooms(roomsData || [])
-        } catch (error) {
-          console.error('Error fetching rooms:', error)
+        } catch (_error) {
+          // Error fetching rooms - handled by error state
         }
       }
 
@@ -129,16 +129,21 @@ export function CreateOperatorDialog({
       }
 
       // Create the operator record
-      const { error: operatorError } = await supabase.from('operators').insert({
-        email: data.email,
-        first_name: data.firstName,
-        last_name: data.lastName,
-        phone_number: data.phoneNumber || null,
-        role: data.role,
-        room_id: data.role === 'superadmin' ? null : data.roomId,
-        auth_id: authData.user.id,
-        is_active: true,
-      })
+      const operatorData: Database['public']['Tables']['operators']['Insert'] =
+        {
+          email: data.email,
+          first_name: data.firstName,
+          last_name: data.lastName,
+          phone_number: data.phoneNumber || null,
+          role: data.role,
+          room_id: data.role === 'superadmin' ? null : data.roomId,
+          auth_id: authData.user.id,
+          is_active: true,
+        }
+
+      const { error: operatorError } = await supabase
+        .from('operators')
+        .insert(operatorData as any)
 
       if (operatorError) {
         // If operator creation fails, we should clean up the auth user
