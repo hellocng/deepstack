@@ -17,9 +17,10 @@ import { useRouter, usePathname } from 'next/navigation'
 import { formatPhoneNumber } from '@/lib/utils'
 import { Laptop, Moon, Sun, User } from 'lucide-react'
 import { useState, useEffect } from 'react'
+import { signOutAction } from '@/app/actions'
 
 export function Navigation(): JSX.Element {
-  const { player, loading, signOut } = usePlayerAuth()
+  const { player, loading } = usePlayerAuth()
   const router = useRouter()
   const pathname = usePathname()
   const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('system')
@@ -82,16 +83,6 @@ export function Navigation(): JSX.Element {
 
   const handleSignIn = (): void => {
     router.push('/signin')
-  }
-
-  const handleSignOut = async (): Promise<void> => {
-    try {
-      await signOut()
-      router.push('/')
-    } catch (_error) {
-      // Error signing out
-      // You could add a toast notification here if you have a toast system
-    }
   }
 
   const handleProfile = (): void => {
@@ -227,9 +218,17 @@ export function Navigation(): JSX.Element {
                         </DropdownMenuRadioItem>
                       </DropdownMenuRadioGroup>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={handleSignOut}>
-                        Sign out
-                      </DropdownMenuItem>
+                      <form action={signOutAction}>
+                        <DropdownMenuItem asChild>
+                          <Button
+                            type='submit'
+                            variant='ghost'
+                            className='w-full justify-start p-0 h-auto font-normal'
+                          >
+                            Sign out
+                          </Button>
+                        </DropdownMenuItem>
+                      </form>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 ) : (
