@@ -60,54 +60,66 @@ export type Database = {
         Row: {
           big_blind: number
           created_at: string | null
+          current_players: number | null
           description: string | null
           game_type: Database['public']['Enums']['game_type']
           id: string
           is_active: boolean | null
           max_buy_in: number
+          max_players: number | null
           min_buy_in: number
           name: string
           rake: string | null
+          room_id: string | null
           small_blind: number
-          tenant_id: string | null
+          stakes: string | null
           updated_at: string | null
+          waitlist_count: number | null
         }
         Insert: {
           big_blind: number
           created_at?: string | null
+          current_players?: number | null
           description?: string | null
           game_type: Database['public']['Enums']['game_type']
           id?: string
           is_active?: boolean | null
           max_buy_in: number
+          max_players?: number | null
           min_buy_in: number
           name: string
           rake?: string | null
+          room_id?: string | null
           small_blind: number
-          tenant_id?: string | null
+          stakes?: string | null
           updated_at?: string | null
+          waitlist_count?: number | null
         }
         Update: {
           big_blind?: number
           created_at?: string | null
+          current_players?: number | null
           description?: string | null
           game_type?: Database['public']['Enums']['game_type']
           id?: string
           is_active?: boolean | null
           max_buy_in?: number
+          max_players?: number | null
           min_buy_in?: number
           name?: string
           rake?: string | null
+          room_id?: string | null
           small_blind?: number
-          tenant_id?: string | null
+          stakes?: string | null
           updated_at?: string | null
+          waitlist_count?: number | null
         }
         Relationships: [
           {
-            foreignKeyName: 'games_tenant_id_fkey'
-            columns: ['tenant_id']
+            foreignKeyName: 'games_room_id_fkey'
+            columns: ['room_id']
             isOneToOne: false
-            referencedRelation: 'tenants'
+            referencedRelation: 'rooms'
             referencedColumns: ['id']
           },
         ]
@@ -125,7 +137,7 @@ export type Database = {
           last_name: string
           phone_number: string | null
           role: Database['public']['Enums']['operator_role']
-          tenant_id: string | null
+          room_id: string | null
           updated_at: string | null
         }
         Insert: {
@@ -140,7 +152,7 @@ export type Database = {
           last_name: string
           phone_number?: string | null
           role: Database['public']['Enums']['operator_role']
-          tenant_id?: string | null
+          room_id?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -155,15 +167,15 @@ export type Database = {
           last_name?: string
           phone_number?: string | null
           role?: Database['public']['Enums']['operator_role']
-          tenant_id?: string | null
+          room_id?: string | null
           updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: 'operators_tenant_id_fkey'
-            columns: ['tenant_id']
+            foreignKeyName: 'operators_room_id_fkey'
+            columns: ['room_id']
             isOneToOne: false
-            referencedRelation: 'tenants'
+            referencedRelation: 'rooms'
             referencedColumns: ['id']
           },
         ]
@@ -200,13 +212,6 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: 'player_sessions_table_id_fkey'
-            columns: ['table_id']
-            isOneToOne: false
-            referencedRelation: 'table_sessions'
-            referencedColumns: ['id']
-          },
           {
             foreignKeyName: 'table_seats_player_id_fkey'
             columns: ['player_id']
@@ -255,186 +260,7 @@ export type Database = {
         }
         Relationships: []
       }
-      games: {
-        Row: {
-          created_at: string | null
-          current_players: number | null
-          game_type: string | null
-          id: string
-          is_active: boolean | null
-          max_players: number | null
-          room_id: string | null
-          stakes: string | null
-          updated_at: string | null
-          waitlist_count: number | null
-        }
-        Insert: {
-          created_at?: string | null
-          current_players?: number | null
-          game_type?: string | null
-          id?: string
-          is_active?: boolean | null
-          max_players?: number | null
-          room_id?: string | null
-          stakes?: string | null
-          updated_at?: string | null
-          waitlist_count?: number | null
-        }
-        Update: {
-          created_at?: string | null
-          current_players?: number | null
-          game_type?: string | null
-          id?: string
-          is_active?: boolean | null
-          max_players?: number | null
-          room_id?: string | null
-          stakes?: string | null
-          updated_at?: string | null
-          waitlist_count?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: 'games_room_id_fkey'
-            columns: ['room_id']
-            isOneToOne: false
-            referencedRelation: 'rooms'
-            referencedColumns: ['id']
-          },
-        ]
-      }
       rooms: {
-        Row: {
-          address: string | null
-          created_at: string | null
-          description: string | null
-          id: string
-          image_url: string | null
-          is_active: boolean | null
-          name: string | null
-          phone: string | null
-          updated_at: string | null
-          website: string | null
-        }
-        Insert: {
-          address?: string | null
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          image_url?: string | null
-          is_active?: boolean | null
-          name?: string | null
-          phone?: string | null
-          updated_at?: string | null
-          website?: string | null
-        }
-        Update: {
-          address?: string | null
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          image_url?: string | null
-          is_active?: boolean | null
-          name?: string | null
-          phone?: string | null
-          updated_at?: string | null
-          website?: string | null
-        }
-        Relationships: []
-      }
-      table_sessions: {
-        Row: {
-          created_at: string | null
-          end_time: string | null
-          id: string
-          start_time: string
-          table_id: string
-          tenant_id: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          end_time?: string | null
-          id?: string
-          start_time?: string
-          table_id: string
-          tenant_id?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          end_time?: string | null
-          id?: string
-          start_time?: string
-          table_id?: string
-          tenant_id?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: 'table_sessions_table_id_fkey'
-            columns: ['table_id']
-            isOneToOne: false
-            referencedRelation: 'tables'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'table_sessions_tenant_id_fkey'
-            columns: ['tenant_id']
-            isOneToOne: false
-            referencedRelation: 'tenants'
-            referencedColumns: ['id']
-          },
-        ]
-      }
-      tables: {
-        Row: {
-          created_at: string | null
-          game_id: string | null
-          id: string
-          name: string
-          seat_count: number
-          status: Database['public']['Enums']['table_status'] | null
-          tenant_id: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          game_id?: string | null
-          id?: string
-          name: string
-          seat_count: number
-          status?: Database['public']['Enums']['table_status'] | null
-          tenant_id?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          game_id?: string | null
-          id?: string
-          name?: string
-          seat_count?: number
-          status?: Database['public']['Enums']['table_status'] | null
-          tenant_id?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: 'tables_game_id_fkey'
-            columns: ['game_id']
-            isOneToOne: false
-            referencedRelation: 'games'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'tables_tenant_id_fkey'
-            columns: ['tenant_id']
-            isOneToOne: false
-            referencedRelation: 'tenants'
-            referencedColumns: ['id']
-          },
-        ]
-      }
-      tenants: {
         Row: {
           address: string | null
           code: string
@@ -479,6 +305,54 @@ export type Database = {
         }
         Relationships: []
       }
+      tables: {
+        Row: {
+          created_at: string | null
+          game_id: string | null
+          id: string
+          name: string
+          room_id: string | null
+          seat_count: number
+          status: Database['public']['Enums']['table_status'] | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          game_id?: string | null
+          id?: string
+          name: string
+          room_id?: string | null
+          seat_count: number
+          status?: Database['public']['Enums']['table_status'] | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          game_id?: string | null
+          id?: string
+          name?: string
+          room_id?: string | null
+          seat_count?: number
+          status?: Database['public']['Enums']['table_status'] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'tables_game_id_fkey'
+            columns: ['game_id']
+            isOneToOne: false
+            referencedRelation: 'games'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'tables_room_id_fkey'
+            columns: ['room_id']
+            isOneToOne: false
+            referencedRelation: 'rooms'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       tournament_entries: {
         Row: {
           created_at: string | null
@@ -486,8 +360,8 @@ export type Database = {
           player_id: string | null
           position: number | null
           prize_amount: number | null
+          room_id: string | null
           status: Database['public']['Enums']['tournament_entry_status'] | null
-          tenant_id: string | null
           tournament_id: string | null
           updated_at: string | null
         }
@@ -497,8 +371,8 @@ export type Database = {
           player_id?: string | null
           position?: number | null
           prize_amount?: number | null
+          room_id?: string | null
           status?: Database['public']['Enums']['tournament_entry_status'] | null
-          tenant_id?: string | null
           tournament_id?: string | null
           updated_at?: string | null
         }
@@ -508,8 +382,8 @@ export type Database = {
           player_id?: string | null
           position?: number | null
           prize_amount?: number | null
+          room_id?: string | null
           status?: Database['public']['Enums']['tournament_entry_status'] | null
-          tenant_id?: string | null
           tournament_id?: string | null
           updated_at?: string | null
         }
@@ -522,10 +396,10 @@ export type Database = {
             referencedColumns: ['id']
           },
           {
-            foreignKeyName: 'tournament_entries_tenant_id_fkey'
-            columns: ['tenant_id']
+            foreignKeyName: 'tournament_entries_room_id_fkey'
+            columns: ['room_id']
             isOneToOne: false
-            referencedRelation: 'tenants'
+            referencedRelation: 'rooms'
             referencedColumns: ['id']
           },
           {
@@ -549,9 +423,9 @@ export type Database = {
           name: string
           prize_pool: number | null
           rake: string | null
+          room_id: string | null
           start_time: string
           status: Database['public']['Enums']['tournament_status'] | null
-          tenant_id: string | null
           updated_at: string | null
         }
         Insert: {
@@ -565,9 +439,9 @@ export type Database = {
           name: string
           prize_pool?: number | null
           rake?: string | null
+          room_id?: string | null
           start_time: string
           status?: Database['public']['Enums']['tournament_status'] | null
-          tenant_id?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -581,17 +455,17 @@ export type Database = {
           name?: string
           prize_pool?: number | null
           rake?: string | null
+          room_id?: string | null
           start_time?: string
           status?: Database['public']['Enums']['tournament_status'] | null
-          tenant_id?: string | null
           updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: 'tournaments_tenant_id_fkey'
-            columns: ['tenant_id']
+            foreignKeyName: 'tournaments_room_id_fkey'
+            columns: ['room_id']
             isOneToOne: false
-            referencedRelation: 'tenants'
+            referencedRelation: 'rooms'
             referencedColumns: ['id']
           },
         ]
@@ -604,8 +478,8 @@ export type Database = {
           notes: string | null
           player_id: string | null
           position: number
+          room_id: string | null
           status: Database['public']['Enums']['waitlist_status'] | null
-          tenant_id: string | null
           updated_at: string | null
         }
         Insert: {
@@ -615,8 +489,8 @@ export type Database = {
           notes?: string | null
           player_id?: string | null
           position: number
+          room_id?: string | null
           status?: Database['public']['Enums']['waitlist_status'] | null
-          tenant_id?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -626,8 +500,8 @@ export type Database = {
           notes?: string | null
           player_id?: string | null
           position?: number
+          room_id?: string | null
           status?: Database['public']['Enums']['waitlist_status'] | null
-          tenant_id?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -646,10 +520,49 @@ export type Database = {
             referencedColumns: ['id']
           },
           {
-            foreignKeyName: 'waitlist_entries_tenant_id_fkey'
-            columns: ['tenant_id']
+            foreignKeyName: 'waitlist_entries_room_id_fkey'
+            columns: ['room_id']
             isOneToOne: false
-            referencedRelation: 'tenants'
+            referencedRelation: 'rooms'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      waitlists: {
+        Row: {
+          game_id: string
+          id: string
+          joined_at: string | null
+          player_id: string
+          position: number
+        }
+        Insert: {
+          game_id: string
+          id?: string
+          joined_at?: string | null
+          player_id: string
+          position: number
+        }
+        Update: {
+          game_id?: string
+          id?: string
+          joined_at?: string | null
+          player_id?: string
+          position?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'waitlists_game_id_fkey'
+            columns: ['game_id']
+            isOneToOne: false
+            referencedRelation: 'games'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'waitlists_player_id_fkey'
+            columns: ['player_id']
+            isOneToOne: false
+            referencedRelation: 'players'
             referencedColumns: ['id']
           },
         ]
@@ -683,9 +596,13 @@ export type Database = {
         Args: { session_uuid: string }
         Returns: unknown
       }
-      get_user_tenant_id: {
+      get_user_room_id: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      is_superadmin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
       }
       is_table_session_active: {
         Args: { session_uuid: string }
@@ -717,7 +634,7 @@ export type Database = {
         | 'five_card_draw'
         | 'razz'
         | 'stud_hi_lo'
-      operator_role: 'admin' | 'supervisor' | 'dealer'
+      operator_role: 'admin' | 'supervisor' | 'dealer' | 'superadmin'
       table_status: 'open' | 'closed'
       tournament_entry_status:
         | 'registered'
@@ -867,7 +784,7 @@ export const Constants = {
         'razz',
         'stud_hi_lo',
       ],
-      operator_role: ['admin', 'supervisor', 'dealer'],
+      operator_role: ['admin', 'supervisor', 'dealer', 'superadmin'],
       table_status: ['open', 'closed'],
       tournament_entry_status: [
         'registered',

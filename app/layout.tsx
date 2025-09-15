@@ -3,7 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { Navigation } from '@/components/navigation'
 import { Footer } from '@/components/footer'
-import { PlayerAuthProvider } from '@/lib/auth/player-auth-context'
+import { UserProvider } from '@/lib/auth/user-context'
 import { ThemeProvider } from '@/components/theme-provider'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -57,17 +57,17 @@ export default function RootLayout({
         />
       </head>
       <body className={inter.className}>
-        <PlayerAuthProvider>
+        <UserProvider>
           <ThemeProvider>
             <div className='min-h-screen bg-background flex flex-col'>
               <Navigation />
-              <main className='flex-1 container mx-auto px-4 py-6 pt-24'>
+              <main className='flex-1 w-full max-w-7xl mx-auto px-4 py-6 pt-24'>
                 {children}
               </main>
               <Footer />
             </div>
           </ThemeProvider>
-        </PlayerAuthProvider>
+        </UserProvider>
       </body>
     </html>
   )

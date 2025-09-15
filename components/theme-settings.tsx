@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import {
   Card,
@@ -19,7 +18,7 @@ import {
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { Palette, Check } from 'lucide-react'
-import { usePlayerAuth } from '@/lib/auth/player-auth-context'
+import { useUser } from '@/lib/auth/user-context'
 import { Tables } from '@/types/supabase'
 import {
   PlayerPreferences,
@@ -63,7 +62,7 @@ export function ThemeSettings({
   player,
   onThemeChange,
 }: ThemeSettingsProps): JSX.Element {
-  const { updatePlayer } = usePlayerAuth()
+  const { updateUser } = useUser()
   const [selectedTheme, setSelectedTheme] = useState<string>('neutral')
   const [saving, setSaving] = useState(false)
   const [originalTheme, setOriginalTheme] = useState<string>('neutral')
@@ -76,8 +75,8 @@ export function ThemeSettings({
       'color_theme',
       DEFAULT_PREFERENCES.color_theme!
     )
-    setSelectedTheme(playerTheme)
-    setOriginalTheme(playerTheme)
+    setSelectedTheme(playerTheme || 'neutral')
+    setOriginalTheme(playerTheme || 'neutral')
   }, [player])
 
   const handleThemeChange = async (theme: string): Promise<void> => {
@@ -95,7 +94,7 @@ export function ThemeSettings({
       )
 
       // Update the player's preferences using the auth context
-      await updatePlayer({ preferences: updatedPreferences } as any)
+      await updateUser({ preferences: updatedPreferences } as any)
 
       // Update original theme on success
       setOriginalTheme(theme)

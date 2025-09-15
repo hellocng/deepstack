@@ -21,7 +21,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { usePlayerAuth } from '@/lib/auth/player-auth-context'
+import { useUser } from '@/lib/auth/user-context'
 
 const phoneSchema = z.object({
   phone: z
@@ -61,7 +61,7 @@ export function SignInForm(): JSX.Element {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const { sendOTP, verifyOTP } = usePlayerAuth()
+  const { sendOTP, verifyOTP } = useUser()
   const router = useRouter()
 
   const phoneForm = useForm<PhoneFormData>({

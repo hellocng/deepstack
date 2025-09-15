@@ -32,7 +32,7 @@ export default async function TenantLayout({
     <div className='min-h-screen bg-background'>
       <TenantHeader tenant={tenant} />
       <TenantNavigation tenant={tenant} />
-      <main className='container mx-auto px-4 py-6'>{children}</main>
+      <main className='w-full max-w-7xl mx-auto px-4 py-6'>{children}</main>
     </div>
   )
 }

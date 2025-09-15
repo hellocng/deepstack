@@ -12,15 +12,16 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
 } from '@/components/ui/dropdown-menu'
-import { usePlayerAuth } from '@/lib/auth/player-auth-context'
+import { useUser, usePlayer, useSuperAdmin } from '@/lib/auth/user-context'
 import { useRouter, usePathname } from 'next/navigation'
 import { formatPhoneNumber } from '@/lib/utils'
 import { Laptop, Moon, Sun, User } from 'lucide-react'
 import { useState, useEffect } from 'react'
-import { signOutAction } from '@/app/actions'
 
 export function Navigation(): JSX.Element {
-  const { player, loading } = usePlayerAuth()
+  const { user, loading, signOut } = useUser()
+  const _player = usePlayer()
+  const _superAdmin = useSuperAdmin()
   const router = useRouter()
   const pathname = usePathname()
   const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('system')
@@ -86,15 +87,24 @@ export function Navigation(): JSX.Element {
   }
 
   const handleProfile = (): void => {
-    router.push('/profile')
+    if (
+      user?.type === 'operator' &&
+      (user.profile.role as string) === 'superadmin'
+    ) {
+      router.push('/superadmin')
+    } else {
+      router.push('/profile')
+    }
   }
 
   const handleLogoClick = (): void => {
     router.push('/')
   }
 
-  const isSignInPage = pathname === '/signin'
+  const isSignInPage = pathname === '/signin' || pathname === '/admin/signin'
+  const isSuperAdminPage = pathname.startsWith('/superadmin')
   const isRootPage = pathname === '/'
+  const shouldShowSignIn = !isSignInPage && !isSuperAdminPage && !user
 
   // Prevent hydration mismatch
   if (!mounted) {
@@ -113,8 +123,8 @@ export function Navigation(): JSX.Element {
               )}
             </div>
             <div className='flex items-center gap-4'>
-              {!isSignInPage && (
-                <div className='w-8 h-8 rounded-full bg-muted animate-pulse' />
+              {shouldShowSignIn && (
+                <div className='w-16 h-8 rounded bg-muted animate-pulse' />
               )}
             </div>
           </div>
@@ -138,11 +148,11 @@ export function Navigation(): JSX.Element {
             )}
           </div>
           <div className='flex items-center gap-4'>
-            {!isSignInPage && (
+            {!isSignInPage && !isSuperAdminPage && (
               <>
                 {loading ? (
                   <div className='w-8 h-8 rounded-full bg-muted animate-pulse' />
-                ) : player ? (
+                ) : user ? (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
@@ -151,9 +161,15 @@ export function Navigation(): JSX.Element {
                       >
                         <Avatar className='h-8 w-8'>
                           <AvatarFallback className='text-sm font-medium'>
-                            {player.alias
-                              ? player.alias.charAt(0).toUpperCase()
-                              : '?'}
+                            {user.type === 'player'
+                              ? user.profile.alias
+                                ? user.profile.alias.charAt(0).toUpperCase()
+                                : '?'
+                              : user.profile.first_name
+                                ? user.profile.first_name
+                                    .charAt(0)
+                                    .toUpperCase()
+                                : 'A'}
                           </AvatarFallback>
                         </Avatar>
                       </Button>
@@ -166,69 +182,74 @@ export function Navigation(): JSX.Element {
                       <DropdownMenuLabel className='font-normal'>
                         <div className='flex flex-col'>
                           <p className='text-sm font-medium leading-none'>
-                            {player.alias || 'No alias set'}
+                            {user.type === 'player'
+                              ? user.profile.alias || 'No alias set'
+                              : `${user.profile.first_name} ${user.profile.last_name}`}
                           </p>
                           <p className='text-xs leading-none text-muted-foreground mt-4'>
-                            {formatPhoneNumber(player.phone_number || '')}
+                            {user.type === 'player'
+                              ? formatPhoneNumber(
+                                  user.profile.phone_number || ''
+                                )
+                              : user.profile.role}
                           </p>
                         </div>
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={handleProfile}>
                         <User className='mr-2 h-4 w-4' />
-                        Profile
+                        {user.type === 'operator' &&
+                        (user.profile.role as string) === 'superadmin'
+                          ? 'Admin Panel'
+                          : 'Profile'}
                       </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuLabel>Theme</DropdownMenuLabel>
-                      <DropdownMenuRadioGroup
-                        value={theme}
-                        onValueChange={(value) =>
-                          setTheme(value as 'light' | 'dark' | 'system')
-                        }
-                      >
-                        <DropdownMenuRadioItem
-                          className='flex gap-2'
-                          value='light'
-                        >
-                          <Sun
-                            size={16}
-                            className='text-muted-foreground'
-                          />
-                          <span>Light</span>
-                        </DropdownMenuRadioItem>
-                        <DropdownMenuRadioItem
-                          className='flex gap-2'
-                          value='dark'
-                        >
-                          <Moon
-                            size={16}
-                            className='text-muted-foreground'
-                          />
-                          <span>Dark</span>
-                        </DropdownMenuRadioItem>
-                        <DropdownMenuRadioItem
-                          className='flex gap-2'
-                          value='system'
-                        >
-                          <Laptop
-                            size={16}
-                            className='text-muted-foreground'
-                          />
-                          <span>System</span>
-                        </DropdownMenuRadioItem>
-                      </DropdownMenuRadioGroup>
-                      <DropdownMenuSeparator />
-                      <form action={signOutAction}>
-                        <DropdownMenuItem asChild>
-                          <Button
-                            type='submit'
-                            variant='ghost'
-                            className='w-full justify-start p-0 h-auto font-normal'
+                      {user.type === 'player' && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuLabel>Theme</DropdownMenuLabel>
+                          <DropdownMenuRadioGroup
+                            value={theme}
+                            onValueChange={(value) =>
+                              setTheme(value as 'light' | 'dark' | 'system')
+                            }
                           >
-                            Sign out
-                          </Button>
-                        </DropdownMenuItem>
-                      </form>
+                            <DropdownMenuRadioItem
+                              className='flex gap-2'
+                              value='light'
+                            >
+                              <Sun
+                                size={16}
+                                className='text-muted-foreground'
+                              />
+                              <span>Light</span>
+                            </DropdownMenuRadioItem>
+                            <DropdownMenuRadioItem
+                              className='flex gap-2'
+                              value='dark'
+                            >
+                              <Moon
+                                size={16}
+                                className='text-muted-foreground'
+                              />
+                              <span>Dark</span>
+                            </DropdownMenuRadioItem>
+                            <DropdownMenuRadioItem
+                              className='flex gap-2'
+                              value='system'
+                            >
+                              <Laptop
+                                size={16}
+                                className='text-muted-foreground'
+                              />
+                              <span>System</span>
+                            </DropdownMenuRadioItem>
+                          </DropdownMenuRadioGroup>
+                        </>
+                      )}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={signOut}>
+                        Sign out
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 ) : (

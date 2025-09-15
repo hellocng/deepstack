@@ -6,6 +6,22 @@ alwaysApply: true
 
 # DeepStack - Project Standards
 
+## Terminology Standardization
+
+**CRITICAL**: The following terms are synonymous and must be used consistently:
+
+- **Room** (preferred) - The primary term for a poker room/establishment
+- **Tenant** - Database/technical term (legacy, being phased out)
+- **Operator** - Business term referring to room staff/management
+
+**Usage Guidelines**:
+
+- Use "room" in user-facing content, URLs, and new code
+- "tenant" may still appear in database schemas and legacy code
+- "operator" refers to room staff/management, not the room itself
+- Always be consistent within the same context
+- When in doubt, use "room"
+
 ## Tech Stack & Architecture
 
 - **Framework**: Next.js 14+ with App Router

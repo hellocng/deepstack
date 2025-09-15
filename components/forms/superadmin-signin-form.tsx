@@ -1,0 +1,175 @@
+'use client'
+
+import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { createClient } from '@/lib/supabase/client'
+
+const superAdminSignInSchema = z.object({
+  email: z
+    .string()
+    .min(1, 'Email is required')
+    .email('Please enter a valid email address'),
+  password: z
+    .string()
+    .min(1, 'Password is required')
+    .min(6, 'Password must be at least 6 characters'),
+})
+
+type SuperAdminSignInFormData = z.infer<typeof superAdminSignInSchema>
+
+export function SuperAdminSignInForm(): JSX.Element {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const router = useRouter()
+
+  const form = useForm<SuperAdminSignInFormData>({
+    resolver: zodResolver(superAdminSignInSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  })
+
+  const onSubmit = async (data: SuperAdminSignInFormData): Promise<void> => {
+    setLoading(true)
+    setError('')
+
+    try {
+      const supabase = createClient()
+
+      // Debug: Log what we're trying to sign in with
+
+      // Sign in with email and password
+      const { data: authData, error: authError } =
+        await supabase.auth.signInWithPassword({
+          email: data.email,
+          password: data.password,
+        })
+
+      if (authError) {
+        throw authError
+      }
+
+      if (authData.user) {
+        // Check if the user is a superadmin by looking up their role
+        const { data: operator, error: operatorError } = await supabase
+          .from('operators')
+          .select('role')
+          .eq('auth_id', authData.user.id)
+          .eq('role', 'superadmin')
+          .eq('is_active', true)
+          .single()
+
+        if (operatorError || !operator) {
+          // User is not a superadmin, sign them out and show error
+          await supabase.auth.signOut()
+          setError(
+            'Access denied. This account is not authorized for superadmin access.'
+          )
+          return
+        }
+
+        // Successfully authenticated as superadmin, redirect to superadmin dashboard
+        router.push('/superadmin')
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to sign in')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className='min-h-screen flex items-center justify-center px-4 -mt-24'>
+      <Card className='w-full max-w-md hover:shadow-none hover:cursor-default'>
+        <CardHeader className='text-center pb-6'>
+          <CardTitle className='text-2xl font-bold select-none cursor-default'>
+            SuperAdmin Sign In
+          </CardTitle>
+          <CardDescription className='mt-2 select-none cursor-default'>
+            Sign in to access the superadmin dashboard
+          </CardDescription>
+        </CardHeader>
+        <CardContent className='px-6 pb-6'>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className='space-y-6'
+          >
+            <div className='space-y-4'>
+              <div className='space-y-2'>
+                <Label
+                  htmlFor='email'
+                  className='text-sm font-medium'
+                >
+                  Email
+                </Label>
+                <Input
+                  id='email'
+                  type='email'
+                  placeholder='Enter your email'
+                  {...form.register('email')}
+                  className='h-11'
+                  autoComplete='email'
+                />
+                {form.formState.errors.email && (
+                  <p className='text-sm text-destructive'>
+                    {form.formState.errors.email.message}
+                  </p>
+                )}
+              </div>
+
+              <div className='space-y-2'>
+                <Label
+                  htmlFor='password'
+                  className='text-sm font-medium'
+                >
+                  Password
+                </Label>
+                <Input
+                  id='password'
+                  type='password'
+                  placeholder='Enter your password'
+                  {...form.register('password')}
+                  className='h-11'
+                  autoComplete='current-password'
+                />
+                {form.formState.errors.password && (
+                  <p className='text-sm text-destructive'>
+                    {form.formState.errors.password.message}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {error && (
+              <div className='text-sm text-destructive text-center py-2'>
+                {error}
+              </div>
+            )}
+
+            <Button
+              type='submit'
+              className='w-full h-11'
+              disabled={loading}
+            >
+              {loading ? 'Signing In...' : 'Sign In'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { usePlayerAuth } from '@/lib/auth/player-auth-context'
+import { usePlayer } from '@/lib/auth/user-context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -19,10 +19,13 @@ import { ArrowLeft, User } from 'lucide-react'
 import { ThemeSettings } from '@/components/theme-settings'
 
 export default function ProfilePage(): JSX.Element {
-  const { player, loading } = usePlayerAuth()
+  const player = usePlayer()
+  const loading = !player
   const router = useRouter()
-  const [alias, setAlias] = useState(player?.alias || '')
-  const [originalAlias, setOriginalAlias] = useState(player?.alias || '')
+  const [alias, setAlias] = useState(player?.profile.alias || '')
+  const [originalAlias, setOriginalAlias] = useState(
+    player?.profile.alias || ''
+  )
   const [saving, setSaving] = useState(false)
 
   const handleSaveAlias = async (): Promise<void> => {
@@ -110,7 +113,7 @@ export default function ProfilePage(): JSX.Element {
               <Label htmlFor='phone'>Phone Number</Label>
               <Input
                 id='phone'
-                value={formatPhoneNumber(player.phone_number)}
+                value={formatPhoneNumber(player.profile.phone_number)}
                 disabled
                 className='bg-muted'
               />
@@ -162,7 +165,7 @@ export default function ProfilePage(): JSX.Element {
         {/* Theme Settings */}
         <ThemeSettings
           player={player}
-          onThemeChange={(theme) => {
+          onThemeChange={(_theme) => {
             // Theme change is handled by the ThemeSettings component
             // This callback can be used for additional actions if needed
           }}

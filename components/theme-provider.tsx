@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { usePlayerAuth } from '@/lib/auth/player-auth-context'
+import { usePlayer } from '@/lib/auth/user-context'
 import { useColorTheme } from '@/hooks/use-color-theme'
 import {
   PlayerPreferences,
@@ -14,11 +14,11 @@ export function ThemeProvider({
 }: {
   children: React.ReactNode
 }): JSX.Element {
-  const { player } = usePlayerAuth()
   const [mounted, setMounted] = useState(false)
 
-  // Get the user's preferred color theme from their profile
-  const playerPreferences = player?.preferences as PlayerPreferences | null
+  const player = usePlayer()
+  const playerPreferences = player?.profile
+    .preferences as PlayerPreferences | null
   const userColorTheme = getPreference(
     playerPreferences,
     'color_theme',
