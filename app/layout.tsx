@@ -9,7 +9,7 @@ import { ThemeProvider } from '@/components/theme-provider'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'DeepStack - Poker Room Management',
+  title: 'Home | DeepStack',
   description:
     'Find poker games, join waitlists, and connect with friends across multiple poker rooms.',
   keywords: ['poker', 'poker room', 'waitlist', 'tournaments', 'games'],
@@ -26,6 +26,11 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        <link
+          rel='icon'
+          href='/favicon.svg'
+          type='image/svg+xml'
+        />
         <script
           dangerouslySetInnerHTML={{
             __html: `

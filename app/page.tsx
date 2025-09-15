@@ -8,8 +8,15 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Users, MapPin, Clock } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 export default function HomePage(): JSX.Element {
+  const router = useRouter()
+
+  const handleBrowseRooms = (): void => {
+    router.push('/rooms')
+  }
+
   return (
     <div>
       {/* Hero Section */}
@@ -30,6 +37,7 @@ export default function HomePage(): JSX.Element {
             <Button
               size='lg'
               className='text-lg px-8 py-3'
+              onClick={handleBrowseRooms}
             >
               Browse Rooms
             </Button>

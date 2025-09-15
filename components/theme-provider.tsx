@@ -3,6 +3,11 @@
 import { useEffect, useState } from 'react'
 import { usePlayerAuth } from '@/lib/auth/player-auth-context'
 import { useColorTheme } from '@/hooks/use-color-theme'
+import {
+  PlayerPreferences,
+  getPreference,
+  DEFAULT_PREFERENCES,
+} from '@/types/preferences'
 
 export function ThemeProvider({
   children,
@@ -13,7 +18,12 @@ export function ThemeProvider({
   const [mounted, setMounted] = useState(false)
 
   // Get the user's preferred color theme from their profile
-  const userColorTheme = (player as any)?.color_theme || 'neutral'
+  const playerPreferences = player?.preferences as PlayerPreferences | null
+  const userColorTheme = getPreference(
+    playerPreferences,
+    'color_theme',
+    DEFAULT_PREFERENCES.color_theme!
+  )
 
   // Apply the color theme
   useColorTheme(userColorTheme)

@@ -21,6 +21,12 @@ import { Separator } from '@/components/ui/separator'
 import { Palette, Check } from 'lucide-react'
 import { usePlayerAuth } from '@/lib/auth/player-auth-context'
 import { Tables } from '@/types/supabase'
+import {
+  PlayerPreferences,
+  getPreference,
+  setPreference,
+  DEFAULT_PREFERENCES,
+} from '@/types/preferences'
 
 type Player = Tables<'players'>
 
@@ -64,7 +70,12 @@ export function ThemeSettings({
 
   // Initialize theme from player data
   useEffect(() => {
-    const playerTheme = (player as any).color_theme || 'neutral'
+    const playerPreferences = player?.preferences as PlayerPreferences | null
+    const playerTheme = getPreference(
+      playerPreferences,
+      'color_theme',
+      DEFAULT_PREFERENCES.color_theme!
+    )
     setSelectedTheme(playerTheme)
     setOriginalTheme(playerTheme)
   }, [player])
@@ -74,8 +85,17 @@ export function ThemeSettings({
     setSaving(true)
 
     try {
-      // Update the player's color theme using the auth context
-      await updatePlayer({ color_theme: theme } as any)
+      // Get current preferences and update color theme
+      const currentPreferences =
+        (player?.preferences as PlayerPreferences) || {}
+      const updatedPreferences = setPreference(
+        currentPreferences,
+        'color_theme',
+        theme as any
+      )
+
+      // Update the player's preferences using the auth context
+      await updatePlayer({ preferences: updatedPreferences } as any)
 
       // Update original theme on success
       setOriginalTheme(theme)

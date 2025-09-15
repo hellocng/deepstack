@@ -221,37 +221,123 @@ export type Database = {
           alias: string | null
           auth_id: string | null
           avatar_url: string | null
-          color_theme: string | null
           created_at: string | null
           email: string | null
           id: string
           last_login: string | null
           phone_number: string | null
+          preferences: Json | null
           updated_at: string | null
         }
         Insert: {
           alias?: string | null
           auth_id?: string | null
           avatar_url?: string | null
-          color_theme?: string | null
           created_at?: string | null
           email?: string | null
           id?: string
           last_login?: string | null
           phone_number?: string | null
+          preferences?: Json | null
           updated_at?: string | null
         }
         Update: {
           alias?: string | null
           auth_id?: string | null
           avatar_url?: string | null
-          color_theme?: string | null
           created_at?: string | null
           email?: string | null
           id?: string
           last_login?: string | null
           phone_number?: string | null
+          preferences?: Json | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      games: {
+        Row: {
+          created_at: string | null
+          current_players: number | null
+          game_type: string | null
+          id: string
+          is_active: boolean | null
+          max_players: number | null
+          room_id: string | null
+          stakes: string | null
+          updated_at: string | null
+          waitlist_count: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          current_players?: number | null
+          game_type?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_players?: number | null
+          room_id?: string | null
+          stakes?: string | null
+          updated_at?: string | null
+          waitlist_count?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          current_players?: number | null
+          game_type?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_players?: number | null
+          room_id?: string | null
+          stakes?: string | null
+          updated_at?: string | null
+          waitlist_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'games_room_id_fkey'
+            columns: ['room_id']
+            isOneToOne: false
+            referencedRelation: 'rooms'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      rooms: {
+        Row: {
+          address: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          name: string | null
+          phone: string | null
+          updated_at: string | null
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          name?: string | null
+          phone?: string | null
+          updated_at?: string | null
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          name?: string | null
+          phone?: string | null
+          updated_at?: string | null
+          website?: string | null
         }
         Relationships: []
       }

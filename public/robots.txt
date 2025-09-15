@@ -1,0 +1,20 @@
+User-agent: *
+Allow: /
+
+# Block admin routes for all tenants
+Disallow: /*/admin
+Disallow: /*/admin/
+
+# Allow everything else
+Allow: /rooms
+Allow: /profile
+Allow: /signin
+Allow: /signup
+Allow: /*/games
+Allow: /*/dashboard
+Allow: /*/players
+Allow: /*/comps
+Allow: /*/import
+
+# Sitemap (you can add this when you have one)
+# Sitemap: https://yourdomain.com/sitemap.xml
