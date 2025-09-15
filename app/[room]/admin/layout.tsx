@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { useUser, useOperator } from '@/lib/auth/user-context'
 import Link from 'next/link'
+import { Loading } from '@/components/ui/loading'
 
 export default function AdminLayout({
   children,
@@ -21,12 +22,11 @@ export default function AdminLayout({
 
   if (loading) {
     return (
-      <div className='min-h-screen flex items-center justify-center'>
-        <div className='text-center'>
-          <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4'></div>
-          <p className='text-muted-foreground'>Loading...</p>
-        </div>
-      </div>
+      <Loading
+        fullScreen
+        size='md'
+        text='Loading...'
+      />
     )
   }
 

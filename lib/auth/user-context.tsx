@@ -1,6 +1,6 @@
 'use client'
 
-import {
+import React, {
   createContext,
   useContext,
   useEffect,
@@ -18,6 +18,7 @@ type Operator = Tables<'operators'>
 export interface PlayerUser {
   type: 'player'
   profile: Player
+  phoneNumber?: string
 }
 
 export interface OperatorUser {
@@ -41,13 +42,17 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType | undefined>(undefined)
 
+interface UserProviderProps {
+  children: React.ReactNode
+  initialUser?: User | null
+}
+
 export function UserProvider({
   children,
-}: {
-  children: React.ReactNode
-}): JSX.Element {
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
+  initialUser = null,
+}: UserProviderProps): JSX.Element {
+  const [user, setUser] = useState<User | null>(initialUser)
+  const [loading, setLoading] = useState(!initialUser) // No loading if we have initial data
   const [error, setError] = useState<string | null>(null)
   const supabase = useMemo(() => createClient(), [])
 
@@ -56,7 +61,30 @@ export function UserProvider({
       try {
         setError(null)
 
-        // First, try to load as operator
+        // First, try to load as player (most common case)
+        const { data: player, error: playerError } = await supabase
+          .from('players')
+          .select('*')
+          .eq('auth_id', authId)
+          .single()
+
+        if (player && !playerError) {
+          // Get phone number from auth user
+          const {
+            data: { user: authUser },
+          } = await supabase.auth.getUser()
+
+          // User is a player
+          setUser({
+            type: 'player',
+            profile: player,
+            phoneNumber: authUser?.phone || undefined,
+          })
+          setLoading(false)
+          return
+        }
+
+        // If no player profile found, try to load as operator
         const { data: operator, error: operatorError } = await supabase
           .from('operators')
           .select(
@@ -80,27 +108,7 @@ export function UserProvider({
           return
         }
 
-        // If operator query failed due to RLS policies (user is not an operator),
-        // continue to try loading as player
-
-        // Try to load as player
-        const { data: player, error: playerError } = await supabase
-          .from('players')
-          .select('*')
-          .eq('auth_id', authId)
-          .single()
-
-        if (player && !playerError) {
-          // User is a player
-          setUser({
-            type: 'player',
-            profile: player,
-          })
-          setLoading(false)
-          return
-        }
-
-        // If neither operator nor player found, set user to null
+        // If neither player nor operator found, set user to null
         // This might be a new user who hasn't completed profile setup
         setUser(null)
         setLoading(false)
@@ -114,30 +122,9 @@ export function UserProvider({
   )
 
   useEffect(() => {
-    // Get initial user (authenticated via server)
-    const getInitialUser = async (): Promise<void> => {
-      const {
-        data: { user },
-        error,
-      } = await supabase.auth.getUser()
-
-      if (user && !error) {
-        await loadUserProfile(user.id)
-        setLoading(false)
-      } else {
-        setUser(null)
-        setLoading(false)
-      }
-    }
-
-    getInitialUser()
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      // Verify the session with the server for security
-      if (session?.user) {
+    // Only fetch user data if we don't have initial data from server
+    if (!initialUser) {
+      const getInitialUser = async (): Promise<void> => {
         const {
           data: { user },
           error,
@@ -150,14 +137,26 @@ export function UserProvider({
           setUser(null)
           setLoading(false)
         }
-      } else {
+      }
+
+      getInitialUser()
+    }
+
+    // Listen for auth changes (sign in/out)
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_OUT') {
         setUser(null)
         setLoading(false)
+      } else if (event === 'SIGNED_IN' && session?.user) {
+        // Load user profile instead of reloading the page
+        await loadUserProfile(session.user.id)
       }
     })
 
     return (): void => subscription.unsubscribe()
-  }, [loadUserProfile, supabase])
+  }, [loadUserProfile, supabase, initialUser])
 
   const signOut = async (): Promise<void> => {
     try {
@@ -202,9 +201,10 @@ export function UserProvider({
           profile: { ...user.profile, ...updates } as Operator,
         })
       }
-    } catch (_err) {
+    } catch (err) {
       // Error updating user
       setError('Failed to update user profile')
+      throw err // Re-throw the error so calling code can handle it
     }
   }
 
@@ -261,6 +261,7 @@ export function UserProvider({
         setUser({
           type: 'player',
           profile: existingPlayer,
+          phoneNumber: phoneNumber,
         })
         setLoading(false)
         return !existingPlayer.alias // Return true if alias needs to be set
@@ -270,7 +271,6 @@ export function UserProvider({
           .from('players')
           .insert({
             auth_id: data.user.id,
-            phone_number: phoneNumber,
             preferences: {},
           } as TablesInsert<'players'>)
           .select()
@@ -281,6 +281,7 @@ export function UserProvider({
         setUser({
           type: 'player',
           profile: newPlayer,
+          phoneNumber: phoneNumber,
         })
         setLoading(false)
         return true // New player needs to set alias

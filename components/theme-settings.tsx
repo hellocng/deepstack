@@ -67,6 +67,7 @@ export function ThemeSettings({
   const [selectedTheme, setSelectedTheme] = useState<string>('neutral')
   const [saving, setSaving] = useState(false)
   const [originalTheme, setOriginalTheme] = useState<string>('neutral')
+  const [error, setError] = useState<string | null>(null)
 
   // Initialize theme from player data
   useEffect(() => {
@@ -83,6 +84,7 @@ export function ThemeSettings({
   const handleThemeChange = async (theme: string): Promise<void> => {
     setSelectedTheme(theme)
     setSaving(true)
+    setError(null)
 
     try {
       // Get current preferences and update color theme
@@ -104,9 +106,9 @@ export function ThemeSettings({
 
       // Notify parent component
       onThemeChange?.(theme)
-    } catch (_error) {
-      // Error updating theme - handled by error state
-      // Revert on error
+    } catch (err) {
+      // Error updating theme - show error and revert
+      setError(err instanceof Error ? err.message : 'Failed to update theme')
       setSelectedTheme(originalTheme)
     } finally {
       setSaving(false)
@@ -158,6 +160,7 @@ export function ThemeSettings({
               Theme will be applied immediately
             </p>
           )}
+          {error && <p className='text-sm text-destructive'>{error}</p>}
         </div>
 
         <Separator />

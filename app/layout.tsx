@@ -5,7 +5,11 @@ import { Navigation } from '@/components/navigation'
 import { Footer } from '@/components/footer'
 import { UserProvider } from '@/lib/auth/user-context'
 import { ThemeProvider } from '@/components/theme-provider'
+import { UserThemeProvider } from '@/components/user-theme-provider'
 import { Toaster } from 'sonner'
+import { getServerUser } from '@/lib/auth/server-auth'
+import { Suspense } from 'react'
+import { Loading } from '@/components/ui/loading'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -16,11 +20,14 @@ export const metadata: Metadata = {
   keywords: ['poker', 'poker room', 'waitlist', 'tournaments', 'games'],
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
-}): JSX.Element {
+}): Promise<JSX.Element> {
+  // Fetch user data server-side for maximum security
+  const initialUser = await getServerUser()
+
   return (
     <html
       lang='en'
@@ -32,6 +39,34 @@ export default function RootLayout({
           href='/favicon.svg'
           type='image/svg+xml'
         />
+        <link
+          rel='manifest'
+          href='/api/manifest'
+        />
+        <meta
+          name='apple-mobile-web-app-capable'
+          content='yes'
+        />
+        <meta
+          name='apple-mobile-web-app-status-bar-style'
+          content='default'
+        />
+        <meta
+          name='apple-mobile-web-app-title'
+          content='DeepStack'
+        />
+        <meta
+          name='application-name'
+          content='DeepStack'
+        />
+        <meta
+          name='mobile-web-app-capable'
+          content='yes'
+        />
+        <meta
+          name='theme-color'
+          content='#000000'
+        />
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -39,7 +74,7 @@ export default function RootLayout({
                 try {
                   const theme = localStorage.getItem('theme');
                   const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                  
+
                   if (theme === 'dark') {
                     document.documentElement.classList.add('dark');
                     document.documentElement.classList.remove('light');
@@ -67,16 +102,28 @@ export default function RootLayout({
         />
       </head>
       <body className={inter.className}>
-        <UserProvider>
+        <UserProvider initialUser={initialUser}>
           <ThemeProvider>
-            <div className='min-h-screen bg-background flex flex-col'>
-              <Navigation />
-              <main className='flex-1 w-full max-w-7xl mx-auto px-4 py-6 pt-24'>
-                {children}
-              </main>
-              <Footer />
-            </div>
-            <Toaster />
+            <UserThemeProvider>
+              <Suspense
+                fallback={
+                  <Loading
+                    fullScreen
+                    size='lg'
+                    text='Loading...'
+                  />
+                }
+              >
+                <div className='min-h-screen bg-background flex flex-col'>
+                  <Navigation />
+                  <main className='flex-1 w-full max-w-7xl mx-auto px-4 py-6 pt-24'>
+                    {children}
+                  </main>
+                  <Footer />
+                </div>
+              </Suspense>
+              <Toaster />
+            </UserThemeProvider>
           </ThemeProvider>
         </UserProvider>
       </body>

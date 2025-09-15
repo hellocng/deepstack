@@ -1,0 +1,214 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt(): Promise<void>
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
+}
+
+export function usePWA() {
+  const [deferredPrompt, setDeferredPrompt] =
+    useState<BeforeInstallPromptEvent | null>(null)
+  const [isInstalled, setIsInstalled] = useState(false)
+  const [isInAppMode, setIsInAppMode] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [isInstallable, setIsInstallable] = useState(false)
+
+  useEffect(() => {
+    // Simple PWA mode detection
+    const checkPWAMode = () => {
+      const isStandalone = window.matchMedia(
+        '(display-mode: standalone)'
+      ).matches
+      const isIOSStandalone =
+        (navigator as { standalone?: boolean }).standalone === true
+
+      if (isStandalone || isIOSStandalone) {
+        setIsInstalled(true)
+        setIsInAppMode(true)
+        setIsInstallable(false)
+        try {
+          localStorage.setItem('pwa-installed', 'true')
+        } catch {}
+        return true
+      }
+      return false
+    }
+
+    // Check localStorage for previous installation
+    const checkLocalStorage = () => {
+      try {
+        const wasInstalled = localStorage.getItem('pwa-installed') === 'true'
+        if (wasInstalled) {
+          setIsInstalled(true)
+        }
+      } catch {
+        // localStorage not available
+      }
+    }
+
+    // Check if app meets PWA criteria
+    const checkPWACriteria = async () => {
+      const manifestLink = document.querySelector('link[rel="manifest"]')
+      const hasServiceWorker = 'serviceWorker' in navigator
+      const isHttps = window.location.protocol === 'https:'
+      const isLocalhost =
+        window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1' ||
+        window.location.hostname === '0.0.0.0'
+
+      // Test if manifest is accessible
+      let manifestAccessible = false
+      if (manifestLink) {
+        try {
+          const manifestUrl = manifestLink.getAttribute('href')
+          if (manifestUrl) {
+            const response = await fetch(manifestUrl)
+            manifestAccessible = response.ok
+
+            // Try to parse the manifest content
+            if (manifestAccessible) {
+              try {
+                const manifest = await response.json()
+                // Test if icons are accessible
+                if (manifest.icons && manifest.icons.length > 0) {
+                  for (const icon of manifest.icons) {
+                    try {
+                      const iconResponse = await fetch(icon.src)
+                      if (!iconResponse.ok) {
+                        console.warn(`PWA icon not accessible: ${icon.src}`)
+                      }
+                    } catch (error) {
+                      console.warn(`PWA icon fetch failed: ${icon.src}`, error)
+                    }
+                  }
+                }
+              } catch {
+                // Silently handle parse errors
+              }
+            }
+          }
+        } catch {
+          // Silently handle accessibility test failures
+        }
+      }
+
+      // Check current PWA mode state
+      const isCurrentlyInAppMode =
+        window.matchMedia('(display-mode: standalone)').matches ||
+        (navigator as { standalone?: boolean }).standalone === true
+
+      // Set installable if we have the required components and we're not in PWA mode
+      // HTTPS is required for production, but localhost is allowed for development
+      if (
+        manifestLink &&
+        manifestAccessible &&
+        hasServiceWorker &&
+        !isCurrentlyInAppMode &&
+        (isHttps || isLocalhost)
+      ) {
+        setIsInstallable(true)
+      } else {
+        setIsInstallable(false)
+      }
+    }
+
+    // Initialize
+    checkPWAMode()
+    checkLocalStorage()
+
+    // Run PWA criteria check after a delay
+    const pwaCriteriaTimeout = setTimeout(checkPWACriteria, 1000)
+
+    // Listen for beforeinstallprompt event
+    const handleBeforeInstallPrompt = (e: Event) => {
+      // Always prevent default to show our custom install UI
+      e.preventDefault()
+      setDeferredPrompt(e as BeforeInstallPromptEvent)
+      setIsInstallable(true)
+      try {
+        localStorage.removeItem('pwa-installed')
+      } catch {}
+    }
+
+    // Listen for appinstalled event
+    const handleAppInstalled = () => {
+      setIsInstalled(true)
+      setIsInstallable(false)
+      setDeferredPrompt(null)
+      try {
+        localStorage.setItem('pwa-installed', 'true')
+      } catch {}
+    }
+
+    // Register service worker
+    const registerServiceWorker = async () => {
+      if ('serviceWorker' in navigator) {
+        try {
+          // Unregister any existing service workers first
+          const registrations = await navigator.serviceWorker.getRegistrations()
+          for (const registration of registrations) {
+            await registration.unregister()
+          }
+
+          await navigator.serviceWorker.register('/sw.js')
+          // Service worker registered successfully
+        } catch {
+          // Silently handle service worker registration failures
+        }
+      }
+    }
+
+    // Add event listeners
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+    window.addEventListener('appinstalled', handleAppInstalled)
+
+    // Register service worker
+    registerServiceWorker()
+
+    // Cleanup
+    return () => {
+      window.removeEventListener(
+        'beforeinstallprompt',
+        handleBeforeInstallPrompt
+      )
+      window.removeEventListener('appinstalled', handleAppInstalled)
+      clearTimeout(pwaCriteriaTimeout)
+    }
+  }, []) // Remove isInAppMode dependency to prevent infinite loop
+
+  const installApp = async () => {
+    if (!deferredPrompt) {
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      deferredPrompt.prompt()
+      const { outcome } = await deferredPrompt.userChoice
+
+      if (outcome === 'accepted') {
+        setIsInstalled(true)
+        setIsInstallable(false)
+        try {
+          localStorage.setItem('pwa-installed', 'true')
+        } catch {}
+      }
+
+      setDeferredPrompt(null)
+    } catch {
+      // Silently handle installation failures
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  return {
+    isInstalled,
+    isInAppMode,
+    isInstallable,
+    isLoading,
+    installApp,
+  }
+}

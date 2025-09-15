@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import Link from 'next/link'
+import { Loading } from '@/components/ui/loading'
 
 interface DashboardStats {
   totalGames: number
@@ -119,10 +120,10 @@ export function AdminDashboard(): JSX.Element {
   if (loading) {
     return (
       <div className='flex items-center justify-center h-64'>
-        <div className='text-center'>
-          <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4'></div>
-          <p className='text-muted-foreground'>Loading dashboard...</p>
-        </div>
+        <Loading
+          size='md'
+          text='Loading dashboard...'
+        />
       </div>
     )
   }

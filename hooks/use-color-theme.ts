@@ -945,7 +945,14 @@ export function useColorTheme(colorTheme: string = 'neutral'): void {
           mutation.type === 'attributes' &&
           mutation.attributeName === 'class'
         ) {
-          applyTheme()
+          // Only reapply if the class change is related to dark/light mode
+          const target = mutation.target as HTMLElement
+          if (
+            target.classList.contains('dark') ||
+            target.classList.contains('light')
+          ) {
+            applyTheme()
+          }
         }
       })
     })

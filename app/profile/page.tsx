@@ -14,7 +14,6 @@ import {
 } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { useRouter } from 'next/navigation'
-import { formatPhoneNumber } from '@/lib/utils'
 import { ArrowLeft, User } from 'lucide-react'
 import { ThemeSettings } from '@/components/theme-settings'
 
@@ -137,7 +136,7 @@ export default function ProfilePage(): JSX.Element {
               <Label htmlFor='phone'>Phone Number</Label>
               <Input
                 id='phone'
-                value={formatPhoneNumber(player.profile.phone_number || '')}
+                value={player.phoneNumber || ''}
                 disabled
                 className='bg-muted'
               />

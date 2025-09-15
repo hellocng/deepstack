@@ -232,36 +232,27 @@ export type Database = {
         Row: {
           alias: string | null
           auth_id: string | null
-          avatar_url: string | null
           created_at: string | null
-          email: string | null
           id: string
           last_login: string | null
-          phone_number: string | null
           preferences: Json | null
           updated_at: string | null
         }
         Insert: {
           alias?: string | null
           auth_id?: string | null
-          avatar_url?: string | null
           created_at?: string | null
-          email?: string | null
           id?: string
           last_login?: string | null
-          phone_number?: string | null
           preferences?: Json | null
           updated_at?: string | null
         }
         Update: {
           alias?: string | null
           auth_id?: string | null
-          avatar_url?: string | null
           created_at?: string | null
-          email?: string | null
           id?: string
           last_login?: string | null
-          phone_number?: string | null
           preferences?: Json | null
           updated_at?: string | null
         }
