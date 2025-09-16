@@ -1,0 +1,395 @@
+---
+description: File protection rules and gitignore safety
+globs:
+  [
+    '**/.gitignore',
+    '**/package.json',
+    '**/node_modules/**',
+    '**/.next/**',
+    '**/dist/**',
+    '**/build/**',
+  ]
+alwaysApply: true
+---
+
+# File Protection Rules
+
+## CRITICAL: Never Delete Gitignore Files
+
+### Gitignore File Protection
+
+**NEVER delete or modify files that are listed in `.gitignore`:**
+
+```bash
+# ❌ FORBIDDEN - These files should NEVER be deleted
+node_modules/
+.next/
+dist/
+build/
+coverage/
+*.log
+.env.local
+.env.production
+.env.staging
+```
+
+### Protected File Categories
+
+#### 1. Build Artifacts
+
+```bash
+# ❌ NEVER DELETE
+.next/          # Next.js build output
+dist/           # Distribution files
+build/          # Build output
+out/            # Static export output
+```
+
+#### 2. Dependencies
+
+```bash
+# ❌ NEVER DELETE
+node_modules/   # NPM dependencies
+.pnpm-store/    # PNPM store
+.yarn/          # Yarn cache
+```
+
+#### 3. Environment Files
+
+```bash
+# ❌ NEVER DELETE
+.env.local      # Local environment variables
+.env.production # Production environment variables
+.env.staging    # Staging environment variables
+.env.development # Development environment variables
+```
+
+#### 4. Logs and Cache
+
+```bash
+# ❌ NEVER DELETE
+*.log           # Log files
+.cache/         # Cache directories
+.temp/          # Temporary files
+.tmp/           # Temporary files
+```
+
+#### 5. IDE and Editor Files
+
+```bash
+# ❌ NEVER DELETE
+.vscode/        # VS Code settings
+.idea/          # IntelliJ IDEA settings
+*.swp           # Vim swap files
+*.swo           # Vim swap files
+```
+
+#### 6. OS Generated Files
+
+```bash
+# ❌ NEVER DELETE
+.DS_Store       # macOS system files
+Thumbs.db       # Windows thumbnail cache
+desktop.ini     # Windows folder settings
+```
+
+### Safe File Operations
+
+#### ✅ ALLOWED Operations
+
+```bash
+# Safe: Clean build artifacts (they can be regenerated)
+npm run build
+npm run clean
+
+# Safe: Remove specific temporary files
+rm -rf .next/cache
+rm -rf dist/temp
+
+# Safe: Clean node_modules and reinstall
+rm -rf node_modules
+npm install
+```
+
+#### ❌ FORBIDDEN Operations
+
+```bash
+# NEVER: Delete entire directories that are in gitignore
+rm -rf node_modules/
+rm -rf .next/
+rm -rf dist/
+rm -rf build/
+
+# NEVER: Delete environment files
+rm .env.local
+rm .env.production
+
+# NEVER: Delete log files that might contain important information
+rm *.log
+```
+
+### File Deletion Safety Guidelines
+
+#### 1. Check Gitignore First
+
+Before deleting any file or directory, check if it's in `.gitignore`:
+
+```bash
+# Check if a file is in gitignore
+git check-ignore node_modules/
+git check-ignore .next/
+git check-ignore dist/
+
+# If the command returns the path, it's in gitignore - DO NOT DELETE
+```
+
+#### 2. Use Safe Cleanup Commands
+
+```bash
+# ✅ SAFE: Use package.json scripts for cleanup
+npm run clean
+npm run build:clean
+
+# ✅ SAFE: Use framework-specific cleanup commands
+next build
+next clean
+
+# ✅ SAFE: Use build tools for cleanup
+npm run build
+npm run dist
+```
+
+#### 3. Environment-Specific Cleanup
+
+```bash
+# Development cleanup
+npm run dev:clean
+
+# Production cleanup
+npm run build:clean
+
+# Staging cleanup
+npm run staging:clean
+```
+
+### Package.json Safety Scripts
+
+Ensure your package.json has safe cleanup scripts:
+
+```json
+{
+  "scripts": {
+    "clean": "rm -rf .next && rm -rf dist && rm -rf build",
+    "clean:cache": "rm -rf .next/cache",
+    "clean:logs": "rm -rf logs/*.log",
+    "clean:temp": "rm -rf temp/*",
+    "clean:all": "npm run clean && npm run clean:cache && npm run clean:logs",
+    "build:clean": "npm run clean && npm run build"
+  }
+}
+```
+
+### File Protection Implementation
+
+#### 1. Pre-commit Hooks
+
+Add file protection to pre-commit hooks:
+
+```bash
+#!/bin/bash
+# .git/hooks/pre-commit
+
+# Check for dangerous file deletions
+if git diff --cached --name-only | grep -E "^(node_modules|\.next|dist|build)/"; then
+  echo "ERROR: Attempting to commit files that should be in gitignore"
+  exit 1
+fi
+
+# Check for gitignore modifications
+if git diff --cached --name-only | grep -q "\.gitignore"; then
+  echo "WARNING: .gitignore file is being modified"
+  echo "Please ensure you're not removing important ignore patterns"
+fi
+```
+
+#### 2. CI/CD Protection
+
+Add file protection to CI/CD pipelines:
+
+```yaml
+# .github/workflows/ci.yml
+- name: Check for protected files
+  run: |
+    if [ -d "node_modules" ]; then
+      echo "ERROR: node_modules should not be committed"
+      exit 1
+    fi
+
+    if [ -d ".next" ]; then
+      echo "ERROR: .next should not be committed"
+      exit 1
+    fi
+```
+
+#### 3. IDE Configuration
+
+Configure your IDE to warn about protected files:
+
+```json
+// .vscode/settings.json
+{
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/.next": true,
+    "**/dist": true,
+    "**/build": true,
+    "**/.env.local": true,
+    "**/*.log": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/.next": true,
+    "**/dist": true,
+    "**/build": true
+  }
+}
+```
+
+### Emergency Recovery
+
+If you accidentally delete protected files:
+
+#### 1. Build Artifacts
+
+```bash
+# Regenerate build artifacts
+npm run build
+npm run dev
+```
+
+#### 2. Dependencies
+
+```bash
+# Reinstall dependencies
+rm -rf node_modules
+npm install
+# or
+yarn install
+# or
+pnpm install
+```
+
+#### 3. Environment Files
+
+```bash
+# Restore from backup or recreate
+cp .env.example .env.local
+# Edit .env.local with your local settings
+```
+
+#### 4. Cache Files
+
+```bash
+# Clear and regenerate cache
+npm run clean:cache
+npm run build
+```
+
+### File Monitoring
+
+#### 1. Watch for Protected Files
+
+```bash
+# Monitor for protected files being added to git
+git status --ignored
+
+# Check what files are being ignored
+git ls-files --others --ignored --exclude-standard
+```
+
+#### 2. Automated Checks
+
+```bash
+#!/bin/bash
+# scripts/check-protected-files.sh
+
+PROTECTED_FILES=(
+  "node_modules"
+  ".next"
+  "dist"
+  "build"
+  ".env.local"
+  "*.log"
+)
+
+for file in "${PROTECTED_FILES[@]}"; do
+  if [ -e "$file" ]; then
+    echo "WARNING: Protected file/directory '$file' exists"
+  fi
+done
+```
+
+### Team Guidelines
+
+#### 1. Communication
+
+- Always communicate before deleting large directories
+- Use team chat for file cleanup operations
+- Document any file deletion procedures
+
+#### 2. Documentation
+
+- Keep `.gitignore` up to date
+- Document file cleanup procedures
+- Maintain a list of protected files
+
+#### 3. Training
+
+- Train team members on file protection rules
+- Provide examples of safe vs unsafe operations
+- Regular reminders about file protection
+
+### Common Mistakes to Avoid
+
+#### ❌ Common Errors
+
+```bash
+# DON'T: Delete node_modules to "clean up"
+rm -rf node_modules/
+
+# DON'T: Delete build artifacts manually
+rm -rf .next/
+rm -rf dist/
+
+# DON'T: Delete environment files
+rm .env.local
+
+# DON'T: Delete log files that might contain important info
+rm *.log
+```
+
+#### ✅ Correct Approaches
+
+```bash
+# DO: Use package.json scripts
+npm run clean
+npm run build
+
+# DO: Use framework commands
+next build
+next clean
+
+# DO: Reinstall dependencies properly
+rm -rf node_modules && npm install
+```
+
+## Summary
+
+**Remember**: Files listed in `.gitignore` are there for a reason. They are either:
+
+- Generated files that can be recreated
+- Dependencies that can be reinstalled
+- Environment-specific files that shouldn't be shared
+- Cache files that can be regenerated
+
+**Never delete these files manually** - use the appropriate build tools and package.json scripts instead.

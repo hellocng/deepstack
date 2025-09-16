@@ -13,7 +13,7 @@ export function Loading({
   size = 'md',
   text = 'Loading...',
   fullScreen = false,
-}: LoadingProps) {
+}: LoadingProps): JSX.Element {
   const sizeClasses = {
     sm: 'h-4 w-4',
     md: 'h-6 w-6',
@@ -56,7 +56,10 @@ interface TableLoadingProps {
   columns?: number
 }
 
-export function TableLoading({ className, columns = 5 }: TableLoadingProps) {
+export function TableLoading({
+  className,
+  columns = 5,
+}: TableLoadingProps): JSX.Element {
   return (
     <div className={cn('space-y-4', className)}>
       {/* Table outline with spinner */}

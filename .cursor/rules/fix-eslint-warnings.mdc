@@ -1,0 +1,146 @@
+---
+description: Fix current ESLint warnings in the project
+globs: ["**/*.{js,jsx,ts,tsx}"]
+alwaysApply: false
+---
+
+# Fix ESLint Warnings
+
+## Current Issues to Address
+
+### 1. Missing Return Type Annotations
+
+**Files affected:**
+- `components/pwa-install.tsx` (lines 158, 160)
+- `components/ui/drawer.tsx` (lines 11, 61, 72)
+- `components/ui/loading.tsx` (lines 11, 59)
+- `hooks/use-pwa.ts` (lines 10, 20, 40, 52, 125, 136, 146, 171, 181)
+- `utils/supabase/middleware.ts` (line 4)
+
+**Fix pattern:**
+```typescript
+// Before
+function myFunction() {
+  return something;
+}
+
+// After
+function myFunction(): ReturnType {
+  return something;
+}
+
+// For React components
+function MyComponent(): JSX.Element {
+  return <div>...</div>;
+}
+
+// For hooks
+function useMyHook(): { data: string; loading: boolean } {
+  return { data: '', loading: false };
+}
+```
+
+### 2. Console Statements
+
+**Files affected:**
+- `components/navigation.tsx` (line 114)
+- `hooks/use-pwa.ts` (lines 80, 83)
+- `middleware.ts` (line 163)
+
+**Fix pattern:**
+```typescript
+// Remove or replace with proper logging
+// Before
+console.log('Debug info');
+
+// After - Remove entirely or use proper logging
+// For development debugging, use:
+if (process.env.NODE_ENV === 'development') {
+  console.log('Debug info');
+}
+
+// Or use a proper logging library
+import { logger } from '@/lib/logger';
+logger.info('Debug info');
+```
+
+### 3. Unused Variables/Parameters
+
+**Files affected:**
+- `public/sw.js` (line 4: `isDev`)
+- `utils/supabase/middleware.ts` (line 18: `options`)
+
+**Fix pattern:**
+```typescript
+// Prefix unused parameters with underscore
+// Before
+function myFunction(tenantId: string, playerId: string) {
+  // Only using tenantId
+  return tenantId;
+}
+
+// After
+function myFunction(tenantId: string, _playerId: string) {
+  return tenantId;
+}
+
+// For unused variables, prefix with underscore or remove
+// Before
+const isDev = process.env.NODE_ENV === 'development';
+// After
+const _isDev = process.env.NODE_ENV === 'development';
+// Or remove entirely if not needed
+```
+
+### 4. Explicit Any Types
+
+**Files affected:**
+- `middleware.ts` (lines 51, 122)
+
+**Fix pattern:**
+```typescript
+// Before
+function myFunction(param: any) {
+  return param;
+}
+
+// After - Use proper types
+function myFunction(param: string | number) {
+  return param;
+}
+
+// Or use unknown for truly unknown types
+function myFunction(param: unknown) {
+  if (typeof param === 'string') {
+    return param;
+  }
+  return '';
+}
+
+// For complex objects, define interfaces
+interface MyObject {
+  id: string;
+  name: string;
+}
+
+function myFunction(param: MyObject) {
+  return param;
+}
+```
+
+## Implementation Steps
+
+1. **Fix return type annotations** - Add explicit return types to all functions
+2. **Remove console statements** - Replace with proper logging or remove entirely
+3. **Fix unused variables** - Prefix with underscore or remove
+4. **Replace any types** - Use proper TypeScript types or interfaces
+5. **Run ESLint** - Verify all warnings are resolved
+
+## Verification
+
+After making changes, run:
+```bash
+npx eslint . --max-warnings 0
+```
+
+This should pass with no warnings.

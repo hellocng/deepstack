@@ -10,6 +10,3 @@ export type Game = Tables<'games'>
 export type Tournament = Tables<'tournaments'>
 export type Table = Tables<'tables'>
 export type WaitlistEntry = Tables<'waitlist_entries'>
-
-// Legacy alias for backward compatibility (will be removed)
-export type Tenant = Room

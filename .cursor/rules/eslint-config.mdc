@@ -1,6 +1,6 @@
 ---
-description: ESLint configuration and linting standards for the poker room management app
-globs: ['**/*.{js,jsx,ts,tsx}']
+description: ESLint Configuration & Standards
+globs: ["**/*.{js,jsx,ts,tsx}"]
 alwaysApply: true
 ---
 

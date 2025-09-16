@@ -1,0 +1,382 @@
+---
+description: Code Quality Standards and ESLint Integration
+globs: ["**/*.{js,jsx,ts,tsx}"]
+alwaysApply: true
+---
+
+# Code Quality Standards
+
+## ESLint Integration
+
+### Current Configuration
+
+Your project uses ESLint with the following key rules:
+- `@typescript-eslint/explicit-function-return-type: 'warn'` - Require return types
+- `@typescript-eslint/no-unused-vars: 'warn'` - Catch unused variables
+- `@typescript-eslint/no-explicit-any: 'warn'` - Prevent any types
+- `no-console: 'warn'` - Warn about console statements
+- `prefer-const: 'error'` - Enforce const for immutable variables
+
+### Function Return Types
+
+**Always add explicit return types for:**
+- Public functions and methods
+- React components
+- Custom hooks
+- API route handlers
+- Utility functions
+
+```typescript
+// ✅ Good
+function calculateTotal(items: Item[]): number {
+  return items.reduce((sum, item) => sum + item.price, 0);
+}
+
+function MyComponent(): JSX.Element {
+  return <div>Hello</div>;
+}
+
+function useApiData(): { data: any; loading: boolean; error: string | null } {
+  // implementation
+}
+
+// ❌ Bad
+function calculateTotal(items: Item[]) {
+  return items.reduce((sum, item) => sum + item.price, 0);
+}
+```
+
+### Unused Variables
+
+**Handle unused variables properly:**
+- Prefix unused parameters with underscore
+- Remove unused imports and variables
+- Use ESLint disable comments sparingly
+
+```typescript
+// ✅ Good
+function handleSubmit(_event: React.FormEvent, data: FormData): void {
+  // Only using data, not event
+  processData(data);
+}
+
+// ✅ Good - Remove unused imports
+import { useState } from 'react'; // Remove if not used
+
+// ❌ Bad
+function handleSubmit(event: React.FormEvent, data: FormData): void {
+  // event is unused but not prefixed
+  processData(data);
+}
+```
+
+### Console Statements
+
+**Avoid console statements in production:**
+- Remove debug console.log statements
+- Use proper logging for important information
+- Use conditional logging for development
+
+```typescript
+// ✅ Good - Remove or use proper logging
+import { logger } from '@/lib/logger';
+logger.info('User action completed');
+
+// ✅ Good - Development only
+if (process.env.NODE_ENV === 'development') {
+  console.log('Debug info');
+}
+
+// ❌ Bad
+console.log('Debug info'); // Will show warning
+```
+
+### TypeScript Types
+
+**Avoid `any` types:**
+- Use proper TypeScript types
+- Define interfaces for complex objects
+- Use `unknown` for truly unknown types
+
+```typescript
+// ✅ Good
+interface User {
+  id: string;
+  name: string;
+  email: string;
+}
+
+function processUser(user: User): void {
+  // implementation
+}
+
+// ✅ Good - Use unknown for truly unknown types
+function handleUnknownData(data: unknown): string {
+  if (typeof data === 'string') {
+    return data;
+  }
+  return '';
+}
+
+// ❌ Bad
+function processUser(user: any): void {
+  // implementation
+}
+```
+
+## Code Style Standards
+
+### Variable Declarations
+
+- Use `const` for immutable values
+- Use `let` for mutable values
+- Never use `var`
+
+```typescript
+// ✅ Good
+const API_URL = 'https://api.example.com';
+let currentUser: User | null = null;
+
+// ❌ Bad
+var API_URL = 'https://api.example.com';
+```
+
+### Equality Checks
+
+- Use strict equality (`===`) and inequality (`!==`)
+- Avoid loose equality (`==`) and inequality (`!=`)
+
+```typescript
+// ✅ Good
+if (user.id === '123') {
+  // implementation
+}
+
+// ❌ Bad
+if (user.id == '123') {
+  // implementation
+}
+```
+
+## React-Specific Standards
+
+### Component Structure
+
+```typescript
+// ✅ Good component structure
+interface UserCardProps {
+  user: User;
+  onEdit: (user: User) => void;
+}
+
+function UserCard({ user, onEdit }: UserCardProps): JSX.Element {
+  const [isEditing, setIsEditing] = useState<boolean>(false);
+
+  const handleEdit = (): void => {
+    setIsEditing(true);
+    onEdit(user);
+  };
+
+  return (
+    <div className="user-card">
+      <h3>{user.name}</h3>
+      <button onClick={handleEdit}>Edit</button>
+    </div>
+  );
+}
+```
+
+### Hook Usage
+
+```typescript
+// ✅ Good hook with proper types
+function useUserData(userId: string): {
+  user: User | null;
+  loading: boolean;
+  error: string | null;
+} {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchUser(userId)
+      .then(setUser)
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [userId]);
+
+  return { user, loading, error };
+}
+```
+
+## Error Handling
+
+### Try-Catch Blocks
+
+```typescript
+// ✅ Good error handling
+async function fetchUserData(userId: string): Promise<User | null> {
+  try {
+    const response = await fetch(`/api/users/${userId}`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch user: ${response.statusText}`);
+    }
+    return await response.json();
+  } catch (error) {
+    logger.error('Failed to fetch user data:', error);
+    return null;
+  }
+}
+```
+
+### Form Validation
+
+```typescript
+// ✅ Good form validation with proper types
+interface FormData {
+  name: string;
+  email: string;
+  phone: string;
+}
+
+function validateForm(data: FormData): { isValid: boolean; errors: string[] } {
+  const errors: string[] = [];
+  
+  if (!data.name.trim()) {
+    errors.push('Name is required');
+  }
+  
+  if (!data.email.includes('@')) {
+    errors.push('Valid email is required');
+  }
+  
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
+}
+```
+
+## Performance Standards
+
+### React Optimization
+
+```typescript
+// ✅ Good - Use React.memo for expensive components
+const ExpensiveComponent = React.memo(function ExpensiveComponent({ 
+  data 
+}: { 
+  data: ComplexData 
+}): JSX.Element {
+  return <div>{/* expensive rendering */}</div>;
+});
+
+// ✅ Good - Proper dependency arrays
+useEffect(() => {
+  fetchData();
+}, [userId, tenantId]); // Include all dependencies
+```
+
+## Testing Standards
+
+### Test Structure
+
+```typescript
+// ✅ Good test structure
+describe('UserCard', () => {
+  const mockUser: User = {
+    id: '1',
+    name: 'John Doe',
+    email: 'john@example.com'
+  };
+
+  it('should render user information correctly', () => {
+    render(<UserCard user={mockUser} onEdit={jest.fn()} />);
+    
+    expect(screen.getByText('John Doe')).toBeInTheDocument();
+    expect(screen.getByText('john@example.com')).toBeInTheDocument();
+  });
+
+  it('should call onEdit when edit button is clicked', () => {
+    const mockOnEdit = jest.fn();
+    render(<UserCard user={mockUser} onEdit={mockOnEdit} />);
+    
+    fireEvent.click(screen.getByText('Edit'));
+    expect(mockOnEdit).toHaveBeenCalledWith(mockUser);
+  });
+});
+```
+
+## Integration with Development Workflow
+
+### Pre-commit Hooks
+
+Your project already has lint-staged configured:
+```json
+{
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ]
+  }
+}
+```
+
+### IDE Integration
+
+- Enable ESLint extension in VS Code
+- Configure auto-fix on save
+- Show linting errors inline
+- Use TypeScript strict mode
+
+### CI/CD Integration
+
+```yaml
+# Example GitHub Actions step
+- name: Run ESLint
+  run: npx eslint . --max-warnings 0
+```
+
+## Common Patterns
+
+### API Route Handlers
+
+```typescript
+// ✅ Good API route structure
+export async function GET(
+  request: Request,
+  { params }: { params: { tenant: string } }
+): Promise<Response> {
+  try {
+    const data = await fetchData(params.tenant);
+    return Response.json(data);
+  } catch (error) {
+    logger.error('API Error:', error);
+    return Response.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+```
+
+### Database Operations
+
+```typescript
+// ✅ Good database operation with proper types
+async function createUser(userData: CreateUserData): Promise<User> {
+  const { data, error } = await supabase
+    .from('users')
+    .insert(userData)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to create user: ${error.message}`);
+  }
+
+  return data;
+}
+```

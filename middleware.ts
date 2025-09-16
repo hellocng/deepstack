@@ -1,6 +1,8 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Operator } from '@/types'
 
 // Route classification helpers
 function isPublicRoute(pathname: string): boolean {
@@ -48,7 +50,7 @@ function extractRoomFromPath(pathname: string): string | null {
 
 async function validateRoomExists(
   roomCode: string,
-  supabase: any
+  supabase: SupabaseClient
 ): Promise<boolean> {
   try {
     const { data } = await supabase
@@ -78,31 +80,13 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return req.cookies.get(name)?.value
+        getAll() {
+          return req.cookies.getAll()
         },
-        set(name: string, value: string, options: Record<string, unknown>) {
-          req.cookies.set({
-            name,
-            value,
-            ...options,
-          })
-          res.cookies.set({
-            name,
-            value,
-            ...options,
-          })
-        },
-        remove(name: string, options: Record<string, unknown>) {
-          req.cookies.set({
-            name,
-            value: '',
-            ...options,
-          })
-          res.cookies.set({
-            name,
-            value: '',
-            ...options,
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            req.cookies.set(name, value)
+            res.cookies.set(name, value, options)
           })
         },
       },
@@ -137,7 +121,7 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
 
   // Handle authenticated users - determine user type
   let userType: 'player' | 'operator' | 'superadmin' | null = null
-  let operatorData: any = null
+  let operatorData: Pick<Operator, 'id' | 'role' | 'room_id'> | null = null
 
   try {
     // Check if user is a superadmin
@@ -177,8 +161,7 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
         }
       }
     }
-  } catch (error) {
-    console.error('Error determining user type:', error)
+  } catch (_error) {
     return NextResponse.redirect(new URL('/', req.url))
   }
 

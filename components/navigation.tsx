@@ -27,6 +27,7 @@ export function Navigation(): JSX.Element {
   const pathname = usePathname()
   const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('system')
   const [mounted, setMounted] = useState(false)
+  const [isSigningOut, setIsSigningOut] = useState(false)
 
   // Navigation renders successfully
 
@@ -102,6 +103,16 @@ export function Navigation(): JSX.Element {
       router.push('/superadmin')
     } else {
       router.push('/profile')
+    }
+  }
+
+  const handleSignOut = async (): Promise<void> => {
+    try {
+      setIsSigningOut(true)
+      await signOut()
+    } catch (error) {
+      console.error('Error signing out:', error)
+      setIsSigningOut(false)
     }
   }
 
@@ -253,8 +264,14 @@ export function Navigation(): JSX.Element {
                           </>
                         )}
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={signOut}>
-                          Sign out
+                        <DropdownMenuItem
+                          onSelect={(e) => {
+                            e.preventDefault()
+                            handleSignOut()
+                          }}
+                          disabled={isSigningOut}
+                        >
+                          {isSigningOut ? 'Signing out...' : 'Sign out'}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>

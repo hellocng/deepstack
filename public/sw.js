@@ -1,7 +1,7 @@
 const CACHE_NAME = 'deepstack-v1'
 
 // Detect environment based on host
-const isDev =
+const _isDev =
   self.location.hostname === 'localhost' ||
   self.location.hostname === '127.0.0.1' ||
   self.location.hostname === '0.0.0.0' ||

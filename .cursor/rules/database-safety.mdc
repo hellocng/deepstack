@@ -1,0 +1,242 @@
+---
+description: Database safety rules and restrictions
+globs:
+  [
+    '**/lib/supabase/**/*',
+    '**/app/api/**/*',
+    '**/middleware.ts',
+    '**/package.json',
+  ]
+alwaysApply: true
+---
+
+# Database Safety Rules
+
+## CRITICAL: Never Reset Production Database
+
+### Supabase Database Reset Restrictions
+
+**NEVER run the following commands on production or staging environments:**
+
+```bash
+# ❌ FORBIDDEN - These commands will DESTROY all data
+supabase db reset
+npm run db:reset
+npx supabase db reset
+```
+
+### Safe Database Operations
+
+**✅ ALLOWED - Use these commands instead:**
+
+```bash
+# Safe: Generate TypeScript types
+npm run db:generate-types
+
+# Safe: Push schema changes (migrations)
+npm run db:push
+
+# Safe: Local development only
+supabase db reset --local
+```
+
+### Database Reset Safety Guidelines
+
+1. **Production Environment**:
+   - **NEVER** run `supabase db reset` on production
+   - **NEVER** run `npm run db:reset` on production
+   - Use migrations (`supabase db push`) for schema changes
+   - Always backup data before major changes
+
+2. **Staging Environment**:
+   - **NEVER** run `supabase db reset` on staging
+   - Use migrations for schema changes
+   - Test migrations on local development first
+
+3. **Local Development**:
+   - `supabase db reset --local` is safe for local development
+   - Use `npm run db:reset` only in local development
+   - Always commit migration files before resetting
+
+### Migration Strategy
+
+Instead of database resets, use proper migrations:
+
+```bash
+# ✅ CORRECT: Create a new migration
+supabase migration new add_new_table
+
+# ✅ CORRECT: Apply migrations
+supabase db push
+
+# ✅ CORRECT: Generate types after schema changes
+npm run db:generate-types
+```
+
+### Environment Detection
+
+Always verify environment before running database commands:
+
+```typescript
+// lib/supabase/safety.ts
+export function isProductionEnvironment(): boolean {
+  return (
+    process.env.NODE_ENV === 'production' ||
+    process.env.SUPABASE_URL?.includes('supabase.co')
+  )
+}
+
+export function isStagingEnvironment(): boolean {
+  return (
+    process.env.NODE_ENV === 'staging' ||
+    process.env.SUPABASE_URL?.includes('staging')
+  )
+}
+
+// Use in scripts
+if (isProductionEnvironment()) {
+  throw new Error('Database reset is forbidden in production environment')
+}
+```
+
+### Package.json Script Safety
+
+Ensure your package.json scripts are safe:
+
+```json
+{
+  "scripts": {
+    "db:generate-types": "supabase gen types typescript --local > types/database.ts",
+    "db:push": "supabase db push",
+    "db:reset": "supabase db reset --local",
+    "db:reset:local": "supabase db reset --local"
+  }
+}
+```
+
+**Note**: The `db:reset` script should only work locally, never on remote environments.
+
+### Emergency Procedures
+
+If you accidentally run a reset command:
+
+1. **STOP** - Do not proceed with any operations
+2. **CONTACT** - Immediately contact the team lead
+3. **BACKUP** - Check if recent backups exist
+4. **RESTORE** - Restore from the most recent backup
+5. **INVESTIGATE** - Determine how the command was executed
+6. **PREVENT** - Implement additional safeguards
+
+### Team Communication
+
+- Always communicate database changes with the team
+- Use pull requests for migration files
+- Document all schema changes
+- Test migrations in development first
+
+### Monitoring and Alerts
+
+Set up monitoring to detect dangerous operations:
+
+```typescript
+// Example: Log all database operations
+export function logDatabaseOperation(
+  operation: string,
+  environment: string
+): void {
+  if (operation.includes('reset') && environment !== 'local') {
+    // Send alert to team
+    console.error('CRITICAL: Database reset attempted in non-local environment')
+  }
+}
+```
+
+## Database Backup Strategy
+
+### Automated Backups
+
+- Enable automated daily backups in Supabase dashboard
+- Store backups in multiple locations
+- Test backup restoration procedures regularly
+
+### Manual Backup Commands
+
+```bash
+# Create manual backup (if needed)
+supabase db dump --local > backup_$(date +%Y%m%d_%H%M%S).sql
+
+# Restore from backup
+supabase db reset --local
+psql -h localhost -p 54322 -U postgres -d postgres < backup_file.sql
+```
+
+### Backup Verification
+
+- Regularly test backup restoration
+- Verify data integrity after restoration
+- Document backup and restore procedures
+
+## Development Workflow
+
+### Safe Development Practices
+
+1. **Always work locally first**
+2. **Commit migration files to git**
+3. **Test migrations thoroughly**
+4. **Use feature branches for schema changes**
+5. **Review all database changes in pull requests**
+
+### Migration Naming Convention
+
+```bash
+# Use descriptive migration names
+supabase migration new add_user_preferences_table
+supabase migration new update_game_schema_v2
+supabase migration new add_tournament_prize_pool
+```
+
+### Schema Change Process
+
+1. **Design** - Plan the schema change
+2. **Local** - Implement and test locally
+3. **Migration** - Create migration file
+4. **Review** - Code review the migration
+5. **Test** - Test on staging environment
+6. **Deploy** - Apply to production via migration
+
+## Error Prevention
+
+### Pre-commit Hooks
+
+Add safety checks to pre-commit hooks:
+
+```bash
+# .git/hooks/pre-commit
+#!/bin/bash
+# Check for dangerous database commands
+if git diff --cached --name-only | grep -E "\.(sql|ts|js)$" | xargs grep -l "db reset\|supabase.*reset"; then
+  echo "ERROR: Database reset commands found in staged files"
+  exit 1
+fi
+```
+
+### IDE Warnings
+
+Configure your IDE to warn about dangerous commands:
+
+```json
+// .vscode/settings.json
+{
+  "search.exclude": {
+    "**/node_modules": true
+  },
+  "files.associations": {
+    "*.sql": "sql"
+  },
+  "sql.validate.enable": true
+}
+```
+
+## Summary
+
+**Remember**: Database resets are destructive operations that cannot be undone. Always use migrations for schema changes and never run reset commands on production or staging environments.

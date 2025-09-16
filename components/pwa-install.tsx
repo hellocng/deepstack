@@ -155,9 +155,9 @@ function useMediaQuery(query: string): boolean {
     const media = window.matchMedia(query)
     setMatches(media.matches)
 
-    const listener = () => setMatches(media.matches)
+    const listener = (): void => setMatches(media.matches)
     media.addEventListener('change', listener)
-    return () => media.removeEventListener('change', listener)
+    return (): void => media.removeEventListener('change', listener)
   }, [query])
 
   return matches

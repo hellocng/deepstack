@@ -4,11 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Gamepad2, Users, Clock, MapPin } from 'lucide-react'
 
 interface DashboardStatsProps {
-  tenantId: string
+  roomId: string
 }
 
 export function DashboardStats({
-  tenantId: _tenantId,
+  roomId: _roomId,
 }: DashboardStatsProps): JSX.Element {
   // This would fetch real data in a real implementation
   const stats = {

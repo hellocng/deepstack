@@ -160,11 +160,23 @@ export function UserProvider({
 
   const signOut = async (): Promise<void> => {
     try {
-      await supabase.auth.signOut()
+      // Sign out from Supabase (this handles all storage clearing automatically)
+      const { error } = await supabase.auth.signOut()
+
+      if (error) {
+        throw error
+      }
+
+      // Clear local state after successful sign out
       setUser(null)
-    } catch (_err) {
-      // Error signing out
-      setError('Failed to sign out')
+      setError(null)
+
+      // Redirect to home page
+      if (typeof window !== 'undefined') {
+        window.location.href = '/'
+      }
+    } catch (error) {
+      throw error
     }
   }
 

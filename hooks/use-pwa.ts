@@ -7,7 +7,15 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
 }
 
-export function usePWA() {
+export function usePWA(): {
+  deferredPrompt: BeforeInstallPromptEvent | null
+  isInstalled: boolean
+  isInAppMode: boolean
+  isLoading: boolean
+  isInstallable: boolean
+  installApp: () => Promise<void>
+  canInstall: boolean
+} {
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(null)
   const [isInstalled, setIsInstalled] = useState(false)
@@ -17,7 +25,7 @@ export function usePWA() {
 
   useEffect(() => {
     // Simple PWA mode detection
-    const checkPWAMode = () => {
+    const checkPWAMode = (): boolean => {
       const isStandalone = window.matchMedia(
         '(display-mode: standalone)'
       ).matches
@@ -37,7 +45,7 @@ export function usePWA() {
     }
 
     // Check localStorage for previous installation
-    const checkLocalStorage = () => {
+    const checkLocalStorage = (): void => {
       try {
         const wasInstalled = localStorage.getItem('pwa-installed') === 'true'
         if (wasInstalled) {
@@ -49,7 +57,7 @@ export function usePWA() {
     }
 
     // Check if app meets PWA criteria
-    const checkPWACriteria = async () => {
+    const checkPWACriteria = async (): Promise<void> => {
       const manifestLink = document.querySelector('link[rel="manifest"]')
       const hasServiceWorker = 'serviceWorker' in navigator
       const isHttps = window.location.protocol === 'https:'
@@ -77,10 +85,10 @@ export function usePWA() {
                     try {
                       const iconResponse = await fetch(icon.src)
                       if (!iconResponse.ok) {
-                        console.warn(`PWA icon not accessible: ${icon.src}`)
+                        // PWA icon not accessible
                       }
-                    } catch (error) {
-                      console.warn(`PWA icon fetch failed: ${icon.src}`, error)
+                    } catch (_error) {
+                      // PWA icon fetch failed
                     }
                   }
                 }
@@ -122,7 +130,7 @@ export function usePWA() {
     const pwaCriteriaTimeout = setTimeout(checkPWACriteria, 1000)
 
     // Listen for beforeinstallprompt event
-    const handleBeforeInstallPrompt = (e: Event) => {
+    const handleBeforeInstallPrompt = (e: Event): void => {
       // Always prevent default to show our custom install UI
       e.preventDefault()
       setDeferredPrompt(e as BeforeInstallPromptEvent)
@@ -133,7 +141,7 @@ export function usePWA() {
     }
 
     // Listen for appinstalled event
-    const handleAppInstalled = () => {
+    const handleAppInstalled = (): void => {
       setIsInstalled(true)
       setIsInstallable(false)
       setDeferredPrompt(null)
@@ -143,7 +151,7 @@ export function usePWA() {
     }
 
     // Register service worker
-    const registerServiceWorker = async () => {
+    const registerServiceWorker = async (): Promise<void> => {
       if ('serviceWorker' in navigator) {
         try {
           // Unregister any existing service workers first
@@ -168,7 +176,7 @@ export function usePWA() {
     registerServiceWorker()
 
     // Cleanup
-    return () => {
+    return (): void => {
       window.removeEventListener(
         'beforeinstallprompt',
         handleBeforeInstallPrompt
@@ -178,7 +186,7 @@ export function usePWA() {
     }
   }, []) // Remove isInAppMode dependency to prevent infinite loop
 
-  const installApp = async () => {
+  const installApp = async (): Promise<void> => {
     if (!deferredPrompt) {
       return
     }
@@ -205,10 +213,12 @@ export function usePWA() {
   }
 
   return {
+    deferredPrompt,
     isInstalled,
     isInAppMode,
     isInstallable,
     isLoading,
     installApp,
+    canInstall: isInstallable && !isInstalled,
   }
 }

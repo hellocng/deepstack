@@ -41,7 +41,7 @@ const nextConfig = {
     return [
       {
         source: '/admin',
-        destination: '/royal/admin', // Default tenant
+        destination: '/royal/admin', // Default room
         permanent: false,
       },
     ]

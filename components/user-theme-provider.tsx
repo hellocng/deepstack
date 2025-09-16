@@ -29,7 +29,7 @@ export function UserThemeProvider({
         'color_theme',
         DEFAULT_PREFERENCES.color_theme!
       )
-      setColorTheme(userTheme)
+      setColorTheme(userTheme || DEFAULT_PREFERENCES.color_theme!)
     } else {
       // For non-players or when user is not loaded, use default theme
       setColorTheme(DEFAULT_PREFERENCES.color_theme!)

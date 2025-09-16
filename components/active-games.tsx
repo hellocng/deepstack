@@ -6,11 +6,11 @@ import { Badge } from '@/components/ui/badge'
 import { Gamepad2, Users, Play } from 'lucide-react'
 
 interface ActiveGamesProps {
-  tenantId: string
+  roomId: string
 }
 
 export function ActiveGames({
-  tenantId: _tenantId,
+  roomId: _roomId,
 }: ActiveGamesProps): JSX.Element {
   // This would fetch real data in a real implementation
   const activeGames = [

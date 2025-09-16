@@ -1,0 +1,190 @@
+---
+description: Cursor Rules Overview and Usage Guide
+globs: []
+alwaysApply: false
+---
+
+# Cursor Rules Overview
+
+This directory contains Cursor rules for the DeepStack project. These rules provide consistent guidance for code quality, ESLint configuration, and development standards.
+
+## Available Rules
+
+### 1. `eslint-config.mdc` - ESLint Configuration & Standards
+
+- **Type**: Always Applied
+- **Scope**: All TypeScript/JavaScript files
+- **Purpose**: Provides comprehensive ESLint configuration guidance and best practices
+- **Key Topics**: TypeScript rules, React rules, Next.js rules, code quality standards
+
+### 2. `fix-eslint-warnings.mdc` - Fix Current ESLint Warnings
+
+- **Type**: Manual (use @fix-eslint-warnings to invoke)
+- **Scope**: All TypeScript/JavaScript files
+- **Purpose**: Specific guidance for fixing current ESLint warnings in the project
+- **Key Topics**: Return type annotations, console statements, unused variables, any types
+
+### 3. `nextjs-lint-migration.mdc` - Next.js Lint Migration
+
+- **Type**: Manual (use @nextjs-lint-migration to invoke)
+- **Scope**: Configuration files
+- **Purpose**: Guide for migrating from deprecated `next lint` to ESLint CLI
+- **Key Topics**: Migration commands, configuration updates, CI/CD changes
+
+### 4. `code-quality-standards.mdc` - Code Quality Standards
+
+- **Type**: Always Applied
+- **Scope**: All TypeScript/JavaScript files
+- **Purpose**: Comprehensive code quality standards and ESLint integration
+- **Key Topics**: Function return types, unused variables, console statements, TypeScript types
+
+### 5. `database-safety.mdc` - Database Safety Rules
+
+- **Type**: Always Applied
+- **Scope**: Database, API, and configuration files
+- **Purpose**: Critical safety rules for database operations
+- **Key Topics**: Never reset production database, migration safety, backup procedures
+
+### 6. `file-protection.mdc` - File Protection Rules
+
+- **Type**: Always Applied
+- **Scope**: All files and directories
+- **Purpose**: Protection rules for gitignore files and build artifacts
+- **Key Topics**: Never delete gitignore files, safe cleanup procedures, file monitoring
+
+### 7. `debugging-cleanup.mdc` - Debugging and Console Log Cleanup
+
+- **Type**: Always Applied
+- **Scope**: All TypeScript/JavaScript files
+- **Purpose**: Rules for removing debugging code and console statements
+- **Key Topics**: Console statement removal, proper logging alternatives, cleanup checklist
+
+## How to Use These Rules
+
+### Automatic Application
+
+Rules marked as "Always Applied" are automatically included in the AI context when working with relevant files.
+
+### Manual Invocation
+
+To use manual rules, reference them in your chat:
+
+- `@fix-eslint-warnings` - Get help fixing current ESLint warnings
+- `@nextjs-lint-migration` - Get guidance on migrating from next lint
+- `@eslint-config` - Get ESLint configuration help
+- `@code-quality-standards` - Get code quality guidance
+- `@database-safety` - Get database safety guidance
+- `@file-protection` - Get file protection guidance
+- `@debugging-cleanup` - Get debugging cleanup guidance
+
+### Example Usage
+
+```
+@fix-eslint-warnings Help me fix the missing return type warnings in my components
+```
+
+```
+@nextjs-lint-migration I need to migrate from next lint to ESLint CLI
+```
+
+```
+@database-safety Help me understand safe database operations
+```
+
+```
+@file-protection What files should I never delete?
+```
+
+```
+@debugging-cleanup Help me remove console statements from my code
+```
+
+## Current ESLint Issues
+
+Based on the latest ESLint run, the main issues to address are:
+
+1. **Missing Return Type Annotations** (15 warnings)
+   - Files: `components/pwa-install.tsx`, `components/ui/drawer.tsx`, `components/ui/loading.tsx`, `hooks/use-pwa.ts`, `utils/supabase/middleware.ts`
+
+2. **Console Statements** (4 warnings)
+   - Files: `components/navigation.tsx`, `hooks/use-pwa.ts`, `middleware.ts`
+
+3. **Unused Variables** (2 warnings)
+   - Files: `public/sw.js`, `utils/supabase/middleware.ts`
+
+4. **Explicit Any Types** (2 warnings)
+   - Files: `middleware.ts`
+
+## Quick Fix Commands
+
+### Fix All Auto-fixable Issues
+
+```bash
+npx eslint . --fix
+```
+
+### Check for Remaining Issues
+
+```bash
+npx eslint . --max-warnings 0
+```
+
+### Fix Specific File Types
+
+```bash
+# Fix only TypeScript files
+npx eslint "**/*.{ts,tsx}" --fix
+
+# Fix only component files
+npx eslint "components/**/*.{ts,tsx}" --fix
+```
+
+## Integration with Development Workflow
+
+### Pre-commit Hooks
+
+The project is configured with lint-staged to automatically run ESLint on staged files:
+
+```json
+{
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": ["eslint --fix", "prettier --write"]
+  }
+}
+```
+
+### IDE Integration
+
+- Enable ESLint extension in VS Code
+- Configure auto-fix on save
+- Show linting errors inline
+
+### CI/CD Integration
+
+ESLint runs in CI/CD pipeline to ensure code quality:
+
+```bash
+npx eslint . --max-warnings 0
+```
+
+## Best Practices
+
+1. **Fix ESLint warnings immediately** - Don't let them accumulate
+2. **Use proper TypeScript types** - Avoid `any` types
+3. **Add return type annotations** - Especially for public functions
+4. **Remove console statements** - Use proper logging instead
+5. **Handle unused variables** - Prefix with underscore or remove
+
+## Getting Help
+
+- Use `@fix-eslint-warnings` for specific warning fixes
+- Use `@code-quality-standards` for general code quality guidance
+- Use `@eslint-config` for configuration help
+- Check the ESLint documentation for rule details
+
+## Rule Maintenance
+
+- Update rules when ESLint configuration changes
+- Add new rules for new patterns or standards
+- Remove outdated rules
+- Keep rules focused and actionable

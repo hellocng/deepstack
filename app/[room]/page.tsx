@@ -45,7 +45,7 @@ export default async function RoomPage({
       </div>
 
       {/* Dashboard Stats */}
-      <DashboardStats tenantId={roomData.id} />
+      <DashboardStats roomId={roomData.id} />
 
       {/* Quick Actions */}
       <QuickActions room={roomData} />
@@ -53,7 +53,7 @@ export default async function RoomPage({
       {/* Main Content Grid */}
       <div className='grid lg:grid-cols-2 gap-6'>
         {/* Active Games */}
-        <ActiveGames tenantId={roomData.id} />
+        <ActiveGames roomId={roomData.id} />
 
         {/* Friend Activity */}
         <FriendActivity />

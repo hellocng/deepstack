@@ -1,0 +1,258 @@
+---
+description: Debugging and console log cleanup rules
+globs: ['**/*.{ts,tsx,js,jsx}']
+alwaysApply: true
+---
+
+# Debugging and Console Log Cleanup
+
+## CRITICAL: Remove Debugging Code Before Production
+
+### Console Statement Rules
+
+**NEVER commit console statements to production code:**
+
+```typescript
+// ❌ FORBIDDEN - Remove these before committing
+console.log('Debug info')
+console.warn('Warning message')
+console.error('Error message')
+console.info('Info message')
+console.debug('Debug message')
+```
+
+### Debugging Code Cleanup
+
+**Remove all debugging code when features are confirmed working:**
+
+```typescript
+// ❌ FORBIDDEN - Remove debugging code
+console.log('User data:', user)
+console.log('API response:', response)
+console.log('Component rendered')
+console.log('State updated:', state)
+
+// ❌ FORBIDDEN - Remove debugger statements
+debugger
+
+// ❌ FORBIDDEN - Remove temporary debugging variables
+const debugMode = true
+const isDebugging = process.env.NODE_ENV === 'development'
+```
+
+### Proper Logging Alternatives
+
+**Use proper logging instead of console statements:**
+
+```typescript
+// ✅ GOOD - Use proper logging library
+import { logger } from '@/lib/logger'
+
+// For important information
+logger.info('User action completed')
+logger.warn('Deprecated API used')
+logger.error('Database connection failed')
+
+// ✅ GOOD - Conditional logging for development only
+if (process.env.NODE_ENV === 'development') {
+  console.log('Development debug info')
+}
+
+// ✅ GOOD - Use error tracking service
+import { trackError } from '@/lib/error-tracking'
+
+try {
+  // risky operation
+} catch (error) {
+  trackError(error, { context: 'user-action' })
+}
+```
+
+### Development vs Production Logging
+
+#### Development Logging
+
+```typescript
+// ✅ GOOD - Development-only logging
+function debugLog(message: string, data?: any): void {
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[DEBUG] ${message}`, data)
+  }
+}
+
+// Usage
+debugLog('Component mounted', { props })
+debugLog('API call started', { url, params })
+```
+
+#### Production Logging
+
+```typescript
+// ✅ GOOD - Production logging
+import { logger } from '@/lib/logger'
+
+function logUserAction(action: string, userId: string): void {
+  logger.info('User action', {
+    action,
+    userId,
+    timestamp: new Date().toISOString(),
+  })
+}
+
+function logError(error: Error, context: Record<string, any>): void {
+  logger.error('Application error', {
+    message: error.message,
+    stack: error.stack,
+    context,
+  })
+}
+```
+
+### Cleanup Checklist
+
+**Before committing code, ensure:**
+
+- [ ] No `console.log` statements
+- [ ] No `console.warn` statements
+- [ ] No `console.error` statements
+- [ ] No `console.info` statements
+- [ ] No `console.debug` statements
+- [ ] No `debugger` statements
+- [ ] No temporary debugging variables
+- [ ] No commented-out debugging code
+- [ ] No development-only console statements
+
+### ESLint Integration
+
+**Use ESLint to catch console statements:**
+
+```json
+// .eslintrc.json
+{
+  "rules": {
+    "no-console": "warn",
+    "no-debugger": "error"
+  }
+}
+```
+
+**Run ESLint to check for console statements:**
+
+```bash
+# Check for console statements
+npx eslint . --rule "no-console: error"
+
+# Fix auto-fixable issues
+npx eslint . --fix
+```
+
+### Pre-commit Hooks
+
+**Add pre-commit hooks to prevent console statements:**
+
+```bash
+#!/bin/bash
+# .git/hooks/pre-commit
+
+# Check for console statements
+if git diff --cached --name-only | grep -E "\.(ts|tsx|js|jsx)$" | xargs grep -l "console\."; then
+  echo "ERROR: Console statements found in staged files"
+  echo "Please remove all console.log, console.warn, console.error statements"
+  exit 1
+fi
+
+# Check for debugger statements
+if git diff --cached --name-only | grep -E "\.(ts|tsx|js|jsx)$" | xargs grep -l "debugger"; then
+  echo "ERROR: Debugger statements found in staged files"
+  echo "Please remove all debugger statements"
+  exit 1
+fi
+```
+
+### Code Review Guidelines
+
+**During code review, check for:**
+
+1. **Console statements** - Should be removed or replaced with proper logging
+2. **Debugger statements** - Should never be in production code
+3. **Temporary debugging code** - Should be cleaned up
+4. **Development-only code** - Should be properly gated
+5. **Commented debugging code** - Should be removed entirely
+
+### Exception Handling
+
+**When console statements are necessary:**
+
+```typescript
+// ✅ GOOD - Error logging in catch blocks (temporary)
+try {
+  // risky operation
+} catch (error) {
+  // TODO: Replace with proper error tracking
+  console.error('Temporary error logging:', error)
+  throw error
+}
+
+// ✅ GOOD - Development debugging (properly gated)
+if (process.env.NODE_ENV === 'development' && process.env.DEBUG) {
+  console.log('Debug info:', data)
+}
+```
+
+### Migration Strategy
+
+**When removing console statements:**
+
+1. **Identify the purpose** - What was the console statement trying to achieve?
+2. **Replace with proper logging** - Use appropriate logging level
+3. **Add error tracking** - For error cases, use error tracking service
+4. **Test thoroughly** - Ensure functionality still works
+5. **Remove entirely** - If no longer needed, remove completely
+
+### Common Patterns to Remove
+
+```typescript
+// ❌ REMOVE - Debugging state changes
+console.log('State changed:', state)
+console.log('Props received:', props)
+
+// ❌ REMOVE - API debugging
+console.log('API request:', request)
+console.log('API response:', response)
+
+// ❌ REMOVE - Component lifecycle debugging
+console.log('Component mounted')
+console.log('Component updated')
+console.log('Component unmounted')
+
+// ❌ REMOVE - User action debugging
+console.log('User clicked button')
+console.log('Form submitted')
+console.log('Navigation occurred')
+
+// ❌ REMOVE - Performance debugging
+console.log('Render time:', performance.now())
+console.log('Memory usage:', process.memoryUsage())
+```
+
+### Best Practices
+
+1. **Use proper logging libraries** - Don't rely on console statements
+2. **Implement error tracking** - Use services like Sentry, LogRocket, etc.
+3. **Add performance monitoring** - Use APM tools for performance insights
+4. **Use development tools** - React DevTools, Redux DevTools, etc.
+5. **Implement proper error boundaries** - Handle errors gracefully
+6. **Use TypeScript strict mode** - Catch issues at compile time
+7. **Write comprehensive tests** - Reduce need for debugging in production
+
+### Team Guidelines
+
+1. **Code review requirement** - All console statements must be removed
+2. **Pre-commit hooks** - Automatically check for console statements
+3. **CI/CD integration** - Fail builds with console statements
+4. **Documentation** - Document proper logging practices
+5. **Training** - Train team on proper debugging and logging
+
+## Summary
+
+**Remember**: Console statements are for development only. Production code should use proper logging, error tracking, and monitoring services. Always clean up debugging code before committing to ensure professional, maintainable code.
