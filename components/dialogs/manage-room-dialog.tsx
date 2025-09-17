@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
@@ -293,16 +292,11 @@ export function ManageRoomDialog({
         <DialogHeader>
           <DialogTitle className='flex items-center gap-2'>
             <Building2 className='h-5 w-5' />
-            {room.name}
+            Manage Room
             <Badge variant={room.is_active ? 'default' : 'secondary'}>
               {room.is_active ? 'Active' : 'Inactive'}
             </Badge>
           </DialogTitle>
-          <DialogDescription>
-            {superAdmin
-              ? 'Manage basic room information. Contact details and security settings are managed by room operators.'
-              : 'Manage room information, contact details, and security settings.'}
-          </DialogDescription>
         </DialogHeader>
         {superAdmin ? (
           <RoomBasicForm
@@ -314,6 +308,7 @@ export function ManageRoomDialog({
             onCancel={() => onOpenChange(false)}
             isLoading={isLoading}
             submitLabel='Update Room'
+            showActions={false}
           />
         ) : (
           <RoomForm
@@ -333,15 +328,15 @@ export function ManageRoomDialog({
             isLoading={isLoading}
             submitLabel='Update Room'
             showSecuritySettings={!!roomAdmin}
+            showActions={false}
           />
         )}
 
         {/* Action Buttons */}
-        <div className='flex justify-between pt-6 border-t'>
+        <div className='flex justify-between gap-3 pt-6 border-t'>
           <div className='flex gap-2'>
             <Button
               variant={room.is_active ? 'destructive' : 'default'}
-              size='sm'
               onClick={handleToggleStatus}
               disabled={isLoading}
             >
@@ -359,12 +354,28 @@ export function ManageRoomDialog({
             </Button>
             <Button
               variant='destructive'
-              size='sm'
               onClick={handleDeleteRoom}
               disabled={isLoading}
             >
               <Trash2 className='h-4 w-4 mr-2' />
               Delete
+            </Button>
+          </div>
+          <div className='flex gap-2'>
+            <Button
+              type='button'
+              variant='outline'
+              onClick={() => onOpenChange(false)}
+              disabled={isLoading}
+            >
+              Cancel
+            </Button>
+            <Button
+              type='submit'
+              form={superAdmin ? 'room-basic-form' : 'room-form'}
+              disabled={isLoading}
+            >
+              {isLoading ? 'Updating...' : 'Update Room'}
             </Button>
           </div>
         </div>

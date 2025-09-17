@@ -8,7 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { RoomForm } from '@/components/forms/room-form'
+import { RoomCreationForm } from '@/components/forms/room-creation-form'
 import { createClient } from '@/lib/supabase/client'
 import { TablesInsert } from '@/types'
 import { toast } from 'sonner'
@@ -29,11 +29,6 @@ export function CreateRoomDialog({
   const handleSubmit = async (formData: {
     name: string
     code: string
-    description?: string
-    website_url?: string
-    contact_email?: string
-    address?: string
-    phone?: string
   }): Promise<void> => {
     setIsLoading(true)
 
@@ -52,18 +47,13 @@ export function CreateRoomDialog({
         return
       }
 
-      // Create the room
-      const { data: _data, error } = await supabase
+      // Create the room with minimal information - contact details will be managed by room operators
+      const { error } = await supabase
         .from('rooms')
         .insert([
           {
             name: formData.name,
             code: formData.code,
-            description: formData.description || null,
-            website_url: formData.website_url || null,
-            contact_email: formData.contact_email || null,
-            address: formData.address || null,
-            phone: formData.phone || null,
             is_active: true,
           },
         ] as TablesInsert<'rooms'>[])
@@ -96,10 +86,11 @@ export function CreateRoomDialog({
         <DialogHeader>
           <DialogTitle>Create New Room</DialogTitle>
           <DialogDescription>
-            Create a new poker room with basic information and contact details.
+            Create a new poker room with basic information. Contact details and
+            security settings will be managed by room operators.
           </DialogDescription>
         </DialogHeader>
-        <RoomForm
+        <RoomCreationForm
           onSubmit={handleSubmit}
           onCancel={() => onOpenChange(false)}
           isLoading={isLoading}

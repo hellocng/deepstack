@@ -32,7 +32,6 @@ const roomFormSchema = z.object({
       /^[a-z0-9-]+$/,
       'Room code must contain only lowercase letters, numbers, and hyphens'
     ),
-  description: z.string().optional(),
   website_url: z
     .string()
     .optional()
@@ -49,7 +48,7 @@ const roomFormSchema = z.object({
     ),
   address: z.string().optional(),
   phone: z.string().optional(),
-  ip_restriction_enabled: z.boolean(),
+  ip_restriction_enabled: z.boolean().optional(),
   allowed_ips: z.array(z.string()).optional(),
 })
 
@@ -61,6 +60,8 @@ interface RoomFormProps {
   onCancel: () => void
   isLoading?: boolean
   submitLabel?: string
+  showSecuritySettings?: boolean
+  showActions?: boolean
 }
 
 export function RoomForm({
@@ -69,6 +70,8 @@ export function RoomForm({
   onCancel,
   isLoading = false,
   submitLabel = 'Create Room',
+  showSecuritySettings = false,
+  showActions = true,
 }: RoomFormProps): JSX.Element {
   const {
     register,
@@ -81,7 +84,6 @@ export function RoomForm({
     defaultValues: {
       name: initialData?.name || '',
       code: initialData?.code || '',
-      description: initialData?.description || '',
       website_url: initialData?.website_url || '',
       contact_email: initialData?.contact_email || '',
       address: initialData?.address || '',
@@ -117,6 +119,7 @@ export function RoomForm({
 
   return (
     <form
+      id='room-form'
       onSubmit={handleSubmit(onFormSubmit)}
       className='space-y-6'
     >
@@ -164,16 +167,6 @@ export function RoomForm({
               <p className='text-xs text-muted-foreground'>
                 Used in URLs: /{watchedCode || 'room-code'}
               </p>
-            </div>
-
-            <div className='space-y-2'>
-              <Label htmlFor='description'>Description</Label>
-              <textarea
-                id='description'
-                {...register('description')}
-                placeholder='Brief description of the poker room...'
-                className='w-full min-h-[80px] px-3 py-2 border border-input bg-background rounded-md text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
-              />
             </div>
           </CardContent>
         </Card>
@@ -250,101 +243,107 @@ export function RoomForm({
           </CardContent>
         </Card>
 
-        {/* Security Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle className='flex items-center gap-2'>
-              <Shield className='h-5 w-5' />
-              Security Settings
-            </CardTitle>
-          </CardHeader>
-          <CardContent className='space-y-4'>
-            <div className='flex items-center space-x-2'>
-              <Checkbox
-                id='ip_restriction_enabled'
-                checked={watchedIPRestrictionEnabled}
-                onCheckedChange={(checked) =>
-                  setValue('ip_restriction_enabled', checked as boolean)
-                }
-              />
-              <Label
-                htmlFor='ip_restriction_enabled'
-                className='text-sm font-medium'
-              >
-                Enable IP restrictions for admin access
-              </Label>
-            </div>
+        {/* Security Settings - Only show for room operators */}
+        {showSecuritySettings && (
+          <Card>
+            <CardHeader>
+              <CardTitle className='flex items-center gap-2'>
+                <Shield className='h-5 w-5' />
+                Security Settings
+              </CardTitle>
+            </CardHeader>
+            <CardContent className='space-y-4'>
+              <div className='flex items-center space-x-2'>
+                <Checkbox
+                  id='ip_restriction_enabled'
+                  checked={watchedIPRestrictionEnabled}
+                  onCheckedChange={(checked) =>
+                    setValue('ip_restriction_enabled', checked as boolean)
+                  }
+                />
+                <Label
+                  htmlFor='ip_restriction_enabled'
+                  className='text-sm font-medium'
+                >
+                  Enable IP restrictions for admin access
+                </Label>
+              </div>
 
-            {watchedIPRestrictionEnabled && (
-              <div className='space-y-3'>
-                <div className='space-y-2'>
-                  <Label htmlFor='allowed_ips'>Allowed IP Addresses</Label>
-                  <div className='text-sm text-muted-foreground'>
-                    Enter IP addresses, CIDR ranges, or wildcard patterns (one
-                    per line)
-                  </div>
-                  <Textarea
-                    id='allowed_ips'
-                    placeholder='192.168.1.0/24&#10;10.0.0.1&#10;203.0.113.0/24&#10;192.168.2.*'
-                    value={formatIPRestrictions(watchedAllowedIPs || null)}
-                    onChange={(e) => handleIPRestrictionsChange(e.target.value)}
-                    className='min-h-[120px] font-mono text-sm'
-                  />
-                  <div className='text-xs text-muted-foreground space-y-1'>
-                    <p>
-                      <strong>Examples:</strong>
-                    </p>
-                    <p>
-                      • <code>192.168.1.100</code> - Exact IP address
-                    </p>
-                    <p>
-                      • <code>192.168.1.0/24</code> - CIDR range
-                      (192.168.1.1-254)
-                    </p>
-                    <p>
-                      • <code>192.168.2.*</code> - Wildcard pattern
-                      (192.168.2.1-255)
-                    </p>
-                  </div>
-                </div>
-
-                <Alert>
-                  <AlertTriangle className='h-4 w-4' />
-                  <AlertDescription>
-                    <div className='space-y-1'>
-                      <p className='font-medium'>Important Security Note:</p>
-                      <p className='text-sm'>
-                        IP restrictions only apply to admin routes. Players can
-                        still access the room from any IP address. Make sure to
-                        test your IP restrictions before enabling them in
-                        production.
+              {watchedIPRestrictionEnabled && (
+                <div className='space-y-3'>
+                  <div className='space-y-2'>
+                    <Label htmlFor='allowed_ips'>Allowed IP Addresses</Label>
+                    <div className='text-sm text-muted-foreground'>
+                      Enter IP addresses, CIDR ranges, or wildcard patterns (one
+                      per line)
+                    </div>
+                    <Textarea
+                      id='allowed_ips'
+                      placeholder='192.168.1.0/24&#10;10.0.0.1&#10;203.0.113.0/24&#10;192.168.2.*'
+                      value={formatIPRestrictions(watchedAllowedIPs || null)}
+                      onChange={(e) =>
+                        handleIPRestrictionsChange(e.target.value)
+                      }
+                      className='min-h-[120px] font-mono text-sm'
+                    />
+                    <div className='text-xs text-muted-foreground space-y-1'>
+                      <p>
+                        <strong>Examples:</strong>
+                      </p>
+                      <p>
+                        • <code>192.168.1.100</code> - Exact IP address
+                      </p>
+                      <p>
+                        • <code>192.168.1.0/24</code> - CIDR range
+                        (192.168.1.1-254)
+                      </p>
+                      <p>
+                        • <code>192.168.2.*</code> - Wildcard pattern
+                        (192.168.2.1-255)
                       </p>
                     </div>
-                  </AlertDescription>
-                </Alert>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                  </div>
+
+                  <Alert>
+                    <AlertTriangle className='h-4 w-4' />
+                    <AlertDescription>
+                      <div className='space-y-1'>
+                        <p className='font-medium'>Important Security Note:</p>
+                        <p className='text-sm'>
+                          IP restrictions only apply to admin routes. Players
+                          can still access the room from any IP address. Make
+                          sure to test your IP restrictions before enabling them
+                          in production.
+                        </p>
+                      </div>
+                    </AlertDescription>
+                  </Alert>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Form Actions */}
-      <div className='flex justify-end gap-3'>
-        <Button
-          type='button'
-          variant='outline'
-          onClick={onCancel}
-          disabled={isLoading}
-        >
-          Cancel
-        </Button>
-        <Button
-          type='submit'
-          disabled={isLoading}
-        >
-          {isLoading ? 'Saving...' : submitLabel}
-        </Button>
-      </div>
+      {showActions && (
+        <div className='flex justify-end gap-3'>
+          <Button
+            type='button'
+            variant='outline'
+            onClick={onCancel}
+            disabled={isLoading}
+          >
+            Cancel
+          </Button>
+          <Button
+            type='submit'
+            disabled={isLoading}
+          >
+            {isLoading ? 'Saving...' : submitLabel}
+          </Button>
+        </div>
+      )}
     </form>
   )
 }

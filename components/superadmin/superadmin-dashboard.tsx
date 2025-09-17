@@ -4,19 +4,12 @@ import { useEffect, useState, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Tables } from '@/types'
 import { useUser, useSuperAdmin } from '@/lib/auth/user-context'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Building2, Users, Settings, Gamepad2 } from 'lucide-react'
+import { Plus, Building2, Settings } from 'lucide-react'
 import { CreateRoomDialog } from '@/components/dialogs/create-room-dialog'
-import { EditRoomDialog } from '@/components/dialogs/edit-room-dialog'
-import { RoomManagementDialog } from '@/components/dialogs/room-management-dialog'
+import { ManageRoomDialog } from '@/components/dialogs/manage-room-dialog'
 import { Loading } from '@/components/ui/loading'
 
 type Room = Tables<'rooms'>
@@ -41,8 +34,7 @@ export function SuperAdminDashboard(): JSX.Element {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
-  const [editDialogOpen, setEditDialogOpen] = useState(false)
-  const [managementDialogOpen, setManagementDialogOpen] = useState(false)
+  const [manageDialogOpen, setManageDialogOpen] = useState(false)
   const [selectedRoom, setSelectedRoom] = useState<RoomWithStats | null>(null)
 
   // Memoize the superAdmin check to prevent unnecessary re-renders
@@ -148,14 +140,9 @@ export function SuperAdminDashboard(): JSX.Element {
     setCreateDialogOpen(true)
   }
 
-  const handleEditRoom = (room: RoomWithStats): void => {
-    setSelectedRoom(room)
-    setEditDialogOpen(true)
-  }
-
   const handleManageRoom = (room: RoomWithStats): void => {
     setSelectedRoom(room)
-    setManagementDialogOpen(true)
+    setManageDialogOpen(true)
   }
 
   const handleRoomUpdated = (): void => {
@@ -249,49 +236,8 @@ export function SuperAdminDashboard(): JSX.Element {
                     {room.is_active ? 'Active' : 'Inactive'}
                   </Badge>
                 </div>
-                <CardDescription>{room.description}</CardDescription>
               </CardHeader>
               <CardContent className='space-y-4'>
-                {/* Statistics */}
-                <div className='grid grid-cols-3 gap-2 text-center'>
-                  <div className='space-y-1'>
-                    <div className='flex items-center justify-center gap-1 text-sm text-muted-foreground'>
-                      <Users className='h-3 w-3' />
-                      <span className='text-xs'>Users</span>
-                    </div>
-                    <p className='text-lg font-semibold'>
-                      {room.operator_count || 0}
-                    </p>
-                  </div>
-                  <div className='space-y-1'>
-                    <div className='flex items-center justify-center gap-1 text-sm text-muted-foreground'>
-                      <Gamepad2 className='h-3 w-3' />
-                      <span className='text-xs'>Games</span>
-                    </div>
-                    <p className='text-lg font-semibold'>
-                      {room.total_games || 0}
-                    </p>
-                  </div>
-                  <div className='space-y-1'>
-                    <div className='flex items-center justify-center gap-1 text-sm text-muted-foreground'>
-                      <Building2 className='h-3 w-3' />
-                      <span className='text-xs'>Tables</span>
-                    </div>
-                    <p className='text-lg font-semibold'>
-                      {room.total_tables || 0}
-                    </p>
-                  </div>
-                  <div className='space-y-1'>
-                    <div className='flex items-center justify-center gap-1 text-sm text-muted-foreground'>
-                      <Users className='h-3 w-3' />
-                      <span className='text-xs'>Waitlist</span>
-                    </div>
-                    <p className='text-lg font-semibold'>
-                      {room.total_waitlist_players || 0}
-                    </p>
-                  </div>
-                </div>
-
                 {/* Staff Preview */}
                 {(room.operator_count || 0) > 0 && (
                   <div className='space-y-2'>
@@ -318,15 +264,6 @@ export function SuperAdminDashboard(): JSX.Element {
                     <Settings className='h-4 w-4 mr-2' />
                     Manage
                   </Button>
-                  <Button
-                    variant='outline'
-                    size='sm'
-                    className='flex-1'
-                    onClick={() => handleEditRoom(room)}
-                  >
-                    <Building2 className='h-4 w-4 mr-2' />
-                    Edit
-                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -341,22 +278,11 @@ export function SuperAdminDashboard(): JSX.Element {
         onRoomCreated={handleRoomUpdated}
       />
 
-      <EditRoomDialog
-        open={editDialogOpen}
-        onOpenChange={setEditDialogOpen}
+      <ManageRoomDialog
+        open={manageDialogOpen}
+        onOpenChange={setManageDialogOpen}
         room={selectedRoom}
         onRoomUpdated={handleRoomUpdated}
-      />
-
-      <RoomManagementDialog
-        open={managementDialogOpen}
-        onOpenChange={setManagementDialogOpen}
-        room={selectedRoom}
-        onRoomUpdated={handleRoomUpdated}
-        onEditRoom={() => {
-          setManagementDialogOpen(false)
-          setEditDialogOpen(true)
-        }}
       />
     </div>
   )
