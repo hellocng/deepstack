@@ -208,7 +208,7 @@ export function CreateOperatorDialog({
                 <SelectItem value='dealer'>Dealer</SelectItem>
                 <SelectItem value='supervisor'>Supervisor</SelectItem>
                 <SelectItem value='admin'>Admin</SelectItem>
-                <SelectItem value='superadmin'>SuperAdmin</SelectItem>
+                <SelectItem value='superadmin'>Super Admin</SelectItem>
               </SelectContent>
             </Select>
             {form.formState.errors.role && (

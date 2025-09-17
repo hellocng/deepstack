@@ -20,7 +20,7 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: 'Home | DeepStack',
+  title: 'DeepStack',
   description:
     'Find poker games, join waitlists, and connect with friends across multiple poker rooms.',
   keywords: ['poker', 'poker room', 'waitlist', 'tournaments', 'games'],

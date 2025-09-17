@@ -367,7 +367,7 @@ await logIPViolation(
 ### 3. Operational Guidelines
 
 - **Test from different locations** before going live
-- **Have backup access methods** (superadmin bypass)
+- **Have backup access methods** (Super Admin bypass)
 - **Document emergency procedures** for IP lockouts
 - **Train staff** on IP restriction management
 
@@ -396,10 +396,10 @@ if (process.env.NODE_ENV === 'development') {
 
 ### 3. Emergency Access
 
-Superadmins can bypass IP restrictions:
+Super Admins can bypass IP restrictions:
 
 ```typescript
-// Superadmins are not subject to IP restrictions
+// Super Admins are not subject to IP restrictions
 if (operatorData.role === 'superadmin') {
   // Allow access regardless of IP
 }

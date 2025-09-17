@@ -186,7 +186,7 @@ export function SuperAdminDashboard(): JSX.Element {
     <div className='space-y-6'>
       {/* Large Superadmin Title */}
       <div className='text-center py-8'>
-        <h1 className='text-5xl font-bold tracking-tight mb-2'>Superadmin</h1>
+        <h1 className='text-5xl font-bold tracking-tight mb-2'>Super Admin</h1>
         <div className='w-24 h-1 bg-primary mx-auto rounded-full'></div>
       </div>
 

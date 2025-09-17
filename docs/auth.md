@@ -29,7 +29,7 @@ The system supports multiple tenants with proper data isolation and role-based a
 - The navigation avatar popover shows:
   - **Players**: alias + formatted phone number caption
   - **Operators**: room name + role caption
-  - **Superadmins**: "Super Admin" label + verified email from `authUser`
+  - **Super Admins**: "Super Admin" label + verified email from `authUser`
 
 ## Authentication Flow
 

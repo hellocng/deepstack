@@ -192,7 +192,7 @@ get_player_analytics(player_id, time_period = '30_days')
 
 ## 🎨 Dashboard Design
 
-### **Superadmin Dashboard**
+### **Super Admin Dashboard**
 
 - **Multi-room Overview**: All rooms with key metrics
 - **Performance Comparison**: Room-to-room analytics

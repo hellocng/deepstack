@@ -166,8 +166,8 @@ export async function requireAdminAccess(
 }
 
 /**
- * Require superadmin access for API routes
- * Superadmins bypass IP restrictions but still need authentication
+ * Require Super Admin access for API routes
+ * Super Admins bypass IP restrictions but still need authentication
  */
 export async function requireSuperAdminAccess(): Promise<{
   user: ServerUser
@@ -179,7 +179,7 @@ export async function requireSuperAdminAccess(): Promise<{
   }
 
   if (user.profile.role !== 'superadmin') {
-    throw new Error('Superadmin access required')
+    throw new Error('Super Admin access required')
   }
 
   return {

@@ -78,12 +78,12 @@ export function SuperAdminSignInForm(): JSX.Element {
           // User is not a superadmin, sign them out and show error
           await supabase.auth.signOut()
           setError(
-            'Access denied. This account is not authorized for superadmin access.'
+            'Access denied. This account is not authorized for Super Admin access.'
           )
           return
         }
 
-        // Successfully authenticated as superadmin, redirect to superadmin dashboard
+        // Successfully authenticated as superadmin, redirect to Super Admin dashboard
         router.push('/superadmin')
       }
     } catch (err) {
@@ -93,7 +93,7 @@ export function SuperAdminSignInForm(): JSX.Element {
       } else {
         setError(err instanceof Error ? err.message : 'Failed to sign in')
       }
-      handleError(err, 'SuperAdmin signin')
+      handleError(err, 'Super Admin signin')
     } finally {
       setLoading(false)
     }
@@ -104,10 +104,10 @@ export function SuperAdminSignInForm(): JSX.Element {
       <Card className='w-full max-w-md hover:shadow-none hover:cursor-default'>
         <CardHeader className='text-center pb-6'>
           <CardTitle className='text-2xl font-bold select-none cursor-default'>
-            SuperAdmin Sign In
+            Super Admin Sign In
           </CardTitle>
           <CardDescription className='mt-2 select-none cursor-default'>
-            Sign in to access the superadmin dashboard
+            Sign in to access the Super Admin dashboard
           </CardDescription>
         </CardHeader>
         <CardContent className='px-6 pb-6'>

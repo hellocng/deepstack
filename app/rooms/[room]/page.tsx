@@ -4,6 +4,7 @@ import { ActiveGames } from '@/components/active-games'
 import { FriendActivity } from '@/components/friend-activity'
 import { QuickActions } from '@/components/quick-actions'
 import { Tables } from '@/types'
+import type { Metadata } from 'next'
 
 type Room = Tables<'rooms'>
 
@@ -11,6 +12,25 @@ interface RoomPageProps {
   params: Promise<{
     room: string
   }>
+}
+
+export async function generateMetadata({
+  params,
+}: RoomPageProps): Promise<Metadata> {
+  const supabase = await createClient()
+  const resolvedParams = await params
+
+  const { data: room } = await supabase
+    .from('rooms')
+    .select('name')
+    .eq('code', resolvedParams.room)
+    .eq('is_active', true)
+    .single()
+
+  return {
+    title: `${room?.name || 'Room'} | DeepStack`,
+    description: `Find poker games, join waitlists, and connect with friends at ${room?.name || 'this poker room'}.`,
+  }
 }
 
 export default async function RoomPage({
