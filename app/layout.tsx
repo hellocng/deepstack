@@ -16,6 +16,7 @@ const inter = Inter({
   display: 'swap', // Prevents FOUT
   preload: true, // Preloads the font
   fallback: ['system-ui', 'arial'], // Fallback fonts
+  variable: '--font-inter', // CSS variable for consistent font loading
 })
 
 export const metadata: Metadata = {
@@ -35,6 +36,7 @@ export default async function RootLayout({
   return (
     <html
       lang='en'
+      className={inter.variable}
       suppressHydrationWarning
     >
       <head>
@@ -104,6 +106,61 @@ export default async function RootLayout({
                       document.documentElement.classList.remove('dark');
                     }
                   }
+
+                  // Apply neutral color theme immediately to prevent flash
+                  const isDark = document.documentElement.classList.contains('dark');
+                  const neutralTheme = {
+                    light: {
+                      '--background': '0 0% 100%',
+                      '--foreground': '0 0% 3.9%',
+                      '--card': '0 0% 100%',
+                      '--card-foreground': '0 0% 3.9%',
+                      '--popover': '0 0% 100%',
+                      '--popover-foreground': '0 0% 3.9%',
+                      '--primary': '0 0% 9%',
+                      '--primary-foreground': '0 0% 98%',
+                      '--secondary': '0 0% 96.1%',
+                      '--secondary-foreground': '0 0% 9%',
+                      '--muted': '0 0% 96.1%',
+                      '--muted-foreground': '0 0% 45.1%',
+                      '--accent': '0 0% 96.1%',
+                      '--accent-foreground': '0 0% 9%',
+                      '--destructive': '0 84.2% 60.2%',
+                      '--destructive-foreground': '0 0% 98%',
+                      '--border': '0 0% 89.8%',
+                      '--input': '0 0% 89.8%',
+                      '--ring': '0 0% 3.9%'
+                    },
+                    dark: {
+                      '--background': '0 0% 3.9%',
+                      '--foreground': '0 0% 98%',
+                      '--card': '0 0% 3.9%',
+                      '--card-foreground': '0 0% 98%',
+                      '--popover': '0 0% 3.9%',
+                      '--popover-foreground': '0 0% 98%',
+                      '--primary': '0 0% 98%',
+                      '--primary-foreground': '0 0% 9%',
+                      '--secondary': '0 0% 14.9%',
+                      '--secondary-foreground': '0 0% 98%',
+                      '--muted': '0 0% 14.9%',
+                      '--muted-foreground': '0 0% 63.9%',
+                      '--accent': '0 0% 14.9%',
+                      '--accent-foreground': '0 0% 98%',
+                      '--destructive': '0 62.8% 30.6%',
+                      '--destructive-foreground': '0 0% 98%',
+                      '--border': '0 0% 14.9%',
+                      '--input': '0 0% 14.9%',
+                      '--ring': '0 0% 83.1%'
+                    }
+                  };
+                  
+                  const colors = isDark ? neutralTheme.dark : neutralTheme.light;
+                  Object.entries(colors).forEach(([property, value]) => {
+                    document.documentElement.style.setProperty(property, value);
+                  });
+
+                  // Apply font immediately to prevent FOUT
+                  document.documentElement.style.setProperty('--font-inter', 'Inter, system-ui, -apple-system, sans-serif');
                 } catch (e) {
                   // Fallback to light mode
                   document.documentElement.classList.add('light');
@@ -114,7 +171,7 @@ export default async function RootLayout({
           }}
         />
       </head>
-      <body className={inter.className}>
+      <body>
         <UserProvider initialUser={initialUser}>
           <ThemeProvider>
             <UserThemeProvider>
