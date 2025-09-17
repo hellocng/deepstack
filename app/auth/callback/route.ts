@@ -14,7 +14,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (error) {
-      // eslint-disable-next-line no-console
+       
       console.error('Auth callback error:', error)
       return NextResponse.redirect(
         new URL('/signin?error=auth_callback_failed', request.url)
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     })
 
     if (error) {
-      // eslint-disable-next-line no-console
+       
       console.error('Token verification error:', error)
       return NextResponse.redirect(
         new URL('/signin?error=verification_failed', request.url)

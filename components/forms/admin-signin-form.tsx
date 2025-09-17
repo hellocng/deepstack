@@ -15,6 +15,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { AlertTriangle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { handleError, isExpectedAuthError } from '@/lib/utils/error-handler'
 import { useUser } from '@/lib/auth/user-context'
@@ -41,6 +43,8 @@ export function AdminSignInForm(): JSX.Element {
   const { refreshUser } = useUser()
   const roomSlug = params?.room ?? ''
   const redirectParam = searchParams.get('redirect')
+  const ipError = searchParams.get('error')
+  const clientIP = searchParams.get('ip')
   const redirectTo =
     redirectParam && redirectParam.startsWith('/')
       ? redirectParam
@@ -118,6 +122,30 @@ export function AdminSignInForm(): JSX.Element {
           </CardDescription>
         </CardHeader>
         <CardContent className='px-6 pb-6'>
+          {ipError === 'ip_restricted' && (
+            <Alert
+              variant='destructive'
+              className='mb-6'
+            >
+              <AlertTriangle className='h-4 w-4' />
+              <AlertDescription>
+                <div className='space-y-2'>
+                  <p className='font-medium'>
+                    Access denied from your IP address
+                  </p>
+                  <p className='text-sm'>
+                    Your IP address ({clientIP}) is not authorized to access
+                    this room&apos;s admin panel.
+                  </p>
+                  <p className='text-sm'>
+                    Please contact your administrator to add your IP to the
+                    allowed list.
+                  </p>
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+
           <form
             onSubmit={form.handleSubmit(onSubmit)}
             className='space-y-6'

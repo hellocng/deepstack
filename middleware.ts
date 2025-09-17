@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database, Operator } from '@/types'
 import { createMiddlewareClient } from '@/lib/supabase/middleware-client'
+import { validateIPAccess } from '@/lib/ip-validation'
 
 // Route classification helpers
 const ADMIN_SEGMENT = 'admin'
@@ -134,6 +135,30 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
     return applyCookies(result)
   }
 
+  // IP validation for admin routes (before authentication check)
+  if (isAdminRoute(pathname)) {
+    const room = extractRoomFromPath(pathname)
+    if (room) {
+      const ipValidation = await validateIPAccess(req, room, supabase)
+
+      if (!ipValidation.isAllowed) {
+        // Log the attempt for security monitoring
+        console.warn(
+          `IP restriction violation: ${ipValidation.clientIP} attempted to access ${room}/admin - ${ipValidation.reason}`
+        )
+
+        // Redirect to signin with error message
+        const errorUrl = new URL(`/${room}/admin/signin`, req.url)
+        errorUrl.searchParams.set('error', 'ip_restricted')
+        errorUrl.searchParams.set('ip', ipValidation.clientIP)
+        return applyCookies(NextResponse.redirect(errorUrl))
+      }
+
+      // Add IP info to headers for logging/monitoring
+      result.headers.set('x-client-ip', ipValidation.clientIP)
+    }
+  }
+
   // Handle authenticated users - determine user type
   let userType: 'player' | 'operator' | 'superadmin' | null = null
   let operatorData: Pick<Operator, 'id' | 'role' | 'room_id'> | null = null
@@ -209,7 +234,11 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
   // Validate room exists for room-specific routes
   if (isPlayerRoute(pathname) || isAdminRoute(pathname)) {
     const room = extractRoomFromPath(pathname)
-    if (room && !isReservedSegment(room) && !(await validateRoomExists(room, supabase))) {
+    if (
+      room &&
+      !isReservedSegment(room) &&
+      !(await validateRoomExists(room, supabase))
+    ) {
       return applyCookies(NextResponse.redirect(new URL('/rooms', req.url)))
     }
   }

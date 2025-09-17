@@ -16,6 +16,21 @@ The poker room management system uses a simplified authentication architecture t
 
 The system supports multiple tenants with proper data isolation and role-based access control.
 
+### 2024-05 Updates
+
+- Client auth always verifies the current user with `supabase.auth.getUser()` (never trust the
+  session payload alone). The shared `UserProvider` applies this pattern, guards against concurrent
+  syncs, and refreshes the profile after sign-in flows. Check `lib/auth/user-context.tsx` for the
+  reference implementation.
+- Player phone sign-in now refreshes the user context and redirects to `/rooms` so the navigation
+  avatar and alias populate immediately without a manual reload.
+- Operator/admin sign-in keeps the submit button disabled until navigation completes, waits for a
+  `refreshUser()` call, and then routes to the tenant dashboard.
+- The navigation avatar popover shows:
+  - **Players**: alias + formatted phone number caption
+  - **Operators**: room name + role caption
+  - **Superadmins**: "Super Admin" label + verified email from `authUser`
+
 ## Authentication Flow
 
 ### 1. Registered Player Authentication (Phone-based)

@@ -1,6 +1,8 @@
 import { Tables } from '@/types'
 import { PlayerUser, OperatorUser } from './user-context'
 import { createClient } from '@/lib/supabase/server'
+import { validateIPAccess } from '@/lib/ip-validation'
+import type { NextRequest } from 'next/server'
 
 type Room = Tables<'rooms'>
 
@@ -102,5 +104,86 @@ export async function isAuthenticated(): Promise<boolean> {
   } catch (_error) {
     // Silently handle errors in production
     return false
+  }
+}
+
+/**
+ * Require operator access with IP validation for API routes
+ * This function validates both authentication and IP restrictions
+ */
+export async function requireOperatorAccess(
+  request: NextRequest,
+  roomCode: string
+): Promise<{
+  user: ServerUser
+  operatorData: { id: string; role: string; room_id: string | null }
+}> {
+  const supabase = await createClient()
+
+  // First, get the authenticated user
+  const user = await getServerUser()
+  if (!user || user.type !== 'operator') {
+    throw new Error('Authentication required')
+  }
+
+  // Check IP restrictions for operators
+  const ipValidation = await validateIPAccess(request, roomCode, supabase)
+
+  if (!ipValidation.isAllowed) {
+    throw new Error(`IP access denied: ${ipValidation.reason}`)
+  }
+
+  // Verify the operator has access to this room
+  if (user.profile.room_id !== roomCode) {
+    throw new Error('Access denied to this room')
+  }
+
+  return {
+    user,
+    operatorData: user.profile,
+  }
+}
+
+/**
+ * Require admin access with IP validation for API routes
+ * This function validates authentication, IP restrictions, and admin role
+ */
+export async function requireAdminAccess(
+  request: NextRequest,
+  roomCode: string
+): Promise<{
+  user: ServerUser
+  operatorData: { id: string; role: string; room_id: string | null }
+}> {
+  const { user, operatorData } = await requireOperatorAccess(request, roomCode)
+
+  // Check if user has admin privileges
+  if (!['admin', 'superadmin'].includes(operatorData.role)) {
+    throw new Error('Admin access required')
+  }
+
+  return { user, operatorData }
+}
+
+/**
+ * Require superadmin access for API routes
+ * Superadmins bypass IP restrictions but still need authentication
+ */
+export async function requireSuperAdminAccess(): Promise<{
+  user: ServerUser
+  operatorData: { id: string; role: string; room_id: string | null }
+}> {
+  const user = await getServerUser()
+  if (!user || user.type !== 'operator') {
+    throw new Error('Authentication required')
+  }
+
+  if (user.profile.role !== 'superadmin') {
+    throw new Error('Superadmin access required')
+  }
+
+  return {
+    user,
+    operatorData: user.profile,
   }
 }

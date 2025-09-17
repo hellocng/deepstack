@@ -40,7 +40,12 @@ module.exports = [
       '@typescript-eslint/no-explicit-any': 'warn',
 
       // Code quality rules
-      'no-console': 'warn',
+      'no-console': [
+        'warn',
+        {
+          allow: ['warn', 'error'],
+        },
+      ],
       'prefer-const': 'error',
       'no-var': 'error',
       eqeqeq: 'error',

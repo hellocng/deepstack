@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "13.0.5"
+    PostgrestVersion: '13.0.5'
   }
   public: {
     Tables: {
@@ -20,7 +20,7 @@ export type Database = {
           created_at: string | null
           id: string
           player_id: string | null
-          status: Database["public"]["Enums"]["friendship_status"] | null
+          status: Database['public']['Enums']['friendship_status'] | null
           updated_at: string | null
         }
         Insert: {
@@ -28,7 +28,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           player_id?: string | null
-          status?: Database["public"]["Enums"]["friendship_status"] | null
+          status?: Database['public']['Enums']['friendship_status'] | null
           updated_at?: string | null
         }
         Update: {
@@ -36,23 +36,23 @@ export type Database = {
           created_at?: string | null
           id?: string
           player_id?: string | null
-          status?: Database["public"]["Enums"]["friendship_status"] | null
+          status?: Database['public']['Enums']['friendship_status'] | null
           updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "buddies_buddy_id_fkey"
-            columns: ["buddy_id"]
+            foreignKeyName: 'buddies_buddy_id_fkey'
+            columns: ['buddy_id']
             isOneToOne: false
-            referencedRelation: "players"
-            referencedColumns: ["id"]
+            referencedRelation: 'players'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: "buddies_player_id_fkey"
-            columns: ["player_id"]
+            foreignKeyName: 'buddies_player_id_fkey'
+            columns: ['player_id']
             isOneToOne: false
-            referencedRelation: "players"
-            referencedColumns: ["id"]
+            referencedRelation: 'players'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -60,7 +60,7 @@ export type Database = {
         Row: {
           big_blind: number
           created_at: string | null
-          game_type: Database["public"]["Enums"]["game_type"]
+          game_type: Database['public']['Enums']['game_type']
           id: string
           is_active: boolean | null
           max_buy_in: number
@@ -75,7 +75,7 @@ export type Database = {
         Insert: {
           big_blind: number
           created_at?: string | null
-          game_type: Database["public"]["Enums"]["game_type"]
+          game_type: Database['public']['Enums']['game_type']
           id?: string
           is_active?: boolean | null
           max_buy_in: number
@@ -90,7 +90,7 @@ export type Database = {
         Update: {
           big_blind?: number
           created_at?: string | null
-          game_type?: Database["public"]["Enums"]["game_type"]
+          game_type?: Database['public']['Enums']['game_type']
           id?: string
           is_active?: boolean | null
           max_buy_in?: number
@@ -104,11 +104,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "games_room_id_fkey"
-            columns: ["room_id"]
+            foreignKeyName: 'games_room_id_fkey'
+            columns: ['room_id']
             isOneToOne: false
-            referencedRelation: "rooms"
-            referencedColumns: ["id"]
+            referencedRelation: 'rooms'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -120,7 +120,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           last_login: string | null
-          role: Database["public"]["Enums"]["operator_role"]
+          role: Database['public']['Enums']['operator_role']
           room_id: string | null
           updated_at: string | null
         }
@@ -131,7 +131,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           last_login?: string | null
-          role: Database["public"]["Enums"]["operator_role"]
+          role: Database['public']['Enums']['operator_role']
           room_id?: string | null
           updated_at?: string | null
         }
@@ -142,17 +142,17 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           last_login?: string | null
-          role?: Database["public"]["Enums"]["operator_role"]
+          role?: Database['public']['Enums']['operator_role']
           room_id?: string | null
           updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "operators_room_id_fkey"
-            columns: ["room_id"]
+            foreignKeyName: 'operators_room_id_fkey'
+            columns: ['room_id']
             isOneToOne: false
-            referencedRelation: "rooms"
-            referencedColumns: ["id"]
+            referencedRelation: 'rooms'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -189,18 +189,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "player_sessions_player_id_fkey"
-            columns: ["player_id"]
+            foreignKeyName: 'player_sessions_player_id_fkey'
+            columns: ['player_id']
             isOneToOne: false
-            referencedRelation: "players"
-            referencedColumns: ["id"]
+            referencedRelation: 'players'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: "player_sessions_table_session_id_fkey"
-            columns: ["table_session_id"]
+            foreignKeyName: 'player_sessions_table_session_id_fkey'
+            columns: ['table_session_id']
             isOneToOne: false
-            referencedRelation: "table_sessions"
-            referencedColumns: ["id"]
+            referencedRelation: 'table_sessions'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -233,6 +233,41 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      room_ip_restrictions: {
+        Row: {
+          allowed_ips: string[] | null
+          created_at: string | null
+          id: string
+          ip_restriction_enabled: boolean | null
+          room_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          allowed_ips?: string[] | null
+          created_at?: string | null
+          id?: string
+          ip_restriction_enabled?: boolean | null
+          room_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          allowed_ips?: string[] | null
+          created_at?: string | null
+          id?: string
+          ip_restriction_enabled?: boolean | null
+          room_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'room_ip_restrictions_room_id_fkey'
+            columns: ['room_id']
+            isOneToOne: true
+            referencedRelation: 'rooms'
+            referencedColumns: ['id']
+          },
+        ]
       }
       rooms: {
         Row: {
@@ -312,25 +347,25 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "table_sessions_game_id_fkey"
-            columns: ["game_id"]
+            foreignKeyName: 'table_sessions_game_id_fkey'
+            columns: ['game_id']
             isOneToOne: false
-            referencedRelation: "games"
-            referencedColumns: ["id"]
+            referencedRelation: 'games'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: "table_sessions_room_id_fkey"
-            columns: ["room_id"]
+            foreignKeyName: 'table_sessions_room_id_fkey'
+            columns: ['room_id']
             isOneToOne: false
-            referencedRelation: "rooms"
-            referencedColumns: ["id"]
+            referencedRelation: 'rooms'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: "table_sessions_table_id_fkey"
-            columns: ["table_id"]
+            foreignKeyName: 'table_sessions_table_id_fkey'
+            columns: ['table_id']
             isOneToOne: false
-            referencedRelation: "tables"
-            referencedColumns: ["id"]
+            referencedRelation: 'tables'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -364,11 +399,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "tables_room_id_fkey"
-            columns: ["room_id"]
+            foreignKeyName: 'tables_room_id_fkey'
+            columns: ['room_id']
             isOneToOne: false
-            referencedRelation: "rooms"
-            referencedColumns: ["id"]
+            referencedRelation: 'rooms'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -380,7 +415,7 @@ export type Database = {
           position: number | null
           prize_amount: number | null
           room_id: string | null
-          status: Database["public"]["Enums"]["tournament_entry_status"] | null
+          status: Database['public']['Enums']['tournament_entry_status'] | null
           tournament_id: string | null
           updated_at: string | null
         }
@@ -391,7 +426,7 @@ export type Database = {
           position?: number | null
           prize_amount?: number | null
           room_id?: string | null
-          status?: Database["public"]["Enums"]["tournament_entry_status"] | null
+          status?: Database['public']['Enums']['tournament_entry_status'] | null
           tournament_id?: string | null
           updated_at?: string | null
         }
@@ -402,31 +437,31 @@ export type Database = {
           position?: number | null
           prize_amount?: number | null
           room_id?: string | null
-          status?: Database["public"]["Enums"]["tournament_entry_status"] | null
+          status?: Database['public']['Enums']['tournament_entry_status'] | null
           tournament_id?: string | null
           updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "tournament_entries_player_id_fkey"
-            columns: ["player_id"]
+            foreignKeyName: 'tournament_entries_player_id_fkey'
+            columns: ['player_id']
             isOneToOne: false
-            referencedRelation: "players"
-            referencedColumns: ["id"]
+            referencedRelation: 'players'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: "tournament_entries_room_id_fkey"
-            columns: ["room_id"]
+            foreignKeyName: 'tournament_entries_room_id_fkey'
+            columns: ['room_id']
             isOneToOne: false
-            referencedRelation: "rooms"
-            referencedColumns: ["id"]
+            referencedRelation: 'rooms'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: "tournament_entries_tournament_id_fkey"
-            columns: ["tournament_id"]
+            foreignKeyName: 'tournament_entries_tournament_id_fkey'
+            columns: ['tournament_id']
             isOneToOne: false
-            referencedRelation: "tournaments"
-            referencedColumns: ["id"]
+            referencedRelation: 'tournaments'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -436,7 +471,7 @@ export type Database = {
           created_at: string | null
           current_players: number | null
           description: string | null
-          game_type: Database["public"]["Enums"]["game_type"]
+          game_type: Database['public']['Enums']['game_type']
           id: string
           max_players: number
           name: string
@@ -444,7 +479,7 @@ export type Database = {
           rake: string | null
           room_id: string | null
           start_time: string
-          status: Database["public"]["Enums"]["tournament_status"] | null
+          status: Database['public']['Enums']['tournament_status'] | null
           updated_at: string | null
         }
         Insert: {
@@ -452,7 +487,7 @@ export type Database = {
           created_at?: string | null
           current_players?: number | null
           description?: string | null
-          game_type: Database["public"]["Enums"]["game_type"]
+          game_type: Database['public']['Enums']['game_type']
           id?: string
           max_players: number
           name: string
@@ -460,7 +495,7 @@ export type Database = {
           rake?: string | null
           room_id?: string | null
           start_time: string
-          status?: Database["public"]["Enums"]["tournament_status"] | null
+          status?: Database['public']['Enums']['tournament_status'] | null
           updated_at?: string | null
         }
         Update: {
@@ -468,7 +503,7 @@ export type Database = {
           created_at?: string | null
           current_players?: number | null
           description?: string | null
-          game_type?: Database["public"]["Enums"]["game_type"]
+          game_type?: Database['public']['Enums']['game_type']
           id?: string
           max_players?: number
           name?: string
@@ -476,16 +511,16 @@ export type Database = {
           rake?: string | null
           room_id?: string | null
           start_time?: string
-          status?: Database["public"]["Enums"]["tournament_status"] | null
+          status?: Database['public']['Enums']['tournament_status'] | null
           updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "tournaments_room_id_fkey"
-            columns: ["room_id"]
+            foreignKeyName: 'tournaments_room_id_fkey'
+            columns: ['room_id']
             isOneToOne: false
-            referencedRelation: "rooms"
-            referencedColumns: ["id"]
+            referencedRelation: 'rooms'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -497,50 +532,50 @@ export type Database = {
           notes: string | null
           player_id: string | null
           room_id: string | null
-          status: Database["public"]["Enums"]["waitlist_status"] | null
+          status: Database['public']['Enums']['waitlist_status'] | null
           updated_at: string | null
         }
         Insert: {
           created_at?: string | null
-          game_id?: string | null
           id?: string
+          game_id?: string | null
           notes?: string | null
           player_id?: string | null
           room_id?: string | null
-          status?: Database["public"]["Enums"]["waitlist_status"] | null
+          status?: Database['public']['Enums']['waitlist_status'] | null
           updated_at?: string | null
         }
         Update: {
           created_at?: string | null
-          game_id?: string | null
           id?: string
+          game_id?: string | null
           notes?: string | null
           player_id?: string | null
           room_id?: string | null
-          status?: Database["public"]["Enums"]["waitlist_status"] | null
+          status?: Database['public']['Enums']['waitlist_status'] | null
           updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "waitlist_entries_game_id_fkey"
-            columns: ["game_id"]
+            foreignKeyName: 'waitlist_entries_game_id_fkey'
+            columns: ['game_id']
             isOneToOne: false
-            referencedRelation: "games"
-            referencedColumns: ["id"]
+            referencedRelation: 'games'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: "waitlist_entries_player_id_fkey"
-            columns: ["player_id"]
+            foreignKeyName: 'waitlist_entries_player_id_fkey'
+            columns: ['player_id']
             isOneToOne: false
-            referencedRelation: "players"
-            referencedColumns: ["id"]
+            referencedRelation: 'players'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: "waitlist_entries_room_id_fkey"
-            columns: ["room_id"]
+            foreignKeyName: 'waitlist_entries_room_id_fkey'
+            columns: ['room_id']
             isOneToOne: false
-            referencedRelation: "rooms"
-            referencedColumns: ["id"]
+            referencedRelation: 'rooms'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -597,6 +632,13 @@ export type Database = {
           waitlist_count: number
         }[]
       }
+      get_room_ip_restrictions: {
+        Args: { room_code_param: string }
+        Returns: {
+          allowed_ips: string[]
+          ip_restriction_enabled: boolean
+        }[]
+      }
       get_room_operator_count: {
         Args: { room_id_param: string }
         Returns: number
@@ -651,27 +693,27 @@ export type Database = {
       }
     }
     Enums: {
-      friendship_status: "pending" | "accepted" | "blocked"
+      friendship_status: 'pending' | 'accepted' | 'blocked'
       game_type:
-        | "texas_holdem"
-        | "omaha"
-        | "seven_card_stud"
-        | "five_card_draw"
-        | "razr"
-        | "stud_hi_lo"
-      operator_role: "admin" | "supervisor" | "dealer" | "superadmin"
+        | 'texas_holdem'
+        | 'omaha'
+        | 'seven_card_stud'
+        | 'five_card_draw'
+        | 'razr'
+        | 'stud_hi_lo'
+      operator_role: 'admin' | 'supervisor' | 'dealer' | 'superadmin'
       tournament_entry_status:
-        | "registered"
-        | "checked_in"
-        | "eliminated"
-        | "finished"
+        | 'registered'
+        | 'checked_in'
+        | 'eliminated'
+        | 'finished'
       tournament_status:
-        | "scheduled"
-        | "registering"
-        | "in_progress"
-        | "completed"
-        | "cancelled"
-      waitlist_status: "waiting" | "called" | "seated" | "cancelled"
+        | 'scheduled'
+        | 'registering'
+        | 'in_progress'
+        | 'completed'
+        | 'cancelled'
+      waitlist_status: 'waiting' | 'called' | 'seated' | 'cancelled'
     }
     CompositeTypes: {
       [_ in never]: never
@@ -679,33 +721,33 @@ export type Database = {
   }
 }
 
-type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+type DatabaseWithoutInternals = Omit<Database, '__InternalSupabase'>
 
-type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, 'public'>]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
-    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | keyof (DefaultSchema['Tables'] & DefaultSchema['Views'])
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Views'])
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Views'])[TableName] extends {
       Row: infer R
     }
     ? R
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema['Tables'] &
+        DefaultSchema['Views'])
+    ? (DefaultSchema['Tables'] &
+        DefaultSchema['Views'])[DefaultSchemaTableNameOrOptions] extends {
         Row: infer R
       }
       ? R
@@ -714,23 +756,23 @@ export type Tables<
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
+    | keyof DefaultSchema['Tables']
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
       Insert: infer I
     }
     ? I
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema['Tables']
+    ? DefaultSchema['Tables'][DefaultSchemaTableNameOrOptions] extends {
         Insert: infer I
       }
       ? I
@@ -739,23 +781,23 @@ export type TablesInsert<
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
+    | keyof DefaultSchema['Tables']
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
       Update: infer U
     }
     ? U
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema['Tables']
+    ? DefaultSchema['Tables'][DefaultSchemaTableNameOrOptions] extends {
         Update: infer U
       }
       ? U
@@ -764,65 +806,65 @@ export type TablesUpdate<
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema["Enums"]
+    | keyof DefaultSchema['Enums']
     | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions['schema']]['Enums']
     : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions['schema']]['Enums'][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema['Enums']
+    ? DefaultSchema['Enums'][DefaultSchemaEnumNameOrOptions]
     : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema["CompositeTypes"]
+    | keyof DefaultSchema['CompositeTypes']
     | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes']
     : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes'][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema['CompositeTypes']
+    ? DefaultSchema['CompositeTypes'][PublicCompositeTypeNameOrOptions]
     : never
 
 export const Constants = {
   public: {
     Enums: {
-      friendship_status: ["pending", "accepted", "blocked"],
+      friendship_status: ['pending', 'accepted', 'blocked'],
       game_type: [
-        "texas_holdem",
-        "omaha",
-        "seven_card_stud",
-        "five_card_draw",
-        "razr",
-        "stud_hi_lo",
+        'texas_holdem',
+        'omaha',
+        'seven_card_stud',
+        'five_card_draw',
+        'razr',
+        'stud_hi_lo',
       ],
-      operator_role: ["admin", "supervisor", "dealer", "superadmin"],
+      operator_role: ['admin', 'supervisor', 'dealer', 'superadmin'],
       tournament_entry_status: [
-        "registered",
-        "checked_in",
-        "eliminated",
-        "finished",
+        'registered',
+        'checked_in',
+        'eliminated',
+        'finished',
       ],
       tournament_status: [
-        "scheduled",
-        "registering",
-        "in_progress",
-        "completed",
-        "cancelled",
+        'scheduled',
+        'registering',
+        'in_progress',
+        'completed',
+        'cancelled',
       ],
-      waitlist_status: ["waiting", "called", "seated", "cancelled"],
+      waitlist_status: ['waiting', 'called', 'seated', 'cancelled'],
     },
   },
 } as const

@@ -81,7 +81,7 @@ export function handleError(error: unknown, context?: string): void {
   if (isExpectedAuthError(error)) {
     // In development, still log expected errors for debugging
     if (process.env.NODE_ENV === 'development') {
-      // eslint-disable-next-line no-console
+       
       console.warn(
         `Expected auth error${context ? ` in ${context}` : ''}:`,
         error
@@ -92,7 +92,7 @@ export function handleError(error: unknown, context?: string): void {
 
   // Log unexpected errors for debugging
   if (process.env.NODE_ENV === 'development') {
-    // eslint-disable-next-line no-console
+     
     console.error(`Unexpected error${context ? ` in ${context}` : ''}:`, error)
   }
 }
