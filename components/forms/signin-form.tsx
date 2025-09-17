@@ -62,7 +62,7 @@ export function SignInForm(): JSX.Element {
   const [error, setError] = useState('')
   const [_needsAlias, setNeedsAlias] = useState(false)
 
-  const { sendOTP, verifyOTP, updateUser } = useUser()
+  const { sendOTP, verifyOTP, updateUser, refreshUser } = useUser()
   const router = useRouter()
 
   const phoneForm = useForm<PhoneFormData>({
@@ -132,13 +132,17 @@ export function SignInForm(): JSX.Element {
       if (needsAliasSet) {
         setNeedsAlias(true)
         setStep('alias')
-      } else {
-        router.push('/')
+        setLoading(false)
+        return
       }
+
+      await refreshUser()
+      router.replace('/rooms')
+      return
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Invalid verification code')
-    } finally {
       setLoading(false)
+      return
     }
   }
 
@@ -149,11 +153,13 @@ export function SignInForm(): JSX.Element {
     try {
       // Update the player's alias using the user context
       await updateUser({ alias: data.alias })
-      router.push('/')
+      await refreshUser()
+      router.replace('/rooms')
+      return
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to set alias')
-    } finally {
       setLoading(false)
+      return
     }
   }
 
@@ -199,6 +205,7 @@ export function SignInForm(): JSX.Element {
                   {...phoneForm.register('phone')}
                   value={phoneForm.watch('phone')}
                   onChange={(value) => phoneForm.setValue('phone', value)}
+                  autoFocus
                 />
                 {phoneForm.formState.errors.phone && (
                   <p className='text-sm text-destructive'>
@@ -236,6 +243,7 @@ export function SignInForm(): JSX.Element {
                     maxLength={6}
                     value={otpForm.watch('otp')}
                     onChange={(value) => otpForm.setValue('otp', value)}
+                    autoFocus
                   >
                     <InputOTPGroup>
                       <InputOTPSlot index={0} />
@@ -296,6 +304,7 @@ export function SignInForm(): JSX.Element {
                   {...aliasForm.register('alias')}
                   className='h-11'
                   autoComplete='off'
+                  autoFocus
                 />
                 {aliasForm.formState.errors.alias && (
                   <p className='text-sm text-destructive'>

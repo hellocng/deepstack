@@ -10,7 +10,6 @@ import { Toaster } from 'sonner'
 import { getServerUser } from '@/lib/auth/server-auth'
 import { Suspense } from 'react'
 import { Loading } from '@/components/ui/loading'
-import { createClient as createServerClient } from '@/lib/supabase/server'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -31,13 +30,7 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode
 }): Promise<JSX.Element> {
-  const supabase = await createServerClient()
-  const [{ data: sessionData }, initialUser] = await Promise.all([
-    supabase.auth.getSession(),
-    getServerUser(),
-  ])
-
-  const initialSession = sessionData.session ?? null
+  const initialUser = await getServerUser()
 
   return (
     <html
@@ -122,10 +115,7 @@ export default async function RootLayout({
         />
       </head>
       <body className={inter.className}>
-        <UserProvider
-          initialUser={initialUser}
-          initialSession={initialSession}
-        >
+        <UserProvider initialUser={initialUser}>
           <ThemeProvider>
             <UserThemeProvider>
               <Suspense

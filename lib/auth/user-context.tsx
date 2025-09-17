@@ -9,7 +9,7 @@ import React, {
   useMemo,
   useRef,
 } from 'react'
-import type { Session, User as SupabaseAuthUser } from '@supabase/supabase-js'
+import type { User as SupabaseAuthUser } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { Tables, TablesUpdate, TablesInsert } from '@/types'
 import { handleError, isExpectedAuthError } from '@/lib/utils/error-handler'
@@ -35,7 +35,6 @@ export type User = PlayerUser | OperatorUser
 
 interface UserContextType {
   user: User | null
-  session: Session | null
   authUser: SupabaseAuthUser | null
   loading: boolean
   error: string | null
@@ -51,21 +50,19 @@ const UserContext = createContext<UserContextType | undefined>(undefined)
 interface UserProviderProps {
   children: React.ReactNode
   initialUser?: User | null
-  initialSession?: Session | null
 }
 
 export function UserProvider({
   children,
   initialUser = null,
-  initialSession = null,
 }: UserProviderProps): JSX.Element {
   const [user, setUser] = useState<User | null>(initialUser)
-  const [session, setSession] = useState<Session | null>(initialSession)
   const [authUser, setAuthUser] = useState<SupabaseAuthUser | null>(null)
   const [loading, setLoading] = useState(!initialUser)
   const [error, setError] = useState<string | null>(null)
   const supabase = useMemo(() => createClient(), [])
   const isMountedRef = useRef(true)
+  const isSyncingRef = useRef(false)
 
   const loadUserProfile = useCallback(
     async (authId: string): Promise<void> => {
@@ -125,7 +122,6 @@ export function UserProvider({
         if (isExpectedAuthError(err)) {
           if (!isMountedRef.current) return
           setUser(null)
-          setSession(null)
         } else {
           if (isMountedRef.current) {
             setError('Failed to load user profile')
@@ -141,123 +137,111 @@ export function UserProvider({
     [supabase]
   )
 
+  const syncUser = useCallback(async (): Promise<boolean> => {
+    try {
+      if (!isMountedRef.current) return false
+
+      if (isSyncingRef.current) {
+        return true
+      }
+
+      isSyncingRef.current = true
+
+      setLoading(true)
+      setError(null)
+
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession()
+
+      if (sessionError) {
+        throw sessionError
+      }
+
+      if (!session) {
+        setAuthUser(null)
+        setUser(null)
+        setLoading(false)
+        return true
+      }
+
+      const {
+        data: { user: verifiedUser },
+        error: userError,
+      } = await supabase.auth.getUser()
+
+      if (userError) {
+        throw userError
+      }
+
+      if (!isMountedRef.current) return false
+
+      setAuthUser(verifiedUser ?? null)
+
+      if (!verifiedUser) {
+        setUser(null)
+        setLoading(false)
+        return true
+      }
+
+      const existingAuthId =
+        user?.profile.auth_id ?? initialUser?.profile.auth_id ?? null
+
+      if (existingAuthId === verifiedUser.id && user) {
+        setLoading(false)
+        return true
+      }
+
+      await loadUserProfile(verifiedUser.id)
+      return true
+    } catch (err) {
+      if (!isMountedRef.current) return false
+      const isSessionMissing =
+        typeof err === 'object' &&
+        err !== null &&
+        'name' in err &&
+        (err as { name?: string }).name === 'AuthSessionMissingError'
+
+      setAuthUser(null)
+      setUser(null)
+      setLoading(false)
+
+      if (!isSessionMissing) {
+        setError('Failed to load user profile')
+        handleError(err, 'syncUser')
+      }
+
+      return false
+    } finally {
+      isSyncingRef.current = false
+    }
+  }, [supabase, loadUserProfile, user, initialUser])
+
   useEffect(() => {
     isMountedRef.current = true
 
-    const bootstrapAuthState = async (): Promise<void> => {
-      try {
-        const [
-          {
-            data: { user: verifiedUser },
-            error: userError,
-          },
-          {
-            data: { session: currentSession },
-            error: sessionError,
-          },
-        ] = await Promise.all([
-          supabase.auth.getUser(),
-          supabase.auth.getSession(),
-        ])
-
-        if (userError) {
-          throw userError
-        }
-
-        if (sessionError) {
-          throw sessionError
-        }
-
-        setAuthUser(verifiedUser ?? null)
-        setSession(currentSession ?? null)
-
-        if (verifiedUser) {
-          const initialMatchesVerifiedUser = Boolean(
-            initialUser &&
-              ((initialUser.type === 'player' &&
-                initialUser.profile.auth_id === verifiedUser.id) ||
-                (initialUser.type === 'operator' &&
-                  initialUser.profile.auth_id === verifiedUser.id))
-          )
-
-          if (!initialMatchesVerifiedUser) {
-            await loadUserProfile(verifiedUser.id)
-          } else {
-            setLoading(false)
-          }
-        } else {
-          if (!initialUser) {
-            setUser(null)
-          }
-          setLoading(false)
-        }
-      } catch (err) {
-        setAuthUser(null)
-        setSession(null)
-        setUser(null)
-        setLoading(false)
-        handleError(err, 'bootstrapAuthState')
-      }
-    }
-
-    void bootstrapAuthState()
+    void syncUser()
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event) => {
+      if (!isMountedRef.current) return
+
       if (event === 'SIGNED_OUT') {
-        setUser(null)
-        setSession(null)
         setAuthUser(null)
+        setUser(null)
         setLoading(false)
         return
       }
 
-      if (event === 'TOKEN_REFRESHED') {
-        const {
-          data: { session: refreshedSession },
-          error: refreshedError,
-        } = await supabase.auth.getSession()
-        if (!refreshedError) {
-          setSession(refreshedSession ?? null)
-        }
-        return
-      }
-
-      if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
-        const [
-          {
-            data: { user: verifiedUser },
-            error: userError,
-          },
-          {
-            data: { session: latestSession },
-            error: latestSessionError,
-          },
-        ] = await Promise.all([
-          supabase.auth.getUser(),
-          supabase.auth.getSession(),
-        ])
-
-        if (userError) {
-          handleError(userError, 'authStateChange.getUser')
-          return
-        }
-
-        if (latestSessionError) {
-          handleError(latestSessionError, 'authStateChange.getSession')
-        } else {
-          setSession(latestSession ?? null)
-        }
-
-        setAuthUser(verifiedUser ?? null)
-
-        if (verifiedUser) {
-          await loadUserProfile(verifiedUser.id)
-        } else {
-          setUser(null)
-          setLoading(false)
-        }
+      if (
+        event === 'SIGNED_IN' ||
+        event === 'USER_UPDATED' ||
+        event === 'TOKEN_REFRESHED' ||
+        event === 'INITIAL_SESSION'
+      ) {
+        await syncUser()
       }
     })
 
@@ -265,7 +249,7 @@ export function UserProvider({
       isMountedRef.current = false
       subscription.unsubscribe()
     }
-  }, [initialUser, loadUserProfile, supabase])
+  }, [syncUser, supabase])
 
   const signOut = async (): Promise<void> => {
     try {
@@ -275,7 +259,6 @@ export function UserProvider({
 
       // Clear local state after successful sign out
       setUser(null)
-      setSession(null)
       setAuthUser(null)
       setError(null)
       setLoading(false)
@@ -331,45 +314,7 @@ export function UserProvider({
   }
 
   const refreshUser = async (): Promise<void> => {
-    try {
-      const [
-        {
-          data: { user: refreshedUser },
-          error: userError,
-        },
-        {
-          data: { session: refreshedSession },
-          error: sessionError,
-        },
-      ] = await Promise.all([
-        supabase.auth.getUser(),
-        supabase.auth.getSession(),
-      ])
-
-      if (userError) {
-        throw userError
-      }
-
-      if (sessionError) {
-        throw sessionError
-      }
-
-      setAuthUser(refreshedUser ?? null)
-      setSession(refreshedSession ?? null)
-
-      if (!refreshedUser) {
-        setUser(null)
-        setLoading(false)
-        return
-      }
-
-      await loadUserProfile(refreshedUser.id)
-    } catch (_error) {
-      setError('Failed to refresh user profile')
-      handleError(_error, 'refreshUser')
-    } finally {
-      setLoading(false)
-    }
+    await syncUser()
   }
 
   const sendOTP = async (phoneNumber: string): Promise<void> => {
@@ -393,8 +338,6 @@ export function UserProvider({
     })
 
     if (error) throw error
-
-    setSession(data.session ?? null)
 
     if (data.user) {
       const {
@@ -459,7 +402,6 @@ export function UserProvider({
     }
 
     setLoading(false)
-    setAuthUser(null)
     return false
   }
 
@@ -467,7 +409,6 @@ export function UserProvider({
     <UserContext.Provider
       value={{
         user,
-        session,
         authUser,
         loading,
         error,

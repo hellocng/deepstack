@@ -63,7 +63,6 @@ export function AdminSignInForm(): JSX.Element {
     try {
       const supabase = createClient()
 
-      // Sign in with email and password
       const { data: authData, error: authError } =
         await supabase.auth.signInWithPassword({
           email: data.email,
@@ -75,7 +74,6 @@ export function AdminSignInForm(): JSX.Element {
       }
 
       if (authData.user) {
-        // Check if the user is an operator
         const { data: operator, error: operatorError } = await supabase
           .from('operators')
           .select('id, role, room_id')
@@ -83,28 +81,27 @@ export function AdminSignInForm(): JSX.Element {
           .single()
 
         if (operatorError || !operator) {
-          // User is not an operator, sign them out and show error
           await supabase.auth.signOut()
           setError(
             'Access denied. This account is not authorized for admin access.'
           )
+          setLoading(false)
           return
         }
 
-        // Ensure user context refreshes before redirecting
         await refreshUser()
-
         router.replace(redirectTo)
+        return
       }
+
+      setLoading(false)
     } catch (err) {
-      // Handle expected authentication errors gracefully
       if (isExpectedAuthError(err)) {
         setError('Invalid email or password. Please try again.')
       } else {
         setError(err instanceof Error ? err.message : 'Failed to sign in')
       }
       handleError(err, 'Admin signin')
-    } finally {
       setLoading(false)
     }
   }

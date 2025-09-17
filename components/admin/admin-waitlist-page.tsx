@@ -31,13 +31,13 @@ export function AdminWaitlistPage(): JSX.Element {
 
         // Get current operator's room_id
         const {
-          data: { session },
-          error: sessionError,
-        } = await supabase.auth.getSession()
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser()
 
-        const userId = session?.user?.id
+        const userId = user?.id
 
-        if (!userId || sessionError) return
+        if (!userId || userError) return
 
         const { data: operator, error: operatorError } = await supabase
           .from('operators')

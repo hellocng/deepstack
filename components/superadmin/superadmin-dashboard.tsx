@@ -58,15 +58,14 @@ export function SuperAdminDashboard(): JSX.Element {
       setError(null)
       const supabase = createClient()
 
-      // Ensure we have a proper auth session
       const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession()
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser()
 
-      const userId = session?.user?.id
+      const userId = user?.id
 
-      if (!userId || sessionError) {
+      if (!userId || userError) {
         setError('Authentication session error')
         setRooms([])
         setLoading(false)
