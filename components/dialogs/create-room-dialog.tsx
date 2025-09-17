@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dialog'
 import { RoomForm } from '@/components/forms/room-form'
 import { createClient } from '@/lib/supabase/client'
-import { TablesInsert } from '@/types/supabase'
+import { TablesInsert } from '@/types'
 import { toast } from 'sonner'
 
 interface CreateRoomDialogProps {

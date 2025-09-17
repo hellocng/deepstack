@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Tables } from '@/types/supabase'
+import { Tables } from '@/types'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -31,16 +31,18 @@ export function AdminWaitlistPage(): JSX.Element {
 
         // Get current operator's room_id
         const {
-          data: { user },
-          error: authError,
-        } = await supabase.auth.getUser()
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession()
 
-        if (!user || authError) return
+        const userId = session?.user?.id
+
+        if (!userId || sessionError) return
 
         const { data: operator, error: operatorError } = await supabase
           .from('operators')
           .select('room_id')
-          .eq('auth_id', user.id)
+          .eq('auth_id', userId)
           .single()
 
         if (operatorError || !operator) return

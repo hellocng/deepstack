@@ -99,13 +99,6 @@ export function GameCard({ game, room: _room }: GameCardProps): JSX.Element {
           <div className='text-sm text-muted-foreground'>Rake: {game.rake}</div>
         )}
 
-        {/* Description */}
-        {game.description && (
-          <p className='text-sm text-muted-foreground line-clamp-2'>
-            {game.description}
-          </p>
-        )}
-
         {/* Actions */}
         <div className='flex space-x-2 pt-2'>
           <Button

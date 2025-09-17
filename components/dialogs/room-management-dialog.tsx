@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
-import { Tables, TablesUpdate } from '@/types/supabase'
+import { Tables, TablesUpdate } from '@/types'
 import {
   Building2,
   Users,

@@ -110,8 +110,8 @@ export function Navigation(): JSX.Element {
     try {
       setIsSigningOut(true)
       await signOut()
-    } catch (error) {
-      console.error('Error signing out:', error)
+    } catch (_error) {
+      // Silently handle sign out errors - user will be redirected anyway
       setIsSigningOut(false)
     }
   }
@@ -184,11 +184,9 @@ export function Navigation(): JSX.Element {
                                 ? user.profile.alias
                                   ? user.profile.alias.charAt(0).toUpperCase()
                                   : '?'
-                                : user.profile.first_name
-                                  ? user.profile.first_name
-                                      .charAt(0)
-                                      .toUpperCase()
-                                  : 'A'}
+                                : user.profile.role
+                                  ? user.profile.role.charAt(0).toUpperCase()
+                                  : 'O'}
                             </AvatarFallback>
                           </Avatar>
                         </Button>
@@ -203,7 +201,10 @@ export function Navigation(): JSX.Element {
                             <p className='text-sm font-medium leading-none'>
                               {user.type === 'player'
                                 ? user.profile.alias || 'No alias set'
-                                : `${user.profile.first_name} ${user.profile.last_name}`}
+                                : user.profile.role
+                                  ? user.profile.role.charAt(0).toUpperCase() +
+                                    user.profile.role.slice(1)
+                                  : 'Operator'}
                             </p>
                             <p className='text-xs leading-none text-muted-foreground mt-4'>
                               {user.type === 'player'

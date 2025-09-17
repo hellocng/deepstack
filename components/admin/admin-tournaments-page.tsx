@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Tables } from '@/types/supabase'
+import { Tables } from '@/types'
 import {
   Card,
   CardContent,
@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Loading } from '@/components/ui/loading'
 
 type Tournament = Tables<'tournaments'>
 
@@ -26,16 +27,18 @@ export function AdminTournamentsPage(): JSX.Element {
 
         // Get current operator's room_id
         const {
-          data: { user },
-          error: authError,
-        } = await supabase.auth.getUser()
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession()
 
-        if (!user || authError) return
+        const userId = session?.user?.id
+
+        if (!userId || sessionError) return
 
         const { data: operator, error: operatorError } = await supabase
           .from('operators')
           .select('room_id')
-          .eq('auth_id', user.id)
+          .eq('auth_id', userId)
           .single()
 
         if (operatorError || !operator) return
@@ -69,10 +72,10 @@ export function AdminTournamentsPage(): JSX.Element {
   if (loading) {
     return (
       <div className='flex items-center justify-center h-64'>
-        <div className='text-center'>
-          <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4'></div>
-          <p className='text-muted-foreground'>Loading tournaments...</p>
-        </div>
+        <Loading
+          size='md'
+          text='Loading tournaments...'
+        />
       </div>
     )
   }

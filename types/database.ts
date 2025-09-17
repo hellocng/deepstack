@@ -14,26 +14,26 @@ export type Database = {
   }
   public: {
     Tables: {
-      friendships: {
+      buddies: {
         Row: {
+          buddy_id: string | null
           created_at: string | null
-          friend_id: string | null
           id: string
           player_id: string | null
           status: Database['public']['Enums']['friendship_status'] | null
           updated_at: string | null
         }
         Insert: {
+          buddy_id?: string | null
           created_at?: string | null
-          friend_id?: string | null
           id?: string
           player_id?: string | null
           status?: Database['public']['Enums']['friendship_status'] | null
           updated_at?: string | null
         }
         Update: {
+          buddy_id?: string | null
           created_at?: string | null
-          friend_id?: string | null
           id?: string
           player_id?: string | null
           status?: Database['public']['Enums']['friendship_status'] | null
@@ -41,14 +41,14 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'friendships_friend_id_fkey'
-            columns: ['friend_id']
+            foreignKeyName: 'buddies_buddy_id_fkey'
+            columns: ['buddy_id']
             isOneToOne: false
             referencedRelation: 'players'
             referencedColumns: ['id']
           },
           {
-            foreignKeyName: 'friendships_player_id_fkey'
+            foreignKeyName: 'buddies_player_id_fkey'
             columns: ['player_id']
             isOneToOne: false
             referencedRelation: 'players'
@@ -60,8 +60,6 @@ export type Database = {
         Row: {
           big_blind: number
           created_at: string | null
-          current_players: number | null
-          description: string | null
           game_type: Database['public']['Enums']['game_type']
           id: string
           is_active: boolean | null
@@ -72,15 +70,11 @@ export type Database = {
           rake: string | null
           room_id: string | null
           small_blind: number
-          stakes: string | null
           updated_at: string | null
-          waitlist_count: number | null
         }
         Insert: {
           big_blind: number
           created_at?: string | null
-          current_players?: number | null
-          description?: string | null
           game_type: Database['public']['Enums']['game_type']
           id?: string
           is_active?: boolean | null
@@ -91,15 +85,11 @@ export type Database = {
           rake?: string | null
           room_id?: string | null
           small_blind: number
-          stakes?: string | null
           updated_at?: string | null
-          waitlist_count?: number | null
         }
         Update: {
           big_blind?: number
           created_at?: string | null
-          current_players?: number | null
-          description?: string | null
           game_type?: Database['public']['Enums']['game_type']
           id?: string
           is_active?: boolean | null
@@ -110,9 +100,7 @@ export type Database = {
           rake?: string | null
           room_id?: string | null
           small_blind?: number
-          stakes?: string | null
           updated_at?: string | null
-          waitlist_count?: number | null
         }
         Relationships: [
           {
@@ -127,45 +115,30 @@ export type Database = {
       operators: {
         Row: {
           auth_id: string | null
-          avatar_url: string | null
           created_at: string | null
-          email: string
-          first_name: string
           id: string
           is_active: boolean | null
           last_login: string | null
-          last_name: string
-          phone_number: string | null
           role: Database['public']['Enums']['operator_role']
           room_id: string | null
           updated_at: string | null
         }
         Insert: {
           auth_id?: string | null
-          avatar_url?: string | null
           created_at?: string | null
-          email: string
-          first_name: string
           id?: string
           is_active?: boolean | null
           last_login?: string | null
-          last_name: string
-          phone_number?: string | null
           role: Database['public']['Enums']['operator_role']
           room_id?: string | null
           updated_at?: string | null
         }
         Update: {
           auth_id?: string | null
-          avatar_url?: string | null
           created_at?: string | null
-          email?: string
-          first_name?: string
           id?: string
           is_active?: boolean | null
           last_login?: string | null
-          last_name?: string
-          phone_number?: string | null
           role?: Database['public']['Enums']['operator_role']
           room_id?: string | null
           updated_at?: string | null
@@ -188,7 +161,7 @@ export type Database = {
           player_id: string | null
           seat_number: number
           start_time: string | null
-          table_id: string | null
+          table_session_id: string | null
           updated_at: string | null
         }
         Insert: {
@@ -198,7 +171,7 @@ export type Database = {
           player_id?: string | null
           seat_number: number
           start_time?: string | null
-          table_id?: string | null
+          table_session_id?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -208,7 +181,7 @@ export type Database = {
           player_id?: string | null
           seat_number?: number
           start_time?: string | null
-          table_id?: string | null
+          table_session_id?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -220,10 +193,10 @@ export type Database = {
             referencedColumns: ['id']
           },
           {
-            foreignKeyName: 'player_sessions_table_id_fkey'
-            columns: ['table_id']
+            foreignKeyName: 'player_sessions_table_session_id_fkey'
+            columns: ['table_session_id']
             isOneToOne: false
-            referencedRelation: 'tables'
+            referencedRelation: 'table_sessions'
             referencedColumns: ['id']
           },
         ]
@@ -234,7 +207,6 @@ export type Database = {
           auth_id: string | null
           created_at: string | null
           id: string
-          last_login: string | null
           preferences: Json | null
           updated_at: string | null
         }
@@ -243,7 +215,6 @@ export type Database = {
           auth_id?: string | null
           created_at?: string | null
           id?: string
-          last_login?: string | null
           preferences?: Json | null
           updated_at?: string | null
         }
@@ -252,7 +223,6 @@ export type Database = {
           auth_id?: string | null
           created_at?: string | null
           id?: string
-          last_login?: string | null
           preferences?: Json | null
           updated_at?: string | null
         }
@@ -303,45 +273,90 @@ export type Database = {
         }
         Relationships: []
       }
-      tables: {
+      table_sessions: {
         Row: {
           created_at: string | null
-          game_id: string | null
+          end_time: string | null
+          game_id: string
           id: string
-          name: string
-          room_id: string | null
-          seat_count: number
-          status: Database['public']['Enums']['table_status'] | null
+          room_id: string
+          start_time: string
+          table_id: string
           updated_at: string | null
         }
         Insert: {
           created_at?: string | null
-          game_id?: string | null
+          end_time?: string | null
+          game_id: string
           id?: string
-          name: string
-          room_id?: string | null
-          seat_count: number
-          status?: Database['public']['Enums']['table_status'] | null
+          room_id: string
+          start_time: string
+          table_id: string
           updated_at?: string | null
         }
         Update: {
           created_at?: string | null
-          game_id?: string | null
+          end_time?: string | null
+          game_id?: string
           id?: string
-          name?: string
-          room_id?: string | null
-          seat_count?: number
-          status?: Database['public']['Enums']['table_status'] | null
+          room_id?: string
+          start_time?: string
+          table_id?: string
           updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: 'tables_game_id_fkey'
+            foreignKeyName: 'table_sessions_game_id_fkey'
             columns: ['game_id']
             isOneToOne: false
             referencedRelation: 'games'
             referencedColumns: ['id']
           },
+          {
+            foreignKeyName: 'table_sessions_room_id_fkey'
+            columns: ['room_id']
+            isOneToOne: false
+            referencedRelation: 'rooms'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'table_sessions_table_id_fkey'
+            columns: ['table_id']
+            isOneToOne: false
+            referencedRelation: 'tables'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      tables: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean
+          name: string
+          room_id: string | null
+          seat_count: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          room_id?: string | null
+          seat_count: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          room_id?: string | null
+          seat_count?: number
+          updated_at?: string | null
+        }
+        Relationships: [
           {
             foreignKeyName: 'tables_room_id_fkey'
             columns: ['room_id']
@@ -536,6 +551,82 @@ export type Database = {
         Args: { table_uuid: string }
         Returns: number
       }
+      get_room_active_games: {
+        Args: { room_id_param: string }
+        Returns: {
+          created_at: string
+          game_type: string
+          id: string
+          is_active: boolean
+          name: string
+        }[]
+      }
+      get_room_active_operators: {
+        Args: { room_id_param: string }
+        Returns: {
+          created_at: string
+          id: string
+          is_active: boolean
+          role: string
+        }[]
+      }
+      get_room_game_count: {
+        Args: { room_id_param: string }
+        Returns: number
+      }
+      get_room_game_counts_by_type: {
+        Args: { room_id_param: string }
+        Returns: {
+          game_count: number
+          game_type: string
+        }[]
+      }
+      get_room_game_stats: {
+        Args: { room_id_param: string }
+        Returns: {
+          game_id: string
+          game_name: string
+          game_type: string
+          table_count: number
+          waitlist_count: number
+        }[]
+      }
+      get_room_operator_count: {
+        Args: { room_id_param: string }
+        Returns: number
+      }
+      get_room_table_counts_by_game: {
+        Args: { room_id_param: string }
+        Returns: {
+          game_id: string
+          game_name: string
+          game_type: string
+          table_count: number
+        }[]
+      }
+      get_room_waitlist_counts_by_game: {
+        Args: { room_id_param: string }
+        Returns: {
+          game_id: string
+          game_name: string
+          game_type: string
+          waitlist_count: number
+        }[]
+      }
+      get_rooms_with_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          operator_count: number
+          total_games: number
+          total_tables: number
+          total_waitlist_players: number
+          updated_at: string
+        }[]
+      }
       get_user_room_id: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -563,7 +654,6 @@ export type Database = {
         | 'razr'
         | 'stud_hi_lo'
       operator_role: 'admin' | 'supervisor' | 'dealer' | 'superadmin'
-      table_status: 'open' | 'closed'
       tournament_entry_status:
         | 'registered'
         | 'checked_in'
@@ -713,7 +803,6 @@ export const Constants = {
         'stud_hi_lo',
       ],
       operator_role: ['admin', 'supervisor', 'dealer', 'superadmin'],
-      table_status: ['open', 'closed'],
       tournament_entry_status: [
         'registered',
         'checked_in',

@@ -12,7 +12,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { ArrowLeft, MapPin, Phone, Globe, Users, Clock } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { Tables } from '@/types/supabase'
+import { Tables } from '@/types'
 
 type Room = Tables<'rooms'>
 

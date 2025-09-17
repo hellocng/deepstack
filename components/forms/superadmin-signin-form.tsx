@@ -16,6 +16,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { createClient } from '@/lib/supabase/client'
+import { handleError, isExpectedAuthError } from '@/lib/utils/error-handler'
 
 const superAdminSignInSchema = z.object({
   email: z
@@ -86,7 +87,13 @@ export function SuperAdminSignInForm(): JSX.Element {
         router.push('/superadmin')
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to sign in')
+      // Handle expected authentication errors gracefully
+      if (isExpectedAuthError(err)) {
+        setError('Invalid email or password. Please try again.')
+      } else {
+        setError(err instanceof Error ? err.message : 'Failed to sign in')
+      }
+      handleError(err, 'SuperAdmin signin')
     } finally {
       setLoading(false)
     }

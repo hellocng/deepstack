@@ -1,7 +1,6 @@
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
-import { Tables } from '@/types/supabase'
+import { Tables } from '@/types'
 import { PlayerUser, OperatorUser } from './user-context'
+import { createClient } from '@/lib/supabase/server'
 
 type Room = Tables<'rooms'>
 
@@ -13,30 +12,7 @@ export type ServerUser = PlayerUser | OperatorUser
  */
 export async function getServerUser(): Promise<ServerUser | null> {
   try {
-    const cookieStore = await cookies()
-
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll(cookiesToSet) {
-            try {
-              cookiesToSet.forEach(({ name, value, options }) =>
-                cookieStore.set(name, value, options)
-              )
-            } catch {
-              // The `setAll` method was called from a Server Component.
-              // This can be ignored if you have middleware refreshing
-              // user sessions.
-            }
-          },
-        },
-      }
-    )
+    const supabase = await createClient()
 
     // Get the authenticated user
     const {
@@ -48,27 +24,7 @@ export async function getServerUser(): Promise<ServerUser | null> {
       return null
     }
 
-    // Try to load as player first (most common case)
-    const { data: player, error: playerError } = await supabase
-      .from('players')
-      .select('*')
-      .eq('auth_id', user.id)
-      .single()
-
-    if (player && !playerError) {
-      // Get phone number from auth user
-      const {
-        data: { user: authUser },
-      } = await supabase.auth.getUser()
-
-      return {
-        type: 'player',
-        profile: player,
-        phoneNumber: authUser?.phone || undefined,
-      }
-    }
-
-    // If no player profile found, try to load as operator
+    // First, check if user is an operator (including superadmin)
     const { data: operator, error: operatorError } = await supabase
       .from('operators')
       .select(
@@ -86,6 +42,26 @@ export async function getServerUser(): Promise<ServerUser | null> {
         type: 'operator',
         profile: operator,
         room: operator.room as Room | null,
+      }
+    }
+
+    // If no operator profile found, try to load as player
+    const { data: player, error: playerError } = await supabase
+      .from('players')
+      .select('*')
+      .eq('auth_id', user.id)
+      .single()
+
+    if (player && !playerError) {
+      // Get phone number from auth user
+      const {
+        data: { user: authUser },
+      } = await supabase.auth.getUser()
+
+      return {
+        type: 'player',
+        profile: player,
+        phoneNumber: authUser?.phone || undefined,
       }
     }
 

@@ -1,6 +1,12 @@
-// Re-export types from supabase
-export type { Tables, TablesUpdate, TablesInsert } from './supabase'
-import type { Tables } from './supabase'
+// Re-export types from database
+export type {
+  Tables,
+  TablesUpdate,
+  TablesInsert,
+  Database,
+  Json,
+} from './database'
+import type { Tables } from './database'
 
 // Type aliases for common types
 export type Room = Tables<'rooms'>

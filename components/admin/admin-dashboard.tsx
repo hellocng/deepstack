@@ -29,7 +29,7 @@ interface GameData {
 
 interface TableData {
   id: string
-  status: string | null
+  is_active: boolean
 }
 
 interface TournamentData {
@@ -56,16 +56,18 @@ export function AdminDashboard(): JSX.Element {
 
         // Get current operator's room_id
         const {
-          data: { user },
-          error: authError,
-        } = await supabase.auth.getUser()
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession()
 
-        if (!user || authError) return
+        const userId = session?.user?.id
+
+        if (!userId || sessionError) return
 
         const { data: operator, error: operatorError } = await supabase
           .from('operators')
           .select('room_id')
-          .eq('auth_id', user.id)
+          .eq('auth_id', userId)
           .single()
 
         if (operatorError || !operator) return
@@ -80,7 +82,10 @@ export function AdminDashboard(): JSX.Element {
               .from('games')
               .select('id, is_active')
               .eq('room_id', roomId),
-            supabase.from('tables').select('id, status').eq('room_id', roomId),
+            supabase
+              .from('tables')
+              .select('id, is_active')
+              .eq('room_id', roomId),
             supabase
               .from('tournaments')
               .select('id, status')
@@ -98,7 +103,7 @@ export function AdminDashboard(): JSX.Element {
               .length || 0,
           totalTables: tablesResult.data?.length || 0,
           activeTables:
-            tablesResult.data?.filter((t: TableData) => t.status === 'open')
+            tablesResult.data?.filter((t: TableData) => t.is_active === true)
               .length || 0,
           totalTournaments: tournamentsResult.data?.length || 0,
           activeTournaments:

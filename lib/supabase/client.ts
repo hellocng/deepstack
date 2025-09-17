@@ -1,17 +1,26 @@
 import { createBrowserClient } from '@supabase/ssr'
-import { Database } from '@/types/supabase'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import { Database } from '@/types'
 
-let supabaseClient: ReturnType<typeof createBrowserClient<Database>> | null =
-  null
+let supabaseClient: SupabaseClient<Database> | null = null
 
-export function createClient(): ReturnType<
-  typeof createBrowserClient<Database>
-> {
+export function createClient(): SupabaseClient<Database> {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error('Missing Supabase environment variables')
+  }
+
   if (!supabaseClient) {
     supabaseClient = createBrowserClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      supabaseUrl,
+      supabaseAnonKey,
+      {
+        isSingleton: true,
+      }
     )
   }
+
   return supabaseClient
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Tables } from '@/types/supabase'
+import { Tables } from '@/types'
 import {
   Card,
   CardContent,
@@ -27,16 +27,18 @@ export function AdminGamesPage(): JSX.Element {
 
         // Get current operator's room_id
         const {
-          data: { user },
-          error: authError,
-        } = await supabase.auth.getUser()
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession()
 
-        if (!user || authError) return
+        const userId = session?.user?.id
+
+        if (!userId || sessionError) return
 
         const { data: operator, error: operatorError } = await supabase
           .from('operators')
           .select('room_id')
-          .eq('auth_id', user.id)
+          .eq('auth_id', userId)
           .single()
 
         if (operatorError || !operator) return
@@ -116,12 +118,6 @@ export function AdminGamesPage(): JSX.Element {
                   <span className='text-muted-foreground'>Rake:</span>
                   <span>{game.rake || 'N/A'}</span>
                 </div>
-                {game.description && (
-                  <div className='pt-2'>
-                    <span className='text-muted-foreground'>Description:</span>
-                    <p className='text-sm mt-1'>{game.description}</p>
-                  </div>
-                )}
               </div>
               <div className='flex gap-2 mt-4'>
                 <Button

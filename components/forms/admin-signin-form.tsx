@@ -16,6 +16,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { createClient } from '@/lib/supabase/client'
+import { handleError, isExpectedAuthError } from '@/lib/utils/error-handler'
 
 const adminSignInSchema = z.object({
   email: z
@@ -84,7 +85,13 @@ export function AdminSignInForm(): JSX.Element {
         router.push(redirectTo)
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to sign in')
+      // Handle expected authentication errors gracefully
+      if (isExpectedAuthError(err)) {
+        setError('Invalid email or password. Please try again.')
+      } else {
+        setError(err instanceof Error ? err.message : 'Failed to sign in')
+      }
+      handleError(err, 'Admin signin')
     } finally {
       setLoading(false)
     }

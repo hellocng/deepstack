@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/client'
-import { TablesInsert, Database } from '@/types/supabase'
+import { TablesInsert, Database } from '@/types'
 import {
   Dialog,
   DialogContent,
@@ -36,15 +36,6 @@ const createOperatorSchema = z.object({
     .string()
     .min(1, 'Password is required')
     .min(6, 'Password must be at least 6 characters'),
-  firstName: z
-    .string()
-    .min(1, 'First name is required')
-    .min(2, 'First name must be at least 2 characters'),
-  lastName: z
-    .string()
-    .min(1, 'Last name is required')
-    .min(2, 'Last name must be at least 2 characters'),
-  phoneNumber: z.string().optional(),
   role: z.enum(['admin', 'supervisor', 'dealer', 'superadmin']),
   roomId: z.string().optional(),
 })
@@ -71,9 +62,6 @@ export function CreateOperatorDialog({
     defaultValues: {
       email: '',
       password: '',
-      firstName: '',
-      lastName: '',
-      phoneNumber: '',
       role: 'dealer',
       roomId: '',
     },
@@ -130,10 +118,6 @@ export function CreateOperatorDialog({
 
       // Create the operator record
       const operatorData: TablesInsert<'operators'> = {
-        email: data.email,
-        first_name: data.firstName,
-        last_name: data.lastName,
-        phone_number: data.phoneNumber || null,
         role: data.role,
         room_id: data.role === 'superadmin' ? null : data.roomId,
         auth_id: authData.user.id,
@@ -176,35 +160,6 @@ export function CreateOperatorDialog({
           onSubmit={form.handleSubmit(onSubmit)}
           className='space-y-4'
         >
-          <div className='grid grid-cols-2 gap-4'>
-            <div className='space-y-2'>
-              <Label htmlFor='firstName'>First Name</Label>
-              <Input
-                id='firstName'
-                {...form.register('firstName')}
-                placeholder='John'
-              />
-              {form.formState.errors.firstName && (
-                <p className='text-sm text-destructive'>
-                  {form.formState.errors.firstName.message}
-                </p>
-              )}
-            </div>
-            <div className='space-y-2'>
-              <Label htmlFor='lastName'>Last Name</Label>
-              <Input
-                id='lastName'
-                {...form.register('lastName')}
-                placeholder='Doe'
-              />
-              {form.formState.errors.lastName && (
-                <p className='text-sm text-destructive'>
-                  {form.formState.errors.lastName.message}
-                </p>
-              )}
-            </div>
-          </div>
-
           <div className='space-y-2'>
             <Label htmlFor='email'>Email</Label>
             <Input
@@ -231,20 +186,6 @@ export function CreateOperatorDialog({
             {form.formState.errors.password && (
               <p className='text-sm text-destructive'>
                 {form.formState.errors.password.message}
-              </p>
-            )}
-          </div>
-
-          <div className='space-y-2'>
-            <Label htmlFor='phoneNumber'>Phone Number (Optional)</Label>
-            <Input
-              id='phoneNumber'
-              {...form.register('phoneNumber')}
-              placeholder='+1 (555) 123-4567'
-            />
-            {form.formState.errors.phoneNumber && (
-              <p className='text-sm text-destructive'>
-                {form.formState.errors.phoneNumber.message}
               </p>
             )}
           </div>

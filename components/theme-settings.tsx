@@ -19,7 +19,7 @@ import {
 import { Separator } from '@/components/ui/separator'
 import { Palette, Check } from 'lucide-react'
 import { useUser } from '@/lib/auth/user-context'
-import { Tables } from '@/types/supabase'
+import { Tables } from '@/types'
 import {
   PlayerPreferences,
   ColorTheme,
@@ -98,7 +98,7 @@ export function ThemeSettings({
 
       // Update the player's preferences using the auth context
       await updateUser({
-        preferences: updatedPreferences as import('@/types/supabase').Json,
+        preferences: updatedPreferences as import('@/types').Json,
       })
 
       // Update original theme on success

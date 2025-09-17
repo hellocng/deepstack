@@ -8,8 +8,10 @@ import React, {
   useCallback,
   useMemo,
 } from 'react'
+import type { Session } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
-import { Tables, TablesUpdate, TablesInsert } from '@/types/supabase'
+import { Tables, TablesUpdate, TablesInsert } from '@/types'
+import { handleError, isExpectedAuthError } from '@/lib/utils/error-handler'
 
 type Room = Tables<'rooms'>
 type Player = Tables<'players'>
@@ -31,6 +33,7 @@ export type User = PlayerUser | OperatorUser
 
 interface UserContextType {
   user: User | null
+  session: Session | null
   loading: boolean
   error: string | null
   signOut: () => Promise<void>
@@ -52,6 +55,7 @@ export function UserProvider({
   initialUser = null,
 }: UserProviderProps): JSX.Element {
   const [user, setUser] = useState<User | null>(initialUser)
+  const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(!initialUser) // No loading if we have initial data
   const [error, setError] = useState<string | null>(null)
   const supabase = useMemo(() => createClient(), [])
@@ -61,30 +65,16 @@ export function UserProvider({
       try {
         setError(null)
 
-        // First, try to load as player (most common case)
-        const { data: player, error: playerError } = await supabase
-          .from('players')
-          .select('*')
-          .eq('auth_id', authId)
-          .single()
+        const {
+          data: { session: activeSession },
+          error: _sessionError,
+        } = await supabase.auth.getSession()
 
-        if (player && !playerError) {
-          // Get phone number from auth user
-          const {
-            data: { user: authUser },
-          } = await supabase.auth.getUser()
+        // Session error handled gracefully
 
-          // User is a player
-          setUser({
-            type: 'player',
-            profile: player,
-            phoneNumber: authUser?.phone || undefined,
-          })
-          setLoading(false)
-          return
-        }
+        setSession(activeSession ?? null)
 
-        // If no player profile found, try to load as operator
+        // First, check if user is an operator (including superadmin)
         const { data: operator, error: operatorError } = await supabase
           .from('operators')
           .select(
@@ -97,6 +87,8 @@ export function UserProvider({
           .eq('is_active', true)
           .single()
 
+        // Operator query completed
+
         if (operator && !operatorError) {
           // User is an operator
           setUser({
@@ -108,55 +100,117 @@ export function UserProvider({
           return
         }
 
-        // If neither player nor operator found, set user to null
+        // If no operator profile found, try to load as player
+        const { data: player, error: playerError } = await supabase
+          .from('players')
+          .select('*')
+          .eq('auth_id', authId)
+          .single()
+
+        if (player && !playerError) {
+          // Read phone number from the active session to avoid additional network calls
+          // User is a player
+          setUser({
+            type: 'player',
+            profile: player,
+            phoneNumber: activeSession?.user?.phone || undefined,
+          })
+          setLoading(false)
+          return
+        }
+
+        // If neither operator nor player found, set user to null
         // This might be a new user who hasn't completed profile setup
         setUser(null)
         setLoading(false)
-      } catch (_err) {
-        // Error loading user profile
-        setError('Failed to load user profile')
+      } catch (err) {
+        // Handle expected authentication errors gracefully
+        if (isExpectedAuthError(err)) {
+          // Silently handle expected auth errors (user not found, etc.)
+          setUser(null)
+          setSession(null)
+        } else {
+          setError('Failed to load user profile')
+        }
         setLoading(false)
+        handleError(err, 'loadUserProfile')
       }
     },
     [supabase]
   )
 
   useEffect(() => {
-    // Only fetch user data if we don't have initial data from server
-    if (!initialUser) {
-      const getInitialUser = async (): Promise<void> => {
-        const {
-          data: { user },
-          error,
-        } = await supabase.auth.getUser()
+    let isMounted = true
 
-        if (user && !error) {
-          await loadUserProfile(user.id)
-          setLoading(false)
+    const bootstrapSession = async (): Promise<void> => {
+      try {
+        const {
+          data: { session: currentSession },
+          error,
+        } = await supabase.auth.getSession()
+
+        if (!isMounted) return
+
+        if (!error && currentSession?.user) {
+          setSession(currentSession)
+          await loadUserProfile(currentSession.user.id)
         } else {
-          setUser(null)
+          if (!initialUser) {
+            setUser(null)
+          }
+          setSession(null)
           setLoading(false)
         }
-      }
-
-      getInitialUser()
-    }
-
-    // Listen for auth changes (sign in/out)
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_OUT') {
+      } catch (err) {
+        if (!isMounted) return
+        setSession(null)
         setUser(null)
         setLoading(false)
-      } else if (event === 'SIGNED_IN' && session?.user) {
-        // Load user profile instead of reloading the page
-        await loadUserProfile(session.user.id)
+        handleError(err, 'bootstrapSession')
+      }
+    }
+
+    if (!initialUser) {
+      void bootstrapSession()
+    } else {
+      supabase.auth
+        .getSession()
+        .then(({ data }) => {
+          if (isMounted) {
+            setSession(data.session ?? null)
+          }
+        })
+        .catch((err) => {
+          if (isMounted) {
+            handleError(err, 'syncInitialSession')
+            setSession(null)
+          }
+        })
+    }
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, nextSession) => {
+      if (!isMounted) return
+
+      if (event === 'SIGNED_OUT') {
+        setUser(null)
+        setSession(null)
+        setLoading(false)
+        return
+      }
+
+      if (nextSession?.user) {
+        setSession(nextSession)
+        await loadUserProfile(nextSession.user.id)
       }
     })
 
-    return (): void => subscription.unsubscribe()
-  }, [loadUserProfile, supabase, initialUser])
+    return (): void => {
+      isMounted = false
+      subscription.unsubscribe()
+    }
+  }, [initialUser, loadUserProfile, supabase])
 
   const signOut = async (): Promise<void> => {
     try {
@@ -169,6 +223,7 @@ export function UserProvider({
 
       // Clear local state after successful sign out
       setUser(null)
+      setSession(null)
       setError(null)
 
       // Redirect to home page
@@ -255,6 +310,8 @@ export function UserProvider({
 
     if (error) throw error
 
+    setSession(data.session ?? null)
+
     if (data.user) {
       // Check if player profile exists
       const { data: existingPlayer, error: playerError } = await supabase
@@ -308,6 +365,7 @@ export function UserProvider({
     <UserContext.Provider
       value={{
         user,
+        session,
         loading,
         error,
         signOut,
@@ -343,6 +401,9 @@ export function useOperator(): OperatorUser | null {
 
 export function useSuperAdmin(): OperatorUser | null {
   const { user } = useUser()
+
+  // User role check completed
+
   return user?.type === 'operator' &&
     (user.profile.role as string) === 'superadmin'
     ? user

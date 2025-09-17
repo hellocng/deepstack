@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Tables } from '@/types/supabase'
+import { Tables } from '@/types'
+import { useUser, useSuperAdmin } from '@/lib/auth/user-context'
 import {
   Card,
   CardContent,
@@ -12,67 +13,163 @@ import {
 } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import {
-  Plus,
-  Building2,
-  Users,
-  Settings,
-  Gamepad2,
-  Calendar,
-} from 'lucide-react'
+import { Plus, Building2, Users, Settings, Gamepad2 } from 'lucide-react'
 import { CreateRoomDialog } from '@/components/dialogs/create-room-dialog'
 import { EditRoomDialog } from '@/components/dialogs/edit-room-dialog'
 import { RoomManagementDialog } from '@/components/dialogs/room-management-dialog'
+import { Loading } from '@/components/ui/loading'
 
 type Room = Tables<'rooms'>
 type Operator = Tables<'operators'>
 type Game = Tables<'games'>
-type Tournament = Tables<'tournaments'>
+// type Tournament = Tables<'tournaments'> // Unused for now
 
 interface RoomWithStats extends Room {
   operators: Operator[]
   games: Game[]
-  tournaments: Tournament[]
+  tournaments: Tables<'tournaments'>[]
+  operator_count?: number
+  total_games?: number
+  total_tables?: number
+  total_waitlist_players?: number
 }
 
 export function SuperAdminDashboard(): JSX.Element {
+  const { loading: userLoading } = useUser()
+  const superAdmin = useSuperAdmin()
   const [rooms, setRooms] = useState<RoomWithStats[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [managementDialogOpen, setManagementDialogOpen] = useState(false)
   const [selectedRoom, setSelectedRoom] = useState<RoomWithStats | null>(null)
 
-  const fetchRooms = async (): Promise<void> => {
+  // Memoize the superAdmin check to prevent unnecessary re-renders
+  const hasSuperAdmin = useMemo(() => !!superAdmin, [superAdmin])
+
+  // Debug logging
+  if (process.env.NODE_ENV === 'development') {
+    // eslint-disable-next-line no-console
+    console.log(
+      'SuperAdminDashboard render - userLoading:',
+      userLoading,
+      'superAdmin:',
+      hasSuperAdmin,
+      'loading:',
+      loading
+    )
+  }
+
+  const fetchRooms = useCallback(async (): Promise<void> => {
+    if (process.env.NODE_ENV === 'development') {
+      // eslint-disable-next-line no-console
+      console.log('fetchRooms called - superAdmin:', !!superAdmin)
+    }
+
+    if (!hasSuperAdmin) {
+      setLoading(false)
+      return
+    }
+
     try {
+      setError(null)
       const supabase = createClient()
 
-      // Fetch rooms with their operators, games, and tournaments
+      // Ensure we have a proper auth session
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession()
+
+      const userId = session?.user?.id
+
+      if (!userId || sessionError) {
+        // eslint-disable-next-line no-console
+        console.error('Session error:', sessionError)
+        setError('Authentication session error')
+        setRooms([])
+        setLoading(false)
+        return
+      }
+
+      // First, get basic room data
       const { data: roomsData, error: roomsError } = await supabase
         .from('rooms')
-        .select(
-          `
-          *,
-          operators:operators(*),
-          games:games(*),
-          tournaments:tournaments(*)
-        `
-        )
-        .order('name')
+        .select('*')
+        .order('created_at', { ascending: false })
 
-      if (roomsError) throw roomsError
+      if (roomsError) {
+        // eslint-disable-next-line no-console
+        console.error('Rooms fetch error:', roomsError)
+        throw roomsError
+      }
 
-      setRooms(roomsData || [])
-    } catch (_error) {
-      // Error fetching rooms - handled by error state
+      if (!roomsData || roomsData.length === 0) {
+        setRooms([])
+        setLoading(false)
+        return
+      }
+
+      // Then get stats using RPC function (bypasses RLS issues for stats)
+      const { data: statsData, error: statsError } = await supabase.rpc(
+        'get_rooms_with_stats'
+      )
+
+      if (statsError) {
+        // eslint-disable-next-line no-console
+        console.error('Stats RPC error:', statsError)
+        throw statsError
+      }
+
+      // Create a map of stats by room ID
+      const statsMap = new Map<string, Record<string, unknown>>()
+      if (statsData) {
+        statsData.forEach((stat: Record<string, unknown>) => {
+          statsMap.set(stat.id as string, stat)
+        })
+      }
+
+      // Combine room data with stats
+      const roomsWithStats: RoomWithStats[] = roomsData.map((room) => {
+        const stats = statsMap.get(room.id) || {}
+        return {
+          ...room,
+          operators: [],
+          games: [],
+          tournaments: [],
+          operator_count: (stats.operator_count as number) || 0,
+          total_games: (stats.total_games as number) || 0,
+          total_tables: (stats.total_tables as number) || 0,
+          total_waitlist_players: (stats.total_waitlist_players as number) || 0,
+        }
+      })
+
+      setRooms(roomsWithStats)
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Error fetching rooms:', error)
+      setError(error instanceof Error ? error.message : 'Failed to fetch rooms')
+      setRooms([])
     } finally {
       setLoading(false)
     }
-  }
+  }, [hasSuperAdmin, superAdmin])
 
   useEffect(() => {
-    fetchRooms()
-  }, [])
+    // Only fetch rooms when user loading is complete and we have a superAdmin user
+    if (!userLoading && hasSuperAdmin) {
+      // Add a small delay to ensure session is fully restored
+      const timer = setTimeout((): void => {
+        fetchRooms()
+      }, 200)
+
+      return (): void => clearTimeout(timer)
+    } else if (!userLoading && !hasSuperAdmin) {
+      // User loading is complete but no superAdmin - stop loading
+      setLoading(false)
+    }
+  }, [userLoading, hasSuperAdmin, fetchRooms])
 
   const handleCreateRoom = (): void => {
     setCreateDialogOpen(true)
@@ -92,12 +189,34 @@ export function SuperAdminDashboard(): JSX.Element {
     fetchRooms()
   }
 
-  if (loading) {
+  if (userLoading || loading) {
     return (
       <div className='flex items-center justify-center h-64'>
-        <div className='text-center'>
-          <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4'></div>
-          <p className='text-muted-foreground'>Loading rooms...</p>
+        <Loading
+          size='md'
+          text={userLoading ? 'Loading user...' : 'Loading rooms...'}
+        />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className='flex items-center justify-center h-64'>
+        <div className='text-center space-y-4'>
+          <div className='text-red-600 font-medium'>
+            Error loading dashboard
+          </div>
+          <div className='text-sm text-muted-foreground'>{error}</div>
+          <button
+            onClick={() => {
+              setError(null)
+              fetchRooms()
+            }}
+            className='px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90'
+          >
+            Retry
+          </button>
         </div>
       </div>
     )
@@ -105,9 +224,16 @@ export function SuperAdminDashboard(): JSX.Element {
 
   return (
     <div className='space-y-6'>
+      {/* Large Superadmin Title */}
+      <div className='text-center py-8'>
+        <h1 className='text-5xl font-bold tracking-tight mb-2'>Superadmin</h1>
+        <div className='w-24 h-1 bg-primary mx-auto rounded-full'></div>
+      </div>
+
+      {/* Section Title */}
       <div className='flex items-center justify-between'>
         <div>
-          <h1 className='text-3xl font-bold tracking-tight'>Room Management</h1>
+          <h2 className='text-3xl font-bold tracking-tight'>Room Management</h2>
           <p className='text-muted-foreground'>
             Manage poker room establishments and their staff
           </p>
@@ -161,7 +287,7 @@ export function SuperAdminDashboard(): JSX.Element {
                       <span className='text-xs'>Users</span>
                     </div>
                     <p className='text-lg font-semibold'>
-                      {room.operators.length}
+                      {room.operator_count || 0}
                     </p>
                   </div>
                   <div className='space-y-1'>
@@ -169,47 +295,41 @@ export function SuperAdminDashboard(): JSX.Element {
                       <Gamepad2 className='h-3 w-3' />
                       <span className='text-xs'>Games</span>
                     </div>
-                    <p className='text-lg font-semibold'>{room.games.length}</p>
+                    <p className='text-lg font-semibold'>
+                      {room.total_games || 0}
+                    </p>
                   </div>
                   <div className='space-y-1'>
                     <div className='flex items-center justify-center gap-1 text-sm text-muted-foreground'>
-                      <Calendar className='h-3 w-3' />
-                      <span className='text-xs'>Events</span>
+                      <Building2 className='h-3 w-3' />
+                      <span className='text-xs'>Tables</span>
                     </div>
                     <p className='text-lg font-semibold'>
-                      {room.tournaments.length}
+                      {room.total_tables || 0}
+                    </p>
+                  </div>
+                  <div className='space-y-1'>
+                    <div className='flex items-center justify-center gap-1 text-sm text-muted-foreground'>
+                      <Users className='h-3 w-3' />
+                      <span className='text-xs'>Waitlist</span>
+                    </div>
+                    <p className='text-lg font-semibold'>
+                      {room.total_waitlist_players || 0}
                     </p>
                   </div>
                 </div>
 
                 {/* Staff Preview */}
-                {room.operators.length > 0 && (
+                {(room.operator_count || 0) > 0 && (
                   <div className='space-y-2'>
                     <div className='text-sm text-muted-foreground'>
                       Staff Members
                     </div>
                     <div className='space-y-1'>
-                      {room.operators.slice(0, 2).map((operator) => (
-                        <div
-                          key={operator.id}
-                          className='text-sm flex items-center justify-between'
-                        >
-                          <span className='font-medium'>
-                            {operator.first_name} {operator.last_name}
-                          </span>
-                          <Badge
-                            variant='outline'
-                            className='text-xs'
-                          >
-                            {operator.role}
-                          </Badge>
-                        </div>
-                      ))}
-                      {room.operators.length > 2 && (
-                        <div className='text-sm text-muted-foreground'>
-                          +{room.operators.length - 2} more
-                        </div>
-                      )}
+                      <div className='text-sm text-muted-foreground'>
+                        {room.operator_count || 0} operator
+                        {(room.operator_count || 0) !== 1 ? 's' : ''} assigned
+                      </div>
                     </div>
                   </div>
                 )}

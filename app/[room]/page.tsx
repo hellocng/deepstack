@@ -3,7 +3,7 @@ import { DashboardStats } from '@/components/dashboard-stats'
 import { ActiveGames } from '@/components/active-games'
 import { FriendActivity } from '@/components/friend-activity'
 import { QuickActions } from '@/components/quick-actions'
-import { Tables } from '@/types/supabase'
+import { Tables } from '@/types'
 
 type Room = Tables<'rooms'>
 

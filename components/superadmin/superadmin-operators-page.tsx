@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Tables } from '@/types/supabase'
+import { Tables } from '@/types'
 import {
   Card,
   CardContent,
@@ -13,6 +13,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { CreateOperatorDialog } from '@/components/dialogs/create-operator-dialog'
+import { Loading } from '@/components/ui/loading'
 
 type Operator = Tables<'operators'> & {
   rooms: Tables<'rooms'> | null
@@ -65,10 +66,10 @@ export function SuperAdminOperatorsPage(): JSX.Element {
   if (loading) {
     return (
       <div className='flex items-center justify-center h-64'>
-        <div className='text-center'>
-          <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4'></div>
-          <p className='text-muted-foreground'>Loading operators...</p>
-        </div>
+        <Loading
+          size='md'
+          text='Loading operators...'
+        />
       </div>
     )
   }
@@ -93,13 +94,16 @@ export function SuperAdminOperatorsPage(): JSX.Element {
             <CardHeader>
               <div className='flex items-center justify-between'>
                 <CardTitle className='text-lg'>
-                  {operator.first_name} {operator.last_name}
+                  {operator.role.charAt(0).toUpperCase() +
+                    operator.role.slice(1)}
                 </CardTitle>
                 <Badge variant={operator.is_active ? 'default' : 'secondary'}>
                   {operator.is_active ? 'Active' : 'Inactive'}
                 </Badge>
               </div>
-              <CardDescription>{operator.email}</CardDescription>
+              <CardDescription>
+                Operator ID: {operator.id.slice(0, 8)}...
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className='space-y-2 text-sm'>
@@ -112,8 +116,10 @@ export function SuperAdminOperatorsPage(): JSX.Element {
                   <span>{operator.rooms?.name || 'No room assigned'}</span>
                 </div>
                 <div className='flex justify-between'>
-                  <span className='text-muted-foreground'>Phone:</span>
-                  <span>{operator.phone_number || 'Not provided'}</span>
+                  <span className='text-muted-foreground'>Auth ID:</span>
+                  <span className='text-xs font-mono'>
+                    {operator.auth_id?.slice(0, 8)}...
+                  </span>
                 </div>
                 <div className='flex justify-between'>
                   <span className='text-muted-foreground'>Last Login:</span>

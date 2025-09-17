@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Tables } from '@/types/supabase'
+import { Tables } from '@/types'
 import {
   Card,
   CardContent,
@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Loading } from '@/components/ui/loading'
 
 type Table = Tables<'tables'>
 
@@ -26,16 +27,18 @@ export function AdminTablesPage(): JSX.Element {
 
         // Get current operator's room_id
         const {
-          data: { user },
-          error: authError,
-        } = await supabase.auth.getUser()
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession()
 
-        if (!user || authError) return
+        const userId = session?.user?.id
+
+        if (!userId || sessionError) return
 
         const { data: operator, error: operatorError } = await supabase
           .from('operators')
           .select('room_id')
-          .eq('auth_id', user.id)
+          .eq('auth_id', userId)
           .single()
 
         if (operatorError || !operator) return
@@ -69,10 +72,10 @@ export function AdminTablesPage(): JSX.Element {
   if (loading) {
     return (
       <div className='flex items-center justify-center h-64'>
-        <div className='text-center'>
-          <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4'></div>
-          <p className='text-muted-foreground'>Loading tables...</p>
-        </div>
+        <Loading
+          size='md'
+          text='Loading tables...'
+        />
       </div>
     )
   }
@@ -95,10 +98,8 @@ export function AdminTablesPage(): JSX.Element {
             <CardHeader>
               <div className='flex items-center justify-between'>
                 <CardTitle className='text-lg'>{table.name}</CardTitle>
-                <Badge
-                  variant={table.status === 'open' ? 'default' : 'secondary'}
-                >
-                  {table.status}
+                <Badge variant={table.is_active ? 'default' : 'secondary'}>
+                  {table.is_active ? 'Active' : 'Inactive'}
                 </Badge>
               </div>
               <CardDescription>Table #{table.id.slice(-4)}</CardDescription>
@@ -110,8 +111,8 @@ export function AdminTablesPage(): JSX.Element {
                   <span>{table.seat_count}</span>
                 </div>
                 <div className='flex justify-between'>
-                  <span className='text-muted-foreground'>Game:</span>
-                  <span>{table.game_id ? 'Assigned' : 'Unassigned'}</span>
+                  <span className='text-muted-foreground'>Status:</span>
+                  <span>{table.is_active ? 'Active' : 'Inactive'}</span>
                 </div>
               </div>
               <div className='flex gap-2 mt-4'>
@@ -125,7 +126,7 @@ export function AdminTablesPage(): JSX.Element {
                   variant='outline'
                   size='sm'
                 >
-                  {table.status === 'open' ? 'Close' : 'Open'}
+                  {table.is_active ? 'Close' : 'Open'}
                 </Button>
               </div>
             </CardContent>
