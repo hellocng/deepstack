@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/card'
 import { createClient } from '@/lib/supabase/client'
 import { handleError, isExpectedAuthError } from '@/lib/utils/error-handler'
+import { useUser } from '@/lib/auth/user-context'
 
 const adminSignInSchema = z.object({
   email: z
@@ -36,7 +37,16 @@ export function AdminSignInForm(): JSX.Element {
   const [error, setError] = useState('')
   const router = useRouter()
   const searchParams = useSearchParams()
-  const redirectTo = searchParams.get('redirect') || '/admin'
+  const params = useParams<{ room?: string }>()
+  const { refreshUser } = useUser()
+  const roomSlug = params?.room ?? ''
+  const redirectParam = searchParams.get('redirect')
+  const redirectTo =
+    redirectParam && redirectParam.startsWith('/')
+      ? redirectParam
+      : roomSlug
+        ? `/${roomSlug}/admin`
+        : '/rooms'
 
   const form = useForm<AdminSignInFormData>({
     resolver: zodResolver(adminSignInSchema),
@@ -81,8 +91,10 @@ export function AdminSignInForm(): JSX.Element {
           return
         }
 
-        // Successfully authenticated as operator, redirect to admin dashboard
-        router.push(redirectTo)
+        // Ensure user context refreshes before redirecting
+        await refreshUser()
+
+        router.replace(redirectTo)
       }
     } catch (err) {
       // Handle expected authentication errors gracefully

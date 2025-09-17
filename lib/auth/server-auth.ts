@@ -53,15 +53,10 @@ export async function getServerUser(): Promise<ServerUser | null> {
       .maybeSingle()
 
     if (player && !playerError) {
-      // Get phone number from auth user
-      const {
-        data: { user: authUser },
-      } = await supabase.auth.getUser()
-
       return {
         type: 'player',
         profile: player,
-        phoneNumber: authUser?.phone || undefined,
+        phoneNumber: user.phone || undefined,
       }
     }
 

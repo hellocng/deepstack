@@ -20,9 +20,9 @@ import React, { useState, useEffect } from 'react'
 import { PWAInstall } from '@/components/pwa-install'
 
 export function Navigation(): JSX.Element {
-  const { user, loading, signOut } = useUser()
+  const { user, authUser, loading, signOut } = useUser()
   const _player = usePlayer()
-  const _superAdmin = useSuperAdmin()
+  const superAdmin = useSuperAdmin()
   const router = useRouter()
   const pathname = usePathname()
   const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('system')
@@ -152,6 +152,49 @@ export function Navigation(): JSX.Element {
     )
   }
 
+  const formatRoleLabel = (role?: string | null): string => {
+    if (!role) return 'Operator'
+    if (role === 'superadmin') return 'Super Admin'
+    return role.charAt(0).toUpperCase() + role.slice(1)
+  }
+
+  const isOperator = user?.type === 'operator'
+  const operatorRole = isOperator ? (user.profile.role as string) : null
+  const isSuperAdmin = !!superAdmin
+
+  const getPrimaryLabel = (): string => {
+    if (!user) return ''
+    if (user.type === 'player') {
+      return user.profile.alias || 'No alias set'
+    }
+
+    if (isSuperAdmin) {
+      return 'Super Admin'
+    }
+
+    return user.room?.name || 'Operator'
+  }
+
+  const getSecondaryLabel = (): string => {
+    if (!user) return ''
+    if (user.type === 'player') {
+      return formatPhoneNumber(user.phoneNumber || '')
+    }
+
+    if (isSuperAdmin) {
+      return authUser?.email || 'Email unavailable'
+    }
+
+    return formatRoleLabel(operatorRole)
+  }
+
+  const primaryLabel = getPrimaryLabel()
+  const secondaryLabel = getSecondaryLabel()
+
+  const avatarFallbackInitial = primaryLabel.trim().charAt(0).toUpperCase() || '?'
+  const avatarUrl = user?.profile.avatar_url || null
+  const avatarAlt = primaryLabel ? `${primaryLabel} avatar` : 'User avatar'
+
   return (
     <nav className='w-full fixed top-0 left-0 right-0 z-50 border-b border-border bg-transparent'>
       <div className='w-full flex justify-center bg-background/90 backdrop-blur-sm'>
@@ -179,17 +222,14 @@ export function Navigation(): JSX.Element {
                           className='relative h-8 w-8 rounded-full'
                         >
                           <Avatar className='h-8 w-8'>
-                            <AvatarImage
-                              src={user.profile.avatar_url || undefined}
-                            />
+                            {avatarUrl ? (
+                              <AvatarImage
+                                src={avatarUrl}
+                                alt={avatarAlt}
+                              />
+                            ) : null}
                             <AvatarFallback className='text-sm font-medium'>
-                              {user.type === 'player'
-                                ? user.profile.alias
-                                  ? user.profile.alias.charAt(0).toUpperCase()
-                                  : '?'
-                                : user.profile.role
-                                  ? user.profile.role.charAt(0).toUpperCase()
-                                  : 'O'}
+                              {avatarFallbackInitial || '?'}
                             </AvatarFallback>
                           </Avatar>
                         </Button>
@@ -202,17 +242,10 @@ export function Navigation(): JSX.Element {
                         <DropdownMenuLabel className='font-normal'>
                           <div className='flex flex-col'>
                             <p className='text-sm font-medium leading-none'>
-                              {user.type === 'player'
-                                ? user.profile.alias || 'No alias set'
-                                : user.profile.role
-                                  ? user.profile.role.charAt(0).toUpperCase() +
-                                    user.profile.role.slice(1)
-                                  : 'Operator'}
+                              {primaryLabel}
                             </p>
                             <p className='text-xs leading-none text-muted-foreground mt-4'>
-                              {user.type === 'player'
-                                ? formatPhoneNumber(user.phoneNumber || '')
-                                : user.profile.role}
+                              {secondaryLabel}
                             </p>
                           </div>
                         </DropdownMenuLabel>

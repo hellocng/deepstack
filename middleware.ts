@@ -5,6 +5,22 @@ import type { Database, Operator } from '@/types'
 import { createMiddlewareClient } from '@/lib/supabase/middleware-client'
 
 // Route classification helpers
+const ADMIN_SEGMENT = 'admin'
+const SUPERADMIN_SEGMENT = 'superadmin'
+
+const RESERVED_ROOT_SEGMENTS = new Set([
+  '',
+  'signin',
+  'rooms',
+  'profile',
+  ADMIN_SEGMENT,
+  SUPERADMIN_SEGMENT,
+  'api',
+  '_next',
+  'favicon.ico',
+  '.well-known',
+])
+
 function isPublicRoute(pathname: string): boolean {
   return (
     pathname === '/' ||
@@ -19,22 +35,35 @@ function isPublicRoute(pathname: string): boolean {
   )
 }
 
+function isReservedSegment(segment: string | undefined): boolean {
+  if (!segment) return true
+  return RESERVED_ROOT_SEGMENTS.has(segment)
+}
+
 function isPlayerRoute(pathname: string): boolean {
-  const segments = pathname.split('/').filter(Boolean)
-  return (
-    segments.length >= 1 &&
-    !segments.includes('admin') &&
-    !segments.includes('superadmin') &&
-    !isPublicRoute(pathname)
-  )
+  if (isPublicRoute(pathname)) return false
+  const segments = getPathSegments(pathname)
+  if (segments.length === 0) return false
+  if (segments[0] === SUPERADMIN_SEGMENT || segments[0] === ADMIN_SEGMENT) {
+    return false
+  }
+  if (isReservedSegment(segments[0])) {
+    return false
+  }
+  return true
+}
+
+function getPathSegments(pathname: string): string[] {
+  return pathname.split('/').filter(Boolean)
 }
 
 function isAdminRoute(pathname: string): boolean {
-  return pathname.includes('/admin/')
+  const segments = getPathSegments(pathname)
+  return segments.length >= 2 && segments[1] === ADMIN_SEGMENT
 }
 
 function isSuperAdminRoute(pathname: string): boolean {
-  return pathname.startsWith('/superadmin')
+  return pathname.startsWith(`/${SUPERADMIN_SEGMENT}`)
 }
 
 function isSigninRoute(pathname: string): boolean {
@@ -42,9 +71,8 @@ function isSigninRoute(pathname: string): boolean {
 }
 
 function extractRoomFromPath(pathname: string): string | null {
-  const segments = pathname.split('/').filter(Boolean)
-  // For routes like /[room]/admin/*, the room is the first segment
-  if (segments.length >= 2 && segments[1] === 'admin') {
+  const segments = getPathSegments(pathname)
+  if (segments.length >= 1) {
     return segments[0]
   }
   return null
@@ -111,42 +139,33 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
   let operatorData: Pick<Operator, 'id' | 'role' | 'room_id'> | null = null
 
   try {
-    // Check if user is a superadmin
-    const { data: superAdmin } = await supabase
+    const { data: operator, error: operatorError } = await supabase
       .from('operators')
       .select('id, role, room_id')
       .eq('auth_id', user.id)
-      .eq('role', 'superadmin')
       .eq('is_active', true)
-      .single()
+      .maybeSingle()
 
-    if (superAdmin) {
-      userType = 'superadmin'
-      operatorData = superAdmin
-      // Superadmin detected - no logging needed
+    if (operatorError && operatorError.code !== 'PGRST116') {
+      throw operatorError
+    }
+
+    if (operator) {
+      userType = operator.role === 'superadmin' ? 'superadmin' : 'operator'
+      operatorData = operator
     } else {
-      // Check if user is an operator (admin/supervisor/dealer)
-      const { data: operator } = await supabase
-        .from('operators')
-        .select('id, role, room_id')
+      const { data: player, error: playerError } = await supabase
+        .from('players')
+        .select('id')
         .eq('auth_id', user.id)
-        .eq('is_active', true)
-        .single()
+        .maybeSingle()
 
-      if (operator) {
-        userType = 'operator'
-        operatorData = operator
-      } else {
-        // Check if user is a player
-        const { data: player } = await supabase
-          .from('players')
-          .select('id')
-          .eq('auth_id', user.id)
-          .single()
+      if (playerError && playerError.code !== 'PGRST116') {
+        throw playerError
+      }
 
-        if (player) {
-          userType = 'player'
-        }
+      if (player) {
+        userType = 'player'
       }
     }
   } catch (_error) {
@@ -189,8 +208,8 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
 
   // Validate room exists for room-specific routes
   if (isPlayerRoute(pathname) || isAdminRoute(pathname)) {
-    const room = extractRoomFromPath(pathname) || pathname.split('/')[1]
-    if (room && !(await validateRoomExists(room, supabase))) {
+    const room = extractRoomFromPath(pathname)
+    if (room && !isReservedSegment(room) && !(await validateRoomExists(room, supabase))) {
       return applyCookies(NextResponse.redirect(new URL('/rooms', req.url)))
     }
   }

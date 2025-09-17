@@ -7,8 +7,9 @@ import React, {
   useState,
   useCallback,
   useMemo,
+  useRef,
 } from 'react'
-import type { Session } from '@supabase/supabase-js'
+import type { Session, User as SupabaseAuthUser } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { Tables, TablesUpdate, TablesInsert } from '@/types'
 import { handleError, isExpectedAuthError } from '@/lib/utils/error-handler'
@@ -35,6 +36,7 @@ export type User = PlayerUser | OperatorUser
 interface UserContextType {
   user: User | null
   session: Session | null
+  authUser: SupabaseAuthUser | null
   loading: boolean
   error: string | null
   signOut: () => Promise<void>
@@ -49,24 +51,28 @@ const UserContext = createContext<UserContextType | undefined>(undefined)
 interface UserProviderProps {
   children: React.ReactNode
   initialUser?: User | null
+  initialSession?: Session | null
 }
 
 export function UserProvider({
   children,
   initialUser = null,
+  initialSession = null,
 }: UserProviderProps): JSX.Element {
   const [user, setUser] = useState<User | null>(initialUser)
-  const [session, setSession] = useState<Session | null>(null)
-  const [loading, setLoading] = useState(!initialUser) // No loading if we have initial data
+  const [session, setSession] = useState<Session | null>(initialSession)
+  const [authUser, setAuthUser] = useState<SupabaseAuthUser | null>(null)
+  const [loading, setLoading] = useState(!initialUser)
   const [error, setError] = useState<string | null>(null)
   const supabase = useMemo(() => createClient(), [])
+  const isMountedRef = useRef(true)
 
   const loadUserProfile = useCallback(
     async (authId: string): Promise<void> => {
       try {
         setError(null)
+        setLoading(true)
 
-        // First, check if user is an operator (including superadmin)
         const { data: operator, error: operatorError } = await supabase
           .from('operators')
           .select(
@@ -79,130 +85,184 @@ export function UserProvider({
           .eq('is_active', true)
           .maybeSingle()
 
-        if (operator && !operatorError) {
-          // User is an operator
+        if (operatorError && operatorError.code !== 'PGRST116') {
+          throw operatorError
+        }
+
+        if (operator) {
+          if (!isMountedRef.current) return
           setUser({
             type: 'operator',
             profile: operator,
             room: operator.room as Room | null,
           })
-          setLoading(false)
           return
         }
 
-        // If no operator profile found, try to load as player
         const { data: player, error: playerError } = await supabase
           .from('players')
           .select('*')
           .eq('auth_id', authId)
           .maybeSingle()
 
-        if (player && !playerError) {
-          // User is a player
+        if (playerError && playerError.code !== 'PGRST116') {
+          throw playerError
+        }
+
+        if (player) {
+          if (!isMountedRef.current) return
           setUser({
             type: 'player',
             profile: player,
             phoneNumber: undefined,
           })
-          setLoading(false)
           return
         }
 
-        // If neither operator nor player found, set user to null
-        // This might be a new user who hasn't completed profile setup
+        if (!isMountedRef.current) return
         setUser(null)
-        setLoading(false)
       } catch (err) {
-        // Handle expected authentication errors gracefully
         if (isExpectedAuthError(err)) {
-          // Silently handle expected auth errors (user not found, etc.)
+          if (!isMountedRef.current) return
           setUser(null)
           setSession(null)
         } else {
-          setError('Failed to load user profile')
+          if (isMountedRef.current) {
+            setError('Failed to load user profile')
+          }
         }
-        setLoading(false)
         handleError(err, 'loadUserProfile')
+      } finally {
+        if (isMountedRef.current) {
+          setLoading(false)
+        }
       }
     },
     [supabase]
   )
 
   useEffect(() => {
-    let isMounted = true
+    isMountedRef.current = true
 
-    const bootstrapSession = async (): Promise<void> => {
+    const bootstrapAuthState = async (): Promise<void> => {
       try {
-        const {
-          data: { session: currentSession },
-          error,
-        } = await supabase.auth.getSession()
+        const [
+          {
+            data: { user: verifiedUser },
+            error: userError,
+          },
+          {
+            data: { session: currentSession },
+            error: sessionError,
+          },
+        ] = await Promise.all([
+          supabase.auth.getUser(),
+          supabase.auth.getSession(),
+        ])
 
-        if (!isMounted) return
+        if (userError) {
+          throw userError
+        }
 
-        if (!error && currentSession?.user) {
-          setSession(currentSession)
-          await loadUserProfile(currentSession.user.id)
-          // loadUserProfile should set loading to false, but ensure it's set
-          setLoading(false)
+        if (sessionError) {
+          throw sessionError
+        }
+
+        setAuthUser(verifiedUser ?? null)
+        setSession(currentSession ?? null)
+
+        if (verifiedUser) {
+          const initialMatchesVerifiedUser = Boolean(
+            initialUser &&
+              ((initialUser.type === 'player' &&
+                initialUser.profile.auth_id === verifiedUser.id) ||
+                (initialUser.type === 'operator' &&
+                  initialUser.profile.auth_id === verifiedUser.id))
+          )
+
+          if (!initialMatchesVerifiedUser) {
+            await loadUserProfile(verifiedUser.id)
+          } else {
+            setLoading(false)
+          }
         } else {
           if (!initialUser) {
             setUser(null)
           }
-          setSession(null)
           setLoading(false)
         }
       } catch (err) {
-        if (!isMounted) return
+        setAuthUser(null)
         setSession(null)
         setUser(null)
         setLoading(false)
-        handleError(err, 'bootstrapSession')
+        handleError(err, 'bootstrapAuthState')
       }
     }
 
-    if (!initialUser) {
-      void bootstrapSession()
-    } else {
-      // We have initial user data, just sync the session and set loading to false
-      supabase.auth
-        .getSession()
-        .then(({ data }) => {
-          if (isMounted) {
-            setSession(data.session ?? null)
-            setLoading(false) // Important: set loading to false when we have initial user
-          }
-        })
-        .catch((err) => {
-          if (isMounted) {
-            handleError(err, 'syncInitialSession')
-            setSession(null)
-            setLoading(false) // Set loading to false even on error
-          }
-        })
-    }
+    void bootstrapAuthState()
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, nextSession) => {
-      if (!isMounted) return
-
+    } = supabase.auth.onAuthStateChange(async (event) => {
       if (event === 'SIGNED_OUT') {
         setUser(null)
         setSession(null)
+        setAuthUser(null)
         setLoading(false)
         return
       }
 
-      if (nextSession?.user) {
-        setSession(nextSession)
-        // Don't call loadUserProfile here - it's already handled in bootstrapSession
-        // This prevents the race condition on direct URL navigation
+      if (event === 'TOKEN_REFRESHED') {
+        const {
+          data: { session: refreshedSession },
+          error: refreshedError,
+        } = await supabase.auth.getSession()
+        if (!refreshedError) {
+          setSession(refreshedSession ?? null)
+        }
+        return
+      }
+
+      if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+        const [
+          {
+            data: { user: verifiedUser },
+            error: userError,
+          },
+          {
+            data: { session: latestSession },
+            error: latestSessionError,
+          },
+        ] = await Promise.all([
+          supabase.auth.getUser(),
+          supabase.auth.getSession(),
+        ])
+
+        if (userError) {
+          handleError(userError, 'authStateChange.getUser')
+          return
+        }
+
+        if (latestSessionError) {
+          handleError(latestSessionError, 'authStateChange.getSession')
+        } else {
+          setSession(latestSession ?? null)
+        }
+
+        setAuthUser(verifiedUser ?? null)
+
+        if (verifiedUser) {
+          await loadUserProfile(verifiedUser.id)
+        } else {
+          setUser(null)
+          setLoading(false)
+        }
       }
     })
 
     return (): void => {
-      isMounted = false
+      isMountedRef.current = false
       subscription.unsubscribe()
     }
   }, [initialUser, loadUserProfile, supabase])
@@ -216,6 +276,7 @@ export function UserProvider({
       // Clear local state after successful sign out
       setUser(null)
       setSession(null)
+      setAuthUser(null)
       setError(null)
       setLoading(false)
 
@@ -270,13 +331,42 @@ export function UserProvider({
   }
 
   const refreshUser = async (): Promise<void> => {
-    if (!user || !user.profile.auth_id) return
-
     try {
-      setLoading(true)
-      await loadUserProfile(user.profile.auth_id)
+      const [
+        {
+          data: { user: refreshedUser },
+          error: userError,
+        },
+        {
+          data: { session: refreshedSession },
+          error: sessionError,
+        },
+      ] = await Promise.all([
+        supabase.auth.getUser(),
+        supabase.auth.getSession(),
+      ])
+
+      if (userError) {
+        throw userError
+      }
+
+      if (sessionError) {
+        throw sessionError
+      }
+
+      setAuthUser(refreshedUser ?? null)
+      setSession(refreshedSession ?? null)
+
+      if (!refreshedUser) {
+        setUser(null)
+        setLoading(false)
+        return
+      }
+
+      await loadUserProfile(refreshedUser.id)
     } catch (_error) {
       setError('Failed to refresh user profile')
+      handleError(_error, 'refreshUser')
     } finally {
       setLoading(false)
     }
@@ -307,11 +397,28 @@ export function UserProvider({
     setSession(data.session ?? null)
 
     if (data.user) {
+      const {
+        data: { user: verifiedUser },
+        error: getUserError,
+      } = await supabase.auth.getUser()
+
+      if (getUserError) {
+        throw getUserError
+      }
+
+      setAuthUser(verifiedUser ?? null)
+
+      if (!verifiedUser) {
+        setUser(null)
+        setLoading(false)
+        return false
+      }
+
       // Check if player profile exists
       const { data: existingPlayer, error: playerError } = await supabase
         .from('players')
         .select('*')
-        .eq('auth_id', data.user.id)
+        .eq('auth_id', verifiedUser.id)
         .single()
 
       if (playerError && playerError.code !== 'PGRST116') {
@@ -333,7 +440,7 @@ export function UserProvider({
         const { data: newPlayer, error: createError } = await supabase
           .from('players')
           .insert({
-            auth_id: data.user.id,
+            auth_id: verifiedUser.id,
             preferences: {},
           } as TablesInsert<'players'>)
           .select()
@@ -352,6 +459,7 @@ export function UserProvider({
     }
 
     setLoading(false)
+    setAuthUser(null)
     return false
   }
 
@@ -360,6 +468,7 @@ export function UserProvider({
       value={{
         user,
         session,
+        authUser,
         loading,
         error,
         signOut,
