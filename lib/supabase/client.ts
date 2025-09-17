@@ -12,14 +12,9 @@ export function createClient(): SupabaseClient<Database> {
     throw new Error('Missing Supabase environment variables')
   }
 
+  // Use singleton pattern to ensure consistent client instance
   if (!supabaseClient) {
-    supabaseClient = createBrowserClient<Database>(
-      supabaseUrl,
-      supabaseAnonKey,
-      {
-        isSingleton: true,
-      }
-    )
+    supabaseClient = createBrowserClient<Database>(supabaseUrl, supabaseAnonKey)
   }
 
   return supabaseClient

@@ -7,11 +7,16 @@ import { UserProvider } from '@/lib/auth/user-context'
 import { ThemeProvider } from '@/components/theme-provider'
 import { UserThemeProvider } from '@/components/user-theme-provider'
 import { Toaster } from 'sonner'
-import { getServerUser } from '@/lib/auth/server-auth'
+// import { getServerUser } from '@/lib/auth/server-auth' // Disabled to prevent SSR/client mismatch
 import { Suspense } from 'react'
 import { Loading } from '@/components/ui/loading'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap', // Prevents FOUT
+  preload: true, // Preloads the font
+  fallback: ['system-ui', 'arial'], // Fallback fonts
+})
 
 export const metadata: Metadata = {
   title: 'Home | DeepStack',
@@ -25,8 +30,8 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode
 }): Promise<JSX.Element> {
-  // Fetch user data server-side for maximum security
-  const initialUser = await getServerUser()
+  // Disable server-side auth to prevent SSR/client mismatch
+  const initialUser = null
 
   return (
     <html
@@ -42,6 +47,15 @@ export default async function RootLayout({
         <link
           rel='manifest'
           href='/api/manifest'
+        />
+        <link
+          rel='preconnect'
+          href='https://fonts.googleapis.com'
+        />
+        <link
+          rel='preconnect'
+          href='https://fonts.gstatic.com'
+          crossOrigin=''
         />
         <meta
           name='apple-mobile-web-app-capable'

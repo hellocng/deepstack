@@ -52,7 +52,7 @@ export function FriendCard({
           <div className='flex items-center space-x-3'>
             <div className='relative'>
               <Avatar className='h-12 w-12'>
-                <AvatarImage src={friend.avatar_url} />
+                <AvatarImage src={friend.avatar_url || undefined} />
                 <AvatarFallback>
                   {friend.alias.charAt(0).toUpperCase()}
                 </AvatarFallback>

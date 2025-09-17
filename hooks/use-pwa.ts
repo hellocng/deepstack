@@ -150,22 +150,21 @@ export function usePWA(): {
       } catch {}
     }
 
-    // Register service worker
+    // Register service worker - DISABLED to prevent auth interference
     const registerServiceWorker = async (): Promise<void> => {
-      if ('serviceWorker' in navigator) {
-        try {
-          // Unregister any existing service workers first
-          const registrations = await navigator.serviceWorker.getRegistrations()
-          for (const registration of registrations) {
-            await registration.unregister()
-          }
-
-          await navigator.serviceWorker.register('/sw.js')
-          // Service worker registered successfully
-        } catch {
-          // Silently handle service worker registration failures
-        }
-      }
+      // Service worker registration disabled to prevent auth issues
+      // if ('serviceWorker' in navigator) {
+      //   try {
+      //     // Only register if not already registered
+      //     const existingRegistration =
+      //       await navigator.serviceWorker.getRegistration('/sw.js')
+      //     if (!existingRegistration) {
+      //       await navigator.serviceWorker.register('/sw.js')
+      //     }
+      //   } catch {
+      //     // Silently handle service worker registration failures
+      //   }
+      // }
     }
 
     // Add event listeners

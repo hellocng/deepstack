@@ -12,6 +12,7 @@ import type { Session } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { Tables, TablesUpdate, TablesInsert } from '@/types'
 import { handleError, isExpectedAuthError } from '@/lib/utils/error-handler'
+import { SignOutUtils } from './signout-utils'
 
 type Room = Tables<'rooms'>
 type Player = Tables<'players'>
@@ -65,29 +66,18 @@ export function UserProvider({
       try {
         setError(null)
 
-        const {
-          data: { session: activeSession },
-          error: _sessionError,
-        } = await supabase.auth.getSession()
-
-        // Session error handled gracefully
-
-        setSession(activeSession ?? null)
-
         // First, check if user is an operator (including superadmin)
         const { data: operator, error: operatorError } = await supabase
           .from('operators')
           .select(
             `
-          *,
-          room:rooms(*)
-        `
+            *,
+            room:rooms(*)
+          `
           )
           .eq('auth_id', authId)
           .eq('is_active', true)
-          .single()
-
-        // Operator query completed
+          .maybeSingle()
 
         if (operator && !operatorError) {
           // User is an operator
@@ -105,15 +95,14 @@ export function UserProvider({
           .from('players')
           .select('*')
           .eq('auth_id', authId)
-          .single()
+          .maybeSingle()
 
         if (player && !playerError) {
-          // Read phone number from the active session to avoid additional network calls
           // User is a player
           setUser({
             type: 'player',
             profile: player,
-            phoneNumber: activeSession?.user?.phone || undefined,
+            phoneNumber: undefined,
           })
           setLoading(false)
           return
@@ -154,6 +143,8 @@ export function UserProvider({
         if (!error && currentSession?.user) {
           setSession(currentSession)
           await loadUserProfile(currentSession.user.id)
+          // loadUserProfile should set loading to false, but ensure it's set
+          setLoading(false)
         } else {
           if (!initialUser) {
             setUser(null)
@@ -173,17 +164,20 @@ export function UserProvider({
     if (!initialUser) {
       void bootstrapSession()
     } else {
+      // We have initial user data, just sync the session and set loading to false
       supabase.auth
         .getSession()
         .then(({ data }) => {
           if (isMounted) {
             setSession(data.session ?? null)
+            setLoading(false) // Important: set loading to false when we have initial user
           }
         })
         .catch((err) => {
           if (isMounted) {
             handleError(err, 'syncInitialSession')
             setSession(null)
+            setLoading(false) // Set loading to false even on error
           }
         })
     }
@@ -202,7 +196,8 @@ export function UserProvider({
 
       if (nextSession?.user) {
         setSession(nextSession)
-        await loadUserProfile(nextSession.user.id)
+        // Don't call loadUserProfile here - it's already handled in bootstrapSession
+        // This prevents the race condition on direct URL navigation
       }
     })
 
@@ -214,23 +209,22 @@ export function UserProvider({
 
   const signOut = async (): Promise<void> => {
     try {
-      // Sign out from Supabase (this handles all storage clearing automatically)
-      const { error } = await supabase.auth.signOut()
-
-      if (error) {
-        throw error
-      }
+      // Call Supabase sign out first, before clearing local state
+      // This ensures the auth state change listener works properly
+      await SignOutUtils.signOutWithFallbacks()
 
       // Clear local state after successful sign out
       setUser(null)
       setSession(null)
       setError(null)
+      setLoading(false)
 
       // Redirect to home page
       if (typeof window !== 'undefined') {
         window.location.href = '/'
       }
     } catch (error) {
+      setError('Failed to sign out. Please refresh the page.')
       throw error
     }
   }
@@ -401,8 +395,6 @@ export function useOperator(): OperatorUser | null {
 
 export function useSuperAdmin(): OperatorUser | null {
   const { user } = useUser()
-
-  // User role check completed
 
   return user?.type === 'operator' &&
     (user.profile.role as string) === 'superadmin'

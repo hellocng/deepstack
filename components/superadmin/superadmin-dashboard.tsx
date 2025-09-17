@@ -48,25 +48,7 @@ export function SuperAdminDashboard(): JSX.Element {
   // Memoize the superAdmin check to prevent unnecessary re-renders
   const hasSuperAdmin = useMemo(() => !!superAdmin, [superAdmin])
 
-  // Debug logging
-  if (process.env.NODE_ENV === 'development') {
-    // eslint-disable-next-line no-console
-    console.log(
-      'SuperAdminDashboard render - userLoading:',
-      userLoading,
-      'superAdmin:',
-      hasSuperAdmin,
-      'loading:',
-      loading
-    )
-  }
-
   const fetchRooms = useCallback(async (): Promise<void> => {
-    if (process.env.NODE_ENV === 'development') {
-      // eslint-disable-next-line no-console
-      console.log('fetchRooms called - superAdmin:', !!superAdmin)
-    }
-
     if (!hasSuperAdmin) {
       setLoading(false)
       return
@@ -85,8 +67,6 @@ export function SuperAdminDashboard(): JSX.Element {
       const userId = session?.user?.id
 
       if (!userId || sessionError) {
-        // eslint-disable-next-line no-console
-        console.error('Session error:', sessionError)
         setError('Authentication session error')
         setRooms([])
         setLoading(false)
@@ -100,8 +80,6 @@ export function SuperAdminDashboard(): JSX.Element {
         .order('created_at', { ascending: false })
 
       if (roomsError) {
-        // eslint-disable-next-line no-console
-        console.error('Rooms fetch error:', roomsError)
         throw roomsError
       }
 
@@ -117,8 +95,6 @@ export function SuperAdminDashboard(): JSX.Element {
       )
 
       if (statsError) {
-        // eslint-disable-next-line no-console
-        console.error('Stats RPC error:', statsError)
         throw statsError
       }
 
@@ -147,14 +123,12 @@ export function SuperAdminDashboard(): JSX.Element {
 
       setRooms(roomsWithStats)
     } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error('Error fetching rooms:', error)
       setError(error instanceof Error ? error.message : 'Failed to fetch rooms')
       setRooms([])
     } finally {
       setLoading(false)
     }
-  }, [hasSuperAdmin, superAdmin])
+  }, [hasSuperAdmin])
 
   useEffect(() => {
     // Only fetch rooms when user loading is complete and we have a superAdmin user
@@ -194,7 +168,7 @@ export function SuperAdminDashboard(): JSX.Element {
       <div className='flex items-center justify-center h-64'>
         <Loading
           size='md'
-          text={userLoading ? 'Loading user...' : 'Loading rooms...'}
+          text='Loading...'
         />
       </div>
     )

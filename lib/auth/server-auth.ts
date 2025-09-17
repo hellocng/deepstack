@@ -35,7 +35,7 @@ export async function getServerUser(): Promise<ServerUser | null> {
       )
       .eq('auth_id', user.id)
       .eq('is_active', true)
-      .single()
+      .maybeSingle()
 
     if (operator && !operatorError) {
       return {
@@ -50,7 +50,7 @@ export async function getServerUser(): Promise<ServerUser | null> {
       .from('players')
       .select('*')
       .eq('auth_id', user.id)
-      .single()
+      .maybeSingle()
 
     if (player && !playerError) {
       // Get phone number from auth user

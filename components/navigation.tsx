@@ -1,7 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -111,8 +111,8 @@ export function Navigation(): JSX.Element {
       setIsSigningOut(true)
       await signOut()
     } catch (_error) {
-      // Silently handle sign out errors - user will be redirected anyway
       setIsSigningOut(false)
+      alert('Failed to sign out. Please try again or refresh the page.')
     }
   }
 
@@ -179,6 +179,9 @@ export function Navigation(): JSX.Element {
                           className='relative h-8 w-8 rounded-full'
                         >
                           <Avatar className='h-8 w-8'>
+                            <AvatarImage
+                              src={user.profile.avatar_url || undefined}
+                            />
                             <AvatarFallback className='text-sm font-medium'>
                               {user.type === 'player'
                                 ? user.profile.alias

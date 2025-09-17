@@ -27,22 +27,11 @@ self.addEventListener('install', (event) => {
   self.skipWaiting()
 })
 
-// Fetch event - network first, minimal caching
-self.addEventListener('fetch', (event) => {
-  const { request } = event
-
-  // Only handle offline page requests
-  if (request.destination === 'document') {
-    // For pages, always try network first, no caching
-    event.respondWith(
-      fetch(request).catch(() => {
-        // Network failed, serve offline page
-        return caches.match('/offline.html')
-      })
-    )
-  }
-  // Don't handle other request types - let browser handle them normally
-})
+// Fetch event - COMPLETELY DISABLED to prevent auth interference
+// self.addEventListener('fetch', (event) => {
+//   // Service worker fetch handling disabled
+//   // This prevents interference with Supabase auth and API calls
+// })
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
