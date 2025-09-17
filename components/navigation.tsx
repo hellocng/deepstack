@@ -122,7 +122,7 @@ export function Navigation(): JSX.Element {
 
   const isSignInPage =
     pathname === '/signin' ||
-    pathname === '/admin/signin' ||
+    pathname.includes('/admin/signin') ||
     pathname === '/superadmin/signin'
   const isRootPage = pathname === '/'
   const _shouldShowSignIn = !isSignInPage && !user
@@ -191,7 +191,8 @@ export function Navigation(): JSX.Element {
   const primaryLabel = getPrimaryLabel()
   const secondaryLabel = getSecondaryLabel()
 
-  const avatarFallbackInitial = primaryLabel.trim().charAt(0).toUpperCase() || '?'
+  const avatarFallbackInitial =
+    primaryLabel.trim().charAt(0).toUpperCase() || '?'
   const avatarUrl = user?.profile.avatar_url || null
   const avatarAlt = primaryLabel ? `${primaryLabel} avatar` : 'User avatar'
 

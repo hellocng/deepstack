@@ -6,21 +6,7 @@ import { createMiddlewareClient } from '@/lib/supabase/middleware-client'
 import { validateIPAccess } from '@/lib/ip-validation'
 
 // Route classification helpers
-const ADMIN_SEGMENT = 'admin'
 const SUPERADMIN_SEGMENT = 'superadmin'
-
-const RESERVED_ROOT_SEGMENTS = new Set([
-  '',
-  'signin',
-  'rooms',
-  'profile',
-  ADMIN_SEGMENT,
-  SUPERADMIN_SEGMENT,
-  'api',
-  '_next',
-  'favicon.ico',
-  '.well-known',
-])
 
 function isPublicRoute(pathname: string): boolean {
   return (
@@ -36,22 +22,10 @@ function isPublicRoute(pathname: string): boolean {
   )
 }
 
-function isReservedSegment(segment: string | undefined): boolean {
-  if (!segment) return true
-  return RESERVED_ROOT_SEGMENTS.has(segment)
-}
-
 function isPlayerRoute(pathname: string): boolean {
   if (isPublicRoute(pathname)) return false
-  const segments = getPathSegments(pathname)
-  if (segments.length === 0) return false
-  if (segments[0] === SUPERADMIN_SEGMENT || segments[0] === ADMIN_SEGMENT) {
-    return false
-  }
-  if (isReservedSegment(segments[0])) {
-    return false
-  }
-  return true
+  // Player routes are now /rooms/[room] (but not admin routes)
+  return pathname.startsWith('/rooms/') && !pathname.includes('/admin')
 }
 
 function getPathSegments(pathname: string): string[] {
@@ -59,8 +33,8 @@ function getPathSegments(pathname: string): string[] {
 }
 
 function isAdminRoute(pathname: string): boolean {
-  const segments = getPathSegments(pathname)
-  return segments.length >= 2 && segments[1] === ADMIN_SEGMENT
+  // Admin routes are now /rooms/[room]/admin
+  return pathname.startsWith('/rooms/') && pathname.includes('/admin')
 }
 
 function isSuperAdminRoute(pathname: string): boolean {
@@ -72,9 +46,12 @@ function isSigninRoute(pathname: string): boolean {
 }
 
 function extractRoomFromPath(pathname: string): string | null {
-  const segments = getPathSegments(pathname)
-  if (segments.length >= 1) {
-    return segments[0]
+  // Extract room from /rooms/[room] or /rooms/[room]/admin paths
+  if (pathname.startsWith('/rooms/')) {
+    const segments = getPathSegments(pathname)
+    if (segments.length >= 2 && segments[0] === 'rooms') {
+      return segments[1]
+    }
   }
   return null
 }
@@ -119,7 +96,7 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
     if (isAdminRoute(pathname) && !isSigninRoute(pathname)) {
       const room = extractRoomFromPath(pathname)
       if (room) {
-        const signinUrl = new URL(`/${room}/admin/signin`, req.url)
+        const signinUrl = new URL(`/rooms/${room}/admin/signin`, req.url)
         signinUrl.searchParams.set('redirect', pathname)
         return applyCookies(NextResponse.redirect(signinUrl))
       }
@@ -148,7 +125,7 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
         )
 
         // Redirect to signin with error message
-        const errorUrl = new URL(`/${room}/admin/signin`, req.url)
+        const errorUrl = new URL(`/rooms/${room}/admin/signin`, req.url)
         errorUrl.searchParams.set('error', 'ip_restricted')
         errorUrl.searchParams.set('ip', ipValidation.clientIP)
         return applyCookies(NextResponse.redirect(errorUrl))
@@ -204,7 +181,7 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
         return applyCookies(NextResponse.redirect(new URL('/rooms', req.url)))
       case 'operator': {
         const room = operatorData?.room_id
-        const adminUrl = room ? `/${room}/admin/` : '/'
+        const adminUrl = room ? `/rooms/${room}/admin/` : '/'
         return applyCookies(NextResponse.redirect(new URL(adminUrl, req.url)))
       }
       case 'superadmin':
@@ -226,20 +203,57 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
     // Operator accessing superadmin route - no logging needed
     if (operatorData?.role !== 'superadmin') {
       const room = operatorData?.room_id
-      const adminUrl = room ? `/${room}/admin/` : '/'
+      const adminUrl = room ? `/rooms/${room}/admin/` : '/'
       return applyCookies(NextResponse.redirect(new URL(adminUrl, req.url)))
     }
   }
 
-  // Validate room exists for room-specific routes
+  // Validate room exists and user has access for room-specific routes
   if (isPlayerRoute(pathname) || isAdminRoute(pathname)) {
     const room = extractRoomFromPath(pathname)
-    if (
-      room &&
-      !isReservedSegment(room) &&
-      !(await validateRoomExists(room, supabase))
-    ) {
-      return applyCookies(NextResponse.redirect(new URL('/rooms', req.url)))
+    if (room) {
+      const roomExists = await validateRoomExists(room, supabase)
+
+      if (!roomExists) {
+        // Room doesn't exist - redirect based on user type
+        switch (userType) {
+          case 'player':
+            return applyCookies(
+              NextResponse.redirect(new URL('/rooms', req.url))
+            )
+          case 'operator': {
+            const operatorRoom = operatorData?.room_id
+            const adminUrl = operatorRoom
+              ? `/rooms/${operatorRoom}/admin/`
+              : '/rooms'
+            return applyCookies(
+              NextResponse.redirect(new URL(adminUrl, req.url))
+            )
+          }
+          case 'superadmin':
+            return applyCookies(
+              NextResponse.redirect(new URL('/superadmin/', req.url))
+            )
+          default:
+            return applyCookies(
+              NextResponse.redirect(new URL('/rooms', req.url))
+            )
+        }
+      }
+
+      // Room exists - check operator access for admin routes
+      if (
+        isAdminRoute(pathname) &&
+        userType === 'operator' &&
+        operatorData?.room_id !== room
+      ) {
+        // Operator trying to access a different room's admin
+        const operatorRoom = operatorData?.room_id
+        const adminUrl = operatorRoom
+          ? `/rooms/${operatorRoom}/admin/`
+          : '/rooms'
+        return applyCookies(NextResponse.redirect(new URL(adminUrl, req.url)))
+      }
     }
   }
 

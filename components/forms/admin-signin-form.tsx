@@ -49,7 +49,7 @@ export function AdminSignInForm(): JSX.Element {
     redirectParam && redirectParam.startsWith('/')
       ? redirectParam
       : roomSlug
-        ? `/${roomSlug}/admin`
+        ? `/rooms/${roomSlug}/admin`
         : '/rooms'
 
   const form = useForm<AdminSignInFormData>({

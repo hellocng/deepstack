@@ -139,7 +139,7 @@ if (isAdminRoute(pathname)) {
 
     if (!ipValidation.isAllowed) {
       // Redirect to signin with error message
-      const errorUrl = new URL(`/${room}/admin/signin`, req.url)
+      const errorUrl = new URL(`/rooms/${room}/admin/signin`, req.url)
       errorUrl.searchParams.set('error', 'ip_restricted')
       errorUrl.searchParams.set('ip', ipValidation.clientIP)
       return NextResponse.redirect(errorUrl)
@@ -297,7 +297,7 @@ const ipRestrictions = {
 ### 2. API Route Protection
 
 ```typescript
-// app/api/[room]/admin/games/route.ts
+// app/api/rooms/[room]/admin/games/route.ts
 export async function GET(
   request: NextRequest,
   { params }: { params: { room: string } }

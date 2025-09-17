@@ -198,7 +198,7 @@ export function AdminDashboard(): JSX.Element {
           </CardHeader>
           <CardContent className='space-y-2'>
             <Link
-              href='/admin/games'
+              href='./games'
               className='block p-3 rounded-lg border hover:bg-accent transition-colors'
             >
               <div className='font-medium'>Manage Games</div>
@@ -207,7 +207,7 @@ export function AdminDashboard(): JSX.Element {
               </div>
             </Link>
             <Link
-              href='/admin/tables'
+              href='./tables'
               className='block p-3 rounded-lg border hover:bg-accent transition-colors'
             >
               <div className='font-medium'>Manage Tables</div>
@@ -216,7 +216,7 @@ export function AdminDashboard(): JSX.Element {
               </div>
             </Link>
             <Link
-              href='/admin/waitlist'
+              href='./waitlist'
               className='block p-3 rounded-lg border hover:bg-accent transition-colors'
             >
               <div className='font-medium'>View Waitlist</div>

@@ -25,7 +25,7 @@ export default function AdminLayout({
   useEffect(() => {
     if (!mounted || loading) return
     if (!operator) {
-      const fallback = roomSlug ? `/${roomSlug}/admin/signin` : '/signin'
+      const fallback = roomSlug ? `/rooms/${roomSlug}/admin/signin` : '/signin'
       router.replace(fallback)
     }
   }, [loading, mounted, operator, roomSlug, router])
