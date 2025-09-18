@@ -12,6 +12,18 @@ import {
 import Link from 'next/link'
 import { Loading } from '@/components/ui/loading'
 import { useOperator } from '@/lib/auth/user-context'
+import {
+  Building2,
+  Shield,
+  BarChart3,
+  Club,
+  Table,
+  Clock,
+  Users,
+  Gift,
+  Trophy,
+  LucideIcon,
+} from 'lucide-react'
 
 interface DashboardStats {
   totalGames: number
@@ -37,6 +49,102 @@ interface TournamentData {
   id: string
   status: string | null
 }
+
+interface ManagementCard {
+  id: string
+  title: string
+  href: string
+  icon: LucideIcon
+  roles: string[]
+}
+
+interface ManagementCardProps {
+  card: ManagementCard
+}
+
+function ManagementCardComponent({ card }: ManagementCardProps): JSX.Element {
+  return (
+    <Link
+      href={card.href}
+      className='group'
+    >
+      <Card className='h-full hover:shadow-lg hover:scale-105 hover:bg-accent transition-all duration-200 cursor-pointer px-6 py-10 border-2 hover:border-primary/20'>
+        <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2 p-0'>
+          <CardTitle className='text-2xl font-bold'>{card.title}</CardTitle>
+          <card.icon className='h-4 w-4 text-muted-foreground' />
+        </CardHeader>
+      </Card>
+    </Link>
+  )
+}
+
+const managementCards: ManagementCard[] = [
+  // Admin-only cards
+  {
+    id: 'room-info',
+    title: 'Room Info',
+    href: './admin/info',
+    icon: Building2,
+    roles: ['admin'],
+  },
+  {
+    id: 'security',
+    title: 'Security',
+    href: './admin/security',
+    icon: Shield,
+    roles: ['admin'],
+  },
+  {
+    id: 'reports',
+    title: 'Reports',
+    href: '#',
+    icon: BarChart3,
+    roles: ['admin'],
+  },
+  // Supervisor and Admin cards
+  {
+    id: 'games',
+    title: 'Games',
+    href: './admin/games',
+    icon: Club,
+    roles: ['admin', 'supervisor'],
+  },
+  {
+    id: 'tables',
+    title: 'Tables',
+    href: './admin/tables',
+    icon: Table,
+    roles: ['admin', 'supervisor'],
+  },
+  {
+    id: 'waitlists',
+    title: 'Waitlists',
+    href: './admin/waitlists',
+    icon: Clock,
+    roles: ['admin', 'supervisor'],
+  },
+  {
+    id: 'players',
+    title: 'Players',
+    href: './admin/players',
+    icon: Users,
+    roles: ['admin', 'supervisor'],
+  },
+  {
+    id: 'promos',
+    title: 'Promos',
+    href: './admin/promos',
+    icon: Gift,
+    roles: ['admin', 'supervisor'],
+  },
+  {
+    id: 'tournaments',
+    title: 'Tournaments',
+    href: './admin/tournaments',
+    icon: Trophy,
+    roles: ['admin', 'supervisor'],
+  },
+]
 
 export function AdminDashboard(): JSX.Element {
   const [stats, setStats] = useState<DashboardStats>({
@@ -121,7 +229,11 @@ export function AdminDashboard(): JSX.Element {
   return (
     <div className='space-y-6'>
       <div>
-        <h1 className='text-3xl font-bold tracking-tight'>Admin Dashboard</h1>
+        <h1 className='text-3xl font-bold tracking-tight'>
+          {operator?.profile?.role === 'supervisor'
+            ? 'Supervisor Console'
+            : 'Admin Dashboard'}
+        </h1>
         <p className='text-muted-foreground'>
           Overview of your poker room operations
         </p>
@@ -175,54 +287,20 @@ export function AdminDashboard(): JSX.Element {
         </Card>
       </div>
 
-      <div className='grid gap-4 md:grid-cols-2'>
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>Common administrative tasks</CardDescription>
-          </CardHeader>
-          <CardContent className='space-y-2'>
-            <Link
-              href='./games'
-              className='block p-3 rounded-lg border hover:bg-accent transition-colors'
-            >
-              <div className='font-medium'>Manage Games</div>
-              <div className='text-sm text-muted-foreground'>
-                Create and manage poker games
-              </div>
-            </Link>
-            <Link
-              href='./tables'
-              className='block p-3 rounded-lg border hover:bg-accent transition-colors'
-            >
-              <div className='font-medium'>Manage Tables</div>
-              <div className='text-sm text-muted-foreground'>
-                Configure table settings and seating
-              </div>
-            </Link>
-            <Link
-              href='./waitlist'
-              className='block p-3 rounded-lg border hover:bg-accent transition-colors'
-            >
-              <div className='font-medium'>View Waitlist</div>
-              <div className='text-sm text-muted-foreground'>
-                Manage player waitlists
-              </div>
-            </Link>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-            <CardDescription>Latest updates in your room</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className='text-sm text-muted-foreground'>
-              Activity feed coming soon...
-            </div>
-          </CardContent>
-        </Card>
+      <div>
+        <h2 className='text-2xl font-bold tracking-tight mb-4'>Manage</h2>
+        <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
+          {managementCards
+            .filter((card) =>
+              card.roles.includes(operator?.profile?.role || '')
+            )
+            .map((card) => (
+              <ManagementCardComponent
+                key={card.id}
+                card={card}
+              />
+            ))}
+        </div>
       </div>
     </div>
   )

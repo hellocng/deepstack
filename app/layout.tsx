@@ -159,8 +159,7 @@ export default async function RootLayout({
                     document.documentElement.style.setProperty(property, value);
                   });
 
-                  // Apply font immediately to prevent FOUT
-                  document.documentElement.style.setProperty('--font-inter', 'Inter, system-ui, -apple-system, sans-serif');
+                  // Font is already handled by Next.js font configuration above
                 } catch (e) {
                   // Fallback to light mode
                   document.documentElement.classList.add('light');
