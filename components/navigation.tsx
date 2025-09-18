@@ -96,12 +96,16 @@ export function Navigation(): JSX.Element {
   }
 
   const handleProfile = (): void => {
-    if (
-      user?.type === 'operator' &&
-      (user.profile.role as string) === 'superadmin'
-    ) {
-      router.push('/superadmin')
+    if (user?.type === 'operator') {
+      if ((user.profile.role as string) === 'superadmin') {
+        router.push('/superadmin')
+      } else if (user.room) {
+        // Route operators to their room admin page
+        const roomIdentifier = user.room.code || user.room.id
+        router.push(`/rooms/${roomIdentifier}/admin`)
+      }
     } else {
+      // Players go to profile
       router.push('/profile')
     }
   }
@@ -255,52 +259,50 @@ export function Navigation(): JSX.Element {
                           <User className='mr-2 h-4 w-4' />
                           {user.type === 'operator' &&
                           (user.profile.role as string) === 'superadmin'
-                            ? 'Admin Panel'
-                            : 'Profile'}
+                            ? 'Super Admin Panel'
+                            : user.type === 'operator'
+                              ? 'Admin Panel'
+                              : 'Profile'}
                         </DropdownMenuItem>
-                        {user.type === 'player' && (
-                          <>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuLabel>Theme</DropdownMenuLabel>
-                            <DropdownMenuRadioGroup
-                              value={theme}
-                              onValueChange={(value) =>
-                                setTheme(value as 'light' | 'dark' | 'system')
-                              }
-                            >
-                              <DropdownMenuRadioItem
-                                className='flex gap-2'
-                                value='light'
-                              >
-                                <Sun
-                                  size={16}
-                                  className='text-muted-foreground'
-                                />
-                                <span>Light</span>
-                              </DropdownMenuRadioItem>
-                              <DropdownMenuRadioItem
-                                className='flex gap-2'
-                                value='dark'
-                              >
-                                <Moon
-                                  size={16}
-                                  className='text-muted-foreground'
-                                />
-                                <span>Dark</span>
-                              </DropdownMenuRadioItem>
-                              <DropdownMenuRadioItem
-                                className='flex gap-2'
-                                value='system'
-                              >
-                                <Laptop
-                                  size={16}
-                                  className='text-muted-foreground'
-                                />
-                                <span>System</span>
-                              </DropdownMenuRadioItem>
-                            </DropdownMenuRadioGroup>
-                          </>
-                        )}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuLabel>Theme</DropdownMenuLabel>
+                        <DropdownMenuRadioGroup
+                          value={theme}
+                          onValueChange={(value) =>
+                            setTheme(value as 'light' | 'dark' | 'system')
+                          }
+                        >
+                          <DropdownMenuRadioItem
+                            className='flex gap-2'
+                            value='light'
+                          >
+                            <Sun
+                              size={16}
+                              className='text-muted-foreground'
+                            />
+                            <span>Light</span>
+                          </DropdownMenuRadioItem>
+                          <DropdownMenuRadioItem
+                            className='flex gap-2'
+                            value='dark'
+                          >
+                            <Moon
+                              size={16}
+                              className='text-muted-foreground'
+                            />
+                            <span>Dark</span>
+                          </DropdownMenuRadioItem>
+                          <DropdownMenuRadioItem
+                            className='flex gap-2'
+                            value='system'
+                          >
+                            <Laptop
+                              size={16}
+                              className='text-muted-foreground'
+                            />
+                            <span>System</span>
+                          </DropdownMenuRadioItem>
+                        </DropdownMenuRadioGroup>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           onSelect={(e) => {

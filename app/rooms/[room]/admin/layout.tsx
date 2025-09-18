@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, usePathname } from 'next/navigation'
 import { useUser, useOperator } from '@/lib/auth/user-context'
 import { Loading } from '@/components/ui/loading'
 
@@ -10,12 +10,16 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode
 }): JSX.Element | null {
-  const { loading } = useUser()
+  const { loading, authUser, user } = useUser()
   const operator = useOperator()
   const router = useRouter()
+  const pathname = usePathname()
   const params = useParams<{ room?: string }>()
   const [mounted, setMounted] = useState(false)
   const roomSlug = params?.room ?? ''
+
+  // Check if we're on the signin page
+  const isSigninPage = pathname?.endsWith('/admin/signin')
 
   // Handle hydration
   useEffect(() => {
@@ -24,13 +28,38 @@ export default function AdminLayout({
 
   useEffect(() => {
     if (!mounted || loading) return
-    if (!operator) {
+
+    if (isSigninPage) {
+      if (operator) {
+        const destination = roomSlug
+          ? `/rooms/${roomSlug}/admin`
+          : '/rooms'
+        router.replace(destination)
+      }
+      return
+    }
+
+    if (!authUser) {
       const fallback = roomSlug ? `/rooms/${roomSlug}/admin/signin` : '/signin'
       router.replace(fallback)
+      return
     }
-  }, [loading, mounted, operator, roomSlug, router])
 
-  if (!mounted || loading) {
+    if (user && user.type !== 'operator') {
+      router.replace('/rooms')
+    }
+  }, [
+    authUser,
+    isSigninPage,
+    loading,
+    mounted,
+    operator,
+    roomSlug,
+    router,
+    user,
+  ])
+
+  if (!mounted || (loading && !isSigninPage)) {
     return (
       <Loading
         fullScreen
@@ -40,6 +69,12 @@ export default function AdminLayout({
     )
   }
 
+  // If we're on the signin page, always render children
+  if (isSigninPage) {
+    return <>{children}</>
+  }
+
+  // For other admin pages, require operator authentication
   if (!operator) {
     return null
   }

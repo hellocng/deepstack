@@ -132,21 +132,35 @@ The IP validation is integrated into the Next.js middleware and runs before auth
 
 ```typescript
 // middleware.ts
-if (isAdminRoute(pathname)) {
-  const room = extractRoomFromPath(pathname)
-  if (room) {
-    const ipValidation = await validateIPAccess(req, room, supabase)
+const roomResolver = createRoomResolver(supabase)
+const requestHeaders = new Headers(req.headers)
+const roomParam = extractRoomFromPath(pathname)
 
-    if (!ipValidation.isAllowed) {
-      // Redirect to signin with error message
-      const errorUrl = new URL(`/rooms/${room}/admin/signin`, req.url)
-      errorUrl.searchParams.set('error', 'ip_restricted')
-      errorUrl.searchParams.set('ip', ipValidation.clientIP)
-      return NextResponse.redirect(errorUrl)
-    }
+if (isAdminRoute(pathname)) {
+  const { context, validation } = await roomResolver.validateAdminAccess(
+    req,
+    roomParam
+  )
+
+  if (!context) {
+    return NextResponse.redirect(new URL('/rooms', req.url))
   }
+
+  if (validation && !validation.isAllowed) {
+    const signinPath = await roomResolver.buildRoomPath(context.id, '/admin/signin')
+    const errorUrl = new URL(signinPath, req.url)
+    errorUrl.searchParams.set('error', 'ip_restricted')
+    errorUrl.searchParams.set('ip', validation.clientIP)
+    return NextResponse.redirect(errorUrl)
+  }
+
+  // Forward room context so server components can consume it without re-querying
+  if (context.code) requestHeaders.set('x-room-slug', context.code)
+  requestHeaders.set('x-room-id', context.id)
 }
 ```
+
+> The middleware now canonicalises `/rooms/[room]` URLs by redirecting raw UUIDs to the published slug and forwards the resolved `x-room-id` / `x-room-slug` headers so downstream handlers can share the same context. When a room does not yet have a slug, the resolver automatically falls back to IP validation by room ID so restrictions still apply.
 
 ### 2. IP Detection
 
@@ -172,22 +186,37 @@ export function getClientIP(request: NextRequest): string {
 API routes can use the enhanced server auth functions:
 
 ```typescript
-// For operator access with IP validation
+// For operator access with IP validation (slug or UUID accepted)
 export async function requireOperatorAccess(
   request: NextRequest,
-  roomCode: string
+  roomIdentifier: string
 ): Promise<{ user: ServerUser; operatorData: any }> {
-  // Validates authentication, IP restrictions, and room access
+  // Resolves room once, validates IP restrictions, compares operator.room_id to context.id
 }
 
-// For admin access with IP validation
+// For admin access add the role check on top of the shared resolver
 export async function requireAdminAccess(
   request: NextRequest,
-  roomCode: string
+  roomIdentifier: string
 ): Promise<{ user: ServerUser; operatorData: any }> {
-  // Validates authentication, IP restrictions, admin role, and room access
+  // Delegates to requireOperatorAccess then asserts admin/superadmin role
 }
 ```
+
+### 4. Server Context Consumption
+
+Server components and API handlers can reuse the forwarded context without triggering extra room lookups:
+
+```typescript
+import { getRequestRoomContext } from '@/lib/rooms/server-context'
+
+export async function GET() {
+  const room = getRequestRoomContext()
+  // room?.id and room?.code are available if the middleware resolved a room segment
+}
+```
+
+The middleware remains the single source of truth for resolving room identifiers, so downstream code can trust the forwarded headers.
 
 ## Configuration
 

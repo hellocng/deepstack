@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/card'
 import Link from 'next/link'
 import { Loading } from '@/components/ui/loading'
+import { useOperator } from '@/lib/auth/user-context'
 
 interface DashboardStats {
   totalGames: number
@@ -48,32 +49,16 @@ export function AdminDashboard(): JSX.Element {
     waitlistEntries: 0,
   })
   const [loading, setLoading] = useState(true)
+  const operator = useOperator()
 
   useEffect(() => {
     const fetchStats = async (): Promise<void> => {
       try {
+        // Use operator from context instead of making new requests
+        if (!operator?.profile?.room_id) return
+
         const supabase = createClient()
-
-        // Get current operator's room_id
-        const {
-          data: { user },
-          error: userError,
-        } = await supabase.auth.getUser()
-
-        const userId = user?.id
-
-        if (!userId || userError) return
-
-        const { data: operator, error: operatorError } = await supabase
-          .from('operators')
-          .select('room_id')
-          .eq('auth_id', userId)
-          .single()
-
-        if (operatorError || !operator) return
-
-        const roomId = (operator as { room_id: string | null }).room_id
-        if (!roomId) return
+        const roomId = operator.profile.room_id
 
         // Fetch stats for the operator's room
         const [gamesResult, tablesResult, tournamentsResult, waitlistResult] =
@@ -120,7 +105,7 @@ export function AdminDashboard(): JSX.Element {
     }
 
     fetchStats()
-  }, [])
+  }, [operator]) // Add operator as dependency, [])
 
   if (loading) {
     return (

@@ -134,7 +134,7 @@ export function UserProvider({
         }
         handleError(err, 'loadUserProfile')
       } finally {
-        if (isMountedRef.current && showLoading) {
+        if (isMountedRef.current) {
           setLoading(false)
         }
       }
@@ -149,7 +149,7 @@ export function UserProvider({
 
         // Prevent too frequent syncs (unless forced)
         const now = Date.now()
-        if (!forceRefresh && now - lastSyncTimeRef.current < 5000) {
+        if (!forceRefresh && now - lastSyncTimeRef.current < 2000) {
           return true
         }
 
@@ -250,15 +250,25 @@ export function UserProvider({
   // Store the latest syncUser function in a ref
   syncUserRef.current = syncUser
 
-  // Handle page visibility changes (tab switching)
+  // Handle page visibility changes (tab switching) - optimized to prevent double requests
   useEffect(() => {
     if (typeof window === 'undefined') return
+
+    let lastSyncTime = 0
+    const SYNC_COOLDOWN = 5000 // 5 seconds cooldown between syncs
 
     const handleVisibilityChange = (): void => {
       if (!isMountedRef.current) return
 
       // When page becomes visible again, refresh user data in background
       if (!document.hidden) {
+        const now = Date.now()
+
+        // Only sync if enough time has passed since last sync
+        if (now - lastSyncTime < SYNC_COOLDOWN) {
+          return
+        }
+
         // Clear any existing timeout
         if (syncTimeoutRef.current) {
           clearTimeout(syncTimeoutRef.current)
@@ -267,33 +277,17 @@ export function UserProvider({
         // Debounce the sync to avoid multiple rapid calls
         syncTimeoutRef.current = setTimeout(() => {
           if (isMountedRef.current && syncUserRef.current) {
+            lastSyncTime = Date.now()
             void syncUserRef.current(true) // Force refresh when coming back to tab
           }
-        }, 100)
+        }, 500) // Increased debounce time
       }
-    }
-
-    const handleFocus = (): void => {
-      if (!isMountedRef.current) return
-
-      // Also handle window focus as a fallback
-      if (syncTimeoutRef.current) {
-        clearTimeout(syncTimeoutRef.current)
-      }
-
-      syncTimeoutRef.current = setTimeout(() => {
-        if (isMountedRef.current && syncUserRef.current) {
-          void syncUserRef.current(true) // Force refresh when window gains focus
-        }
-      }, 100)
     }
 
     document.addEventListener('visibilitychange', handleVisibilityChange)
-    window.addEventListener('focus', handleFocus)
 
-    return () => {
+    return (): void => {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
-      window.removeEventListener('focus', handleFocus)
       if (syncTimeoutRef.current) {
         clearTimeout(syncTimeoutRef.current)
       }
@@ -303,6 +297,7 @@ export function UserProvider({
   useEffect(() => {
     isMountedRef.current = true
 
+    // Initial sync
     void syncUser()
 
     const {
@@ -317,15 +312,26 @@ export function UserProvider({
         return
       }
 
-      if (
-        event === 'SIGNED_IN' ||
-        event === 'USER_UPDATED' ||
-        event === 'TOKEN_REFRESHED' ||
-        event === 'INITIAL_SESSION'
-      ) {
-        if (syncUserRef.current) {
-          await syncUserRef.current(true) // Force refresh on auth events
+      // Handle SIGNED_IN immediately to prevent race conditions with redirects
+      if (event === 'SIGNED_IN') {
+        if (isMountedRef.current && syncUserRef.current) {
+          void syncUserRef.current(true) // Force refresh immediately on sign-in
         }
+        return
+      }
+
+      // Debounce other events to prevent duplicate requests
+      if (event === 'USER_UPDATED' || event === 'TOKEN_REFRESHED') {
+        // Debounce the sync to prevent rapid successive calls
+        if (syncTimeoutRef.current) {
+          clearTimeout(syncTimeoutRef.current)
+        }
+
+        syncTimeoutRef.current = setTimeout(() => {
+          if (isMountedRef.current && syncUserRef.current) {
+            void syncUserRef.current(true) // Force refresh on auth events
+          }
+        }, 100) // Small delay to batch multiple events
       }
     })
 
@@ -336,7 +342,7 @@ export function UserProvider({
         clearTimeout(syncTimeoutRef.current)
       }
     }
-  }, []) // Remove dependencies to prevent infinite loop
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps -- Remove dependencies to prevent infinite loop
 
   const signOut = async (): Promise<void> => {
     try {

@@ -1,5 +1,5 @@
 import { Suspense } from 'react'
-import { AdminSignInForm } from '@/components/forms/admin-signin-form'
+import { OperatorSignInForm } from '@/components/forms/operator-signin-form'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -10,7 +10,12 @@ export const metadata: Metadata = {
 export default function AdminSignInPage(): JSX.Element {
   return (
     <Suspense fallback={<div>Loading...</div>}>
-      <AdminSignInForm />
+      <OperatorSignInForm
+        title='Admin Sign In'
+        description='Sign in to access the admin dashboard'
+        role='admin'
+        showIpRestriction={true}
+      />
     </Suspense>
   )
 }

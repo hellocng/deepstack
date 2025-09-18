@@ -47,7 +47,7 @@ export function usePageVisibility({
     window.addEventListener('focus', handleVisibilityChange)
     window.addEventListener('blur', handleVisibilityChange)
 
-    return () => {
+    return (): void => {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       window.removeEventListener('focus', handleVisibilityChange)
       window.removeEventListener('blur', handleVisibilityChange)

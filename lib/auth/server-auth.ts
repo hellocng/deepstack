@@ -1,7 +1,7 @@
 import { Tables } from '@/types'
 import { PlayerUser, OperatorUser } from './user-context'
 import { createClient } from '@/lib/supabase/server'
-import { validateIPAccess } from '@/lib/ip-validation'
+import { createRoomResolver } from '@/lib/rooms/context'
 import type { NextRequest } from 'next/server'
 
 type Room = Tables<'rooms'>
@@ -113,12 +113,13 @@ export async function isAuthenticated(): Promise<boolean> {
  */
 export async function requireOperatorAccess(
   request: NextRequest,
-  roomCode: string
+  roomIdentifier: string
 ): Promise<{
   user: ServerUser
   operatorData: { id: string; role: string; room_id: string | null }
 }> {
   const supabase = await createClient()
+  const roomResolver = createRoomResolver(supabase)
 
   // First, get the authenticated user
   const user = await getServerUser()
@@ -126,15 +127,20 @@ export async function requireOperatorAccess(
     throw new Error('Authentication required')
   }
 
-  // Check IP restrictions for operators
-  const ipValidation = await validateIPAccess(request, roomCode, supabase)
+  const { context, validation } = await roomResolver.validateAdminAccess(
+    request,
+    roomIdentifier
+  )
 
-  if (!ipValidation.isAllowed) {
-    throw new Error(`IP access denied: ${ipValidation.reason}`)
+  if (!context) {
+    throw new Error('Room not found')
   }
 
-  // Verify the operator has access to this room
-  if (user.profile.room_id !== roomCode) {
+  if (validation && !validation.isAllowed) {
+    throw new Error(`IP access denied: ${validation.reason}`)
+  }
+
+  if (user.profile.room_id !== context.id) {
     throw new Error('Access denied to this room')
   }
 

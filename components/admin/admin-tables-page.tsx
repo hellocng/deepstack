@@ -13,38 +13,23 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Loading } from '@/components/ui/loading'
+import { useOperator } from '@/lib/auth/user-context'
 
 type Table = Tables<'tables'>
 
 export function AdminTablesPage(): JSX.Element {
   const [tables, setTables] = useState<Table[]>([])
   const [loading, setLoading] = useState(true)
+  const operator = useOperator()
 
   useEffect(() => {
     const fetchTables = async (): Promise<void> => {
       try {
+        // Use operator from context instead of making new requests
+        if (!operator?.profile?.room_id) return
+
         const supabase = createClient()
-
-        // Get current operator's room_id
-        const {
-          data: { user },
-          error: userError,
-        } = await supabase.auth.getUser()
-
-        const userId = user?.id
-
-        if (!userId || userError) return
-
-        const { data: operator, error: operatorError } = await supabase
-          .from('operators')
-          .select('room_id')
-          .eq('auth_id', userId)
-          .single()
-
-        if (operatorError || !operator) return
-
-        const roomId = (operator as { room_id: string | null }).room_id
-        if (!roomId) return
+        const roomId = operator.profile.room_id
 
         // Fetch tables for the operator's room
         const { data: tablesData, error } = await supabase
@@ -67,7 +52,7 @@ export function AdminTablesPage(): JSX.Element {
     }
 
     fetchTables()
-  }, [])
+  }, [operator]) // Add operator as dependency
 
   if (loading) {
     return (

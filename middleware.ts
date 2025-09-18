@@ -1,9 +1,13 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database, Operator } from '@/types'
+import type { Operator } from '@/types'
 import { createMiddlewareClient } from '@/lib/supabase/middleware-client'
-import { validateIPAccess } from '@/lib/ip-validation'
+import {
+  createRoomResolver,
+  ROOM_ID_HEADER,
+  ROOM_SLUG_HEADER,
+  UUID_REGEX,
+} from '@/lib/rooms/context'
 
 // Route classification helpers
 const SUPERADMIN_SEGMENT = 'superadmin'
@@ -56,50 +60,80 @@ function extractRoomFromPath(pathname: string): string | null {
   return null
 }
 
-async function validateRoomExists(
-  roomCode: string,
-  supabase: SupabaseClient<Database>
-): Promise<boolean> {
-  try {
-    const { data } = await supabase
-      .from('rooms')
-      .select('id')
-      .eq('code', roomCode)
-      .eq('is_active', true)
-      .single()
-
-    return !!data
-  } catch {
-    return false
-  }
-}
-
 export async function middleware(req: NextRequest): Promise<NextResponse> {
   const pathname = req.nextUrl.pathname
 
-  // Skip middleware for public routes
   if (isPublicRoute(pathname)) {
     return NextResponse.next()
   }
 
-  const { supabase, response, applyCookies } = createMiddlewareClient(req)
-  const result = response
+  const {
+    supabase,
+    response: _response,
+    applyCookies,
+  } = createMiddlewareClient(req)
 
-  // Refresh the session and fetch the current user
+  const roomResolver = createRoomResolver(supabase)
+  const requestHeaders = new Headers(req.headers)
+  const responseHeaders = new Map<string, string>()
+
+  const roomParam = extractRoomFromPath(pathname)
+  const roomContext = roomParam ? await roomResolver.resolve(roomParam) : null
+
+  if (roomContext?.id) {
+    requestHeaders.set(ROOM_ID_HEADER, roomContext.id)
+  }
+
+  if (roomContext?.code) {
+    requestHeaders.set(ROOM_SLUG_HEADER, roomContext.code)
+  }
+
+  if (roomContext?.code && roomParam && roomParam !== roomContext.code) {
+    const canonicalUrl = req.nextUrl.clone()
+    canonicalUrl.pathname = pathname.replace(
+      `/rooms/${roomParam}`,
+      `/rooms/${roomContext.code}`
+    )
+    return applyCookies(NextResponse.redirect(canonicalUrl))
+  }
+
+  const requestedRoomId =
+    roomContext?.id ??
+    (roomParam && UUID_REGEX.test(roomParam) ? roomParam : null)
+
+  const resolveRoomPath = async (
+    roomId: string | null | undefined,
+    suffix = '/admin/'
+  ): Promise<string> => {
+    return roomResolver.buildRoomPath(roomId ?? undefined, suffix)
+  }
+
+  const finalize = (): NextResponse => {
+    const next = NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    })
+
+    responseHeaders.forEach((value, key) => {
+      next.headers.set(key, value)
+    })
+
+    return applyCookies(next)
+  }
+
   const {
     data: { user },
     error: authError,
   } = await supabase.auth.getUser()
 
-  // Handle unauthenticated users
   if (!user || authError) {
     if (isAdminRoute(pathname) && !isSigninRoute(pathname)) {
-      const room = extractRoomFromPath(pathname)
-      if (room) {
-        const signinUrl = new URL(`/rooms/${room}/admin/signin`, req.url)
-        signinUrl.searchParams.set('redirect', pathname)
-        return applyCookies(NextResponse.redirect(signinUrl))
-      }
+      const targetPath = await resolveRoomPath(
+        requestedRoomId ?? roomParam,
+        '/admin/signin'
+      )
+      return applyCookies(NextResponse.redirect(new URL(targetPath, req.url)))
     }
 
     if (isSuperAdminRoute(pathname) && !isSigninRoute(pathname)) {
@@ -108,35 +142,36 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
       )
     }
 
-    // Allow player routes and signin pages for unauthenticated users
-    return applyCookies(result)
+    return finalize()
   }
 
-  // IP validation for admin routes (before authentication check)
   if (isAdminRoute(pathname)) {
-    const room = extractRoomFromPath(pathname)
-    if (room) {
-      const ipValidation = await validateIPAccess(req, room, supabase)
+    const { validation } = await roomResolver.validateAdminAccess(
+      req,
+      roomParam
+    )
 
-      if (!ipValidation.isAllowed) {
-        // Log the attempt for security monitoring
-        console.warn(
-          `IP restriction violation: ${ipValidation.clientIP} attempted to access ${room}/admin - ${ipValidation.reason}`
-        )
+    if (validation && !validation.isAllowed) {
+      const targetPath = await resolveRoomPath(
+        requestedRoomId ?? roomParam,
+        '/admin/signin'
+      )
 
-        // Redirect to signin with error message
-        const errorUrl = new URL(`/rooms/${room}/admin/signin`, req.url)
-        errorUrl.searchParams.set('error', 'ip_restricted')
-        errorUrl.searchParams.set('ip', ipValidation.clientIP)
-        return applyCookies(NextResponse.redirect(errorUrl))
-      }
+      console.warn(
+        `IP restriction violation: ${validation.clientIP} attempted to access ${targetPath} - ${validation.reason}`
+      )
 
-      // Add IP info to headers for logging/monitoring
-      result.headers.set('x-client-ip', ipValidation.clientIP)
+      const errorUrl = new URL(targetPath, req.url)
+      errorUrl.searchParams.set('error', 'ip_restricted')
+      errorUrl.searchParams.set('ip', validation.clientIP)
+      return applyCookies(NextResponse.redirect(errorUrl))
+    }
+
+    if (validation?.clientIP) {
+      responseHeaders.set('x-client-ip', validation.clientIP)
     }
   }
 
-  // Handle authenticated users - determine user type
   let userType: 'player' | 'operator' | 'superadmin' | null = null
   let operatorData: Pick<Operator, 'id' | 'role' | 'room_id'> | null = null
 
@@ -174,14 +209,13 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
     return applyCookies(NextResponse.redirect(new URL('/', req.url)))
   }
 
-  // Handle signin page redirects for authenticated users
   if (isSigninRoute(pathname)) {
     switch (userType) {
       case 'player':
         return applyCookies(NextResponse.redirect(new URL('/rooms', req.url)))
       case 'operator': {
         const room = operatorData?.room_id
-        const adminUrl = room ? `/rooms/${room}/admin/` : '/'
+        const adminUrl = room ? await resolveRoomPath(room) : '/'
         return applyCookies(NextResponse.redirect(new URL(adminUrl, req.url)))
       }
       case 'superadmin':
@@ -191,7 +225,6 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
     }
   }
 
-  // Access control for authenticated users
   if (
     userType === 'player' &&
     (isAdminRoute(pathname) || isSuperAdminRoute(pathname))
@@ -200,22 +233,16 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
   }
 
   if (userType === 'operator' && isSuperAdminRoute(pathname)) {
-    // Operator accessing superadmin route - no logging needed
     if (operatorData?.role !== 'superadmin') {
       const room = operatorData?.room_id
-      const adminUrl = room ? `/rooms/${room}/admin/` : '/'
+      const adminUrl = room ? await resolveRoomPath(room) : '/'
       return applyCookies(NextResponse.redirect(new URL(adminUrl, req.url)))
     }
   }
 
-  // Validate room exists and user has access for room-specific routes
   if (isPlayerRoute(pathname) || isAdminRoute(pathname)) {
-    const room = extractRoomFromPath(pathname)
-    if (room) {
-      const roomExists = await validateRoomExists(room, supabase)
-
-      if (!roomExists) {
-        // Room doesn't exist - redirect based on user type
+    if (roomParam) {
+      if (!roomContext) {
         switch (userType) {
           case 'player':
             return applyCookies(
@@ -224,7 +251,7 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
           case 'operator': {
             const operatorRoom = operatorData?.room_id
             const adminUrl = operatorRoom
-              ? `/rooms/${operatorRoom}/admin/`
+              ? await resolveRoomPath(operatorRoom)
               : '/rooms'
             return applyCookies(
               NextResponse.redirect(new URL(adminUrl, req.url))
@@ -241,30 +268,28 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
         }
       }
 
-      // Room exists - check operator access for admin routes
       if (
         isAdminRoute(pathname) &&
         userType === 'operator' &&
-        operatorData?.room_id !== room
+        requestedRoomId &&
+        operatorData?.room_id !== requestedRoomId
       ) {
-        // Operator trying to access a different room's admin
         const operatorRoom = operatorData?.room_id
         const adminUrl = operatorRoom
-          ? `/rooms/${operatorRoom}/admin/`
+          ? await resolveRoomPath(operatorRoom)
           : '/rooms'
         return applyCookies(NextResponse.redirect(new URL(adminUrl, req.url)))
       }
     }
   }
 
-  // Set operator info in headers for use in the app
   if (operatorData) {
-    result.headers.set('x-operator-id', operatorData.id)
-    result.headers.set('x-operator-role', operatorData.role)
-    result.headers.set('x-operator-room-id', operatorData.room_id || '')
+    responseHeaders.set('x-operator-id', operatorData.id)
+    responseHeaders.set('x-operator-role', operatorData.role)
+    responseHeaders.set('x-operator-room-id', operatorData.room_id || '')
   }
 
-  return applyCookies(result)
+  return finalize()
 }
 
 export const config = {

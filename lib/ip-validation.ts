@@ -167,6 +167,32 @@ export function isValidWildcard(ip: string): boolean {
   return wildcardRegex.test(ip)
 }
 
+// Cache for IP validation results to prevent duplicate requests
+const ipValidationCache = new Map<
+  string,
+  { result: IPValidationResult; timestamp: number }
+>()
+const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
+
+// Clean up expired cache entries
+const cleanupCache = (): void => {
+  const now = Date.now()
+  const keysToDelete: string[] = []
+
+  ipValidationCache.forEach((value, key) => {
+    if (now - value.timestamp > CACHE_DURATION) {
+      keysToDelete.push(key)
+    }
+  })
+
+  keysToDelete.forEach((key) => {
+    ipValidationCache.delete(key)
+  })
+}
+
+// Clean up cache every 10 minutes
+setInterval(cleanupCache, 10 * 60 * 1000)
+
 /**
  * Validate IP restrictions for a room
  * Checks if the client IP is allowed to access admin routes for the room
@@ -177,15 +203,96 @@ export async function validateIPAccess(
   supabase: SupabaseClient<Database>
 ): Promise<IPValidationResult> {
   const clientIP = getClientIP(request)
+  const cacheKey = `${roomCode}-${clientIP}`
+
+  // Check cache first
+  const cached = ipValidationCache.get(cacheKey)
+  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+    return cached.result
+  }
 
   try {
-    // First, verify the room exists
+    // Skip room existence check since it's already verified by the room layout
+    // Go directly to IP restrictions check
+    const { data: restrictions, error } = await supabase.rpc(
+      'get_room_ip_restrictions',
+      { room_code_param: roomCode }
+    )
+
+    if (error) {
+      // If room doesn't exist, the RPC will return an error
+      // In that case, allow access (room layout will handle 404)
+      const result = {
+        isAllowed: true,
+        clientIP,
+      }
+      // Cache the result
+      ipValidationCache.set(cacheKey, { result, timestamp: Date.now() })
+      return result
+    }
+
+    // If no restrictions found, allow access (IP restrictions not configured)
+    if (!restrictions || restrictions.length === 0) {
+      const result = {
+        isAllowed: true,
+        clientIP,
+      }
+      // Cache the result
+      ipValidationCache.set(cacheKey, { result, timestamp: Date.now() })
+      return result
+    }
+
+    const restriction = restrictions[0]
+
+    // If IP restriction is not enabled, allow access
+    if (!restriction.ip_restriction_enabled) {
+      const result = {
+        isAllowed: true,
+        clientIP,
+      }
+      // Cache the result
+      ipValidationCache.set(cacheKey, { result, timestamp: Date.now() })
+      return result
+    }
+
+    // Check if IP is allowed
+    const allowed = isIPAllowed(clientIP, restriction.allowed_ips || [])
+
+    const result = {
+      isAllowed: allowed,
+      clientIP,
+      reason: allowed ? undefined : 'IP address not in allowed list',
+    }
+
+    // Cache the result
+    ipValidationCache.set(cacheKey, { result, timestamp: Date.now() })
+    return result
+  } catch (_error) {
+    const result = {
+      isAllowed: false,
+      clientIP,
+      reason: 'Error validating IP access',
+    }
+    // Cache the result
+    ipValidationCache.set(cacheKey, { result, timestamp: Date.now() })
+    return result
+  }
+}
+
+export async function validateIPAccessByRoomId(
+  request: NextRequest,
+  roomId: string,
+  supabase: SupabaseClient<Database>
+): Promise<IPValidationResult> {
+  const clientIP = getClientIP(request)
+
+  try {
     const { data: room, error: roomError } = await supabase
       .from('rooms')
       .select('id')
-      .eq('code', roomCode)
+      .eq('id', roomId)
       .eq('is_active', true)
-      .single()
+      .maybeSingle()
 
     if (roomError || !room) {
       return {
@@ -195,15 +302,14 @@ export async function validateIPAccess(
       }
     }
 
-    // Get room IP restrictions using the secure function
-    const { data: restrictions, error } = await supabase.rpc(
-      'get_room_ip_restrictions',
-      { room_code_param: roomCode }
-    )
+    const { data: restriction, error } = await supabase
+      .from('room_ip_restrictions')
+      .select('allowed_ips, ip_restriction_enabled')
+      .eq('room_id', roomId)
+      .maybeSingle()
 
     if (error) {
-      // Log error for debugging
-      console.error('Error fetching IP restrictions:', error)
+      // Return error without logging to prevent double requests
       return {
         isAllowed: false,
         clientIP,
@@ -211,25 +317,13 @@ export async function validateIPAccess(
       }
     }
 
-    // If no restrictions found, allow access (IP restrictions not configured)
-    if (!restrictions || restrictions.length === 0) {
+    if (!restriction || !restriction.ip_restriction_enabled) {
       return {
         isAllowed: true,
         clientIP,
       }
     }
 
-    const restriction = restrictions[0]
-
-    // If IP restriction is not enabled, allow access
-    if (!restriction.ip_restriction_enabled) {
-      return {
-        isAllowed: true,
-        clientIP,
-      }
-    }
-
-    // Check if IP is allowed
     const allowed = isIPAllowed(clientIP, restriction.allowed_ips || [])
 
     return {
@@ -237,9 +331,8 @@ export async function validateIPAccess(
       clientIP,
       reason: allowed ? undefined : 'IP address not in allowed list',
     }
-  } catch (error) {
-    // Log error for debugging
-    console.error('Error validating IP access:', error)
+  } catch (_error) {
+    // Return error without logging to prevent double requests
     return {
       isAllowed: false,
       clientIP,

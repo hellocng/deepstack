@@ -8,6 +8,9 @@ import type { Metadata } from 'next'
 
 type Room = Tables<'rooms'>
 
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 interface RoomPageProps {
   params: Promise<{
     room: string
@@ -20,10 +23,13 @@ export async function generateMetadata({
   const supabase = await createClient()
   const resolvedParams = await params
 
+  const roomIdentifier = resolvedParams.room
+  const identifierColumn = UUID_REGEX.test(roomIdentifier) ? 'id' : 'code'
+
   const { data: room } = await supabase
     .from('rooms')
     .select('name')
-    .eq('code', resolvedParams.room)
+    .eq(identifierColumn, roomIdentifier)
     .eq('is_active', true)
     .single()
 
@@ -40,10 +46,13 @@ export default async function RoomPage({
   const resolvedParams = await params
 
   // Get room information
+  const roomIdentifier = resolvedParams.room
+  const identifierColumn = UUID_REGEX.test(roomIdentifier) ? 'id' : 'code'
+
   const { data: room, error } = await supabase
     .from('rooms')
     .select('*')
-    .eq('code', resolvedParams.room)
+    .eq(identifierColumn, roomIdentifier)
     .eq('is_active', true)
     .single()
 

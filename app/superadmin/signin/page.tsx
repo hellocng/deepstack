@@ -1,4 +1,4 @@
-import { SuperAdminSignInForm } from '@/components/forms/superadmin-signin-form'
+import { OperatorSignInForm } from '@/components/forms/operator-signin-form'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -7,5 +7,12 @@ export const metadata: Metadata = {
 }
 
 export default function SuperAdminSignInPage(): JSX.Element {
-  return <SuperAdminSignInForm />
+  return (
+    <OperatorSignInForm
+      title='Super Admin Sign In'
+      description='Sign in to access super admin features and system management'
+      role='superadmin'
+      redirectPath='/superadmin'
+    />
+  )
 }
