@@ -63,12 +63,17 @@ export function UserProvider({
   const supabase = useMemo(() => createClient(), [])
   const isMountedRef = useRef(true)
   const isSyncingRef = useRef(false)
+  const lastSyncTimeRef = useRef<number>(0)
+  const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const syncUserRef = useRef<typeof syncUser>()
 
   const loadUserProfile = useCallback(
-    async (authId: string): Promise<void> => {
+    async (authId: string, showLoading = true): Promise<void> => {
       try {
         setError(null)
-        setLoading(true)
+        if (showLoading) {
+          setLoading(true)
+        }
 
         const { data: operator, error: operatorError } = await supabase
           .from('operators')
@@ -129,7 +134,7 @@ export function UserProvider({
         }
         handleError(err, 'loadUserProfile')
       } finally {
-        if (isMountedRef.current) {
+        if (isMountedRef.current && showLoading) {
           setLoading(false)
         }
       }
@@ -137,86 +142,163 @@ export function UserProvider({
     [supabase]
   )
 
-  const syncUser = useCallback(async (): Promise<boolean> => {
-    try {
-      if (!isMountedRef.current) return false
+  const syncUser = useCallback(
+    async (forceRefresh = false): Promise<boolean> => {
+      try {
+        if (!isMountedRef.current) return false
 
-      if (isSyncingRef.current) {
+        // Prevent too frequent syncs (unless forced)
+        const now = Date.now()
+        if (!forceRefresh && now - lastSyncTimeRef.current < 5000) {
+          return true
+        }
+
+        if (isSyncingRef.current) {
+          return true
+        }
+
+        isSyncingRef.current = true
+        lastSyncTimeRef.current = now
+
+        // Only show loading if we don't have user data yet
+        if (!user) {
+          setLoading(true)
+        } else if (forceRefresh) {
+          // For force refresh with existing user, don't show loading to avoid avatar flicker
+          // The data will refresh in the background
+        }
+        setError(null)
+
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession()
+
+        if (sessionError) {
+          throw sessionError
+        }
+
+        if (!session) {
+          setAuthUser(null)
+          setUser(null)
+          setLoading(false)
+          return true
+        }
+
+        const {
+          data: { user: verifiedUser },
+          error: userError,
+        } = await supabase.auth.getUser()
+
+        if (userError) {
+          throw userError
+        }
+
+        if (!isMountedRef.current) return false
+
+        setAuthUser(verifiedUser ?? null)
+
+        if (!verifiedUser) {
+          setUser(null)
+          setLoading(false)
+          return true
+        }
+
+        // Always load profile for force refresh, or if no user is loaded yet
+        if (forceRefresh || !user) {
+          await loadUserProfile(verifiedUser.id, !user) // Only show loading if no user yet
+          return true
+        }
+
+        // Check if we need to reload profile based on auth ID
+        const currentAuthId = user.profile.auth_id
+        if (currentAuthId !== verifiedUser.id) {
+          await loadUserProfile(verifiedUser.id, false) // Don't show loading for background refresh
+          return true
+        }
+
+        // No need to reload, just ensure loading is false if we had user data
+        if (user) {
+          setLoading(false)
+        }
         return true
-      }
+      } catch (err) {
+        if (!isMountedRef.current) return false
+        const isSessionMissing =
+          typeof err === 'object' &&
+          err !== null &&
+          'name' in err &&
+          (err as { name?: string }).name === 'AuthSessionMissingError'
 
-      isSyncingRef.current = true
-
-      setLoading(true)
-      setError(null)
-
-      const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession()
-
-      if (sessionError) {
-        throw sessionError
-      }
-
-      if (!session) {
         setAuthUser(null)
         setUser(null)
         setLoading(false)
-        return true
+
+        if (!isSessionMissing) {
+          setError('Failed to load user profile')
+          handleError(err, 'syncUser')
+        }
+
+        return false
+      } finally {
+        isSyncingRef.current = false
       }
+    },
+    [supabase, loadUserProfile, user]
+  )
 
-      const {
-        data: { user: verifiedUser },
-        error: userError,
-      } = await supabase.auth.getUser()
+  // Store the latest syncUser function in a ref
+  syncUserRef.current = syncUser
 
-      if (userError) {
-        throw userError
+  // Handle page visibility changes (tab switching)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const handleVisibilityChange = (): void => {
+      if (!isMountedRef.current) return
+
+      // When page becomes visible again, refresh user data in background
+      if (!document.hidden) {
+        // Clear any existing timeout
+        if (syncTimeoutRef.current) {
+          clearTimeout(syncTimeoutRef.current)
+        }
+
+        // Debounce the sync to avoid multiple rapid calls
+        syncTimeoutRef.current = setTimeout(() => {
+          if (isMountedRef.current && syncUserRef.current) {
+            void syncUserRef.current(true) // Force refresh when coming back to tab
+          }
+        }, 100)
       }
-
-      if (!isMountedRef.current) return false
-
-      setAuthUser(verifiedUser ?? null)
-
-      if (!verifiedUser) {
-        setUser(null)
-        setLoading(false)
-        return true
-      }
-
-      const existingAuthId =
-        user?.profile.auth_id ?? initialUser?.profile.auth_id ?? null
-
-      if (existingAuthId === verifiedUser.id && user) {
-        setLoading(false)
-        return true
-      }
-
-      await loadUserProfile(verifiedUser.id)
-      return true
-    } catch (err) {
-      if (!isMountedRef.current) return false
-      const isSessionMissing =
-        typeof err === 'object' &&
-        err !== null &&
-        'name' in err &&
-        (err as { name?: string }).name === 'AuthSessionMissingError'
-
-      setAuthUser(null)
-      setUser(null)
-      setLoading(false)
-
-      if (!isSessionMissing) {
-        setError('Failed to load user profile')
-        handleError(err, 'syncUser')
-      }
-
-      return false
-    } finally {
-      isSyncingRef.current = false
     }
-  }, [supabase, loadUserProfile, user, initialUser])
+
+    const handleFocus = (): void => {
+      if (!isMountedRef.current) return
+
+      // Also handle window focus as a fallback
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current)
+      }
+
+      syncTimeoutRef.current = setTimeout(() => {
+        if (isMountedRef.current && syncUserRef.current) {
+          void syncUserRef.current(true) // Force refresh when window gains focus
+        }
+      }, 100)
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('focus', handleFocus)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('focus', handleFocus)
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current)
+      }
+    }
+  }, []) // Remove syncUser from dependencies to prevent infinite loop
 
   useEffect(() => {
     isMountedRef.current = true
@@ -241,15 +323,20 @@ export function UserProvider({
         event === 'TOKEN_REFRESHED' ||
         event === 'INITIAL_SESSION'
       ) {
-        await syncUser()
+        if (syncUserRef.current) {
+          await syncUserRef.current(true) // Force refresh on auth events
+        }
       }
     })
 
     return (): void => {
       isMountedRef.current = false
       subscription.unsubscribe()
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current)
+      }
     }
-  }, [syncUser, supabase])
+  }, []) // Remove dependencies to prevent infinite loop
 
   const signOut = async (): Promise<void> => {
     try {
@@ -314,7 +401,7 @@ export function UserProvider({
   }
 
   const refreshUser = async (): Promise<void> => {
-    await syncUser()
+    await syncUser(true)
   }
 
   const sendOTP = async (phoneNumber: string): Promise<void> => {

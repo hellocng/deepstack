@@ -39,11 +39,7 @@ const nextConfig = {
   // Redirects
   async redirects() {
     return [
-      {
-        source: '/admin',
-        destination: '/royal/admin', // Default room
-        permanent: false,
-      },
+      // No redirects needed - admin routes are now /rooms/[room]/admin
     ]
   },
 
