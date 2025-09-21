@@ -269,6 +269,41 @@ export type Database = {
           },
         ]
       }
+      room_settings: {
+        Row: {
+          call_in_expiry_minutes: number | null
+          created_at: string | null
+          id: string
+          notify_expiry_minutes: number | null
+          room_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          call_in_expiry_minutes?: number | null
+          created_at?: string | null
+          id?: string
+          notify_expiry_minutes?: number | null
+          room_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          call_in_expiry_minutes?: number | null
+          created_at?: string | null
+          id?: string
+          notify_expiry_minutes?: number | null
+          room_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'room_settings_room_id_fkey'
+            columns: ['room_id']
+            isOneToOne: true
+            referencedRelation: 'rooms'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       rooms: {
         Row: {
           address: string | null
@@ -280,6 +315,7 @@ export type Database = {
           logo_url: string | null
           name: string
           phone: string | null
+          theme_preference: string | null
           updated_at: string | null
           website_url: string | null
         }
@@ -293,6 +329,7 @@ export type Database = {
           logo_url?: string | null
           name: string
           phone?: string | null
+          theme_preference?: string | null
           updated_at?: string | null
           website_url?: string | null
         }
@@ -306,6 +343,7 @@ export type Database = {
           logo_url?: string | null
           name?: string
           phone?: string | null
+          theme_preference?: string | null
           updated_at?: string | null
           website_url?: string | null
         }

@@ -59,6 +59,7 @@ export default function RoomsPage(): JSX.Element {
         logo_url: null,
         website_url: 'https://thecardroom.com',
         is_active: true,
+        theme_preference: 'neutral',
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-01-01T00:00:00Z',
         games: [
@@ -110,6 +111,7 @@ export default function RoomsPage(): JSX.Element {
         logo_url: null,
         website_url: 'https://lucky7casino.com',
         is_active: true,
+        theme_preference: 'blue',
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-01-01T00:00:00Z',
         games: [
@@ -149,6 +151,7 @@ export default function RoomsPage(): JSX.Element {
         logo_url: null,
         website_url: 'https://playersclub.com',
         is_active: true,
+        theme_preference: 'green',
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-01-01T00:00:00Z',
         games: [

@@ -8,7 +8,7 @@ import { Loading } from '@/components/ui/loading'
 import { useOperator } from '@/lib/auth/user-context'
 import {
   Building2,
-  Shield,
+  Settings,
   BarChart3,
   Club,
   Table,
@@ -82,10 +82,10 @@ const managementCards: ManagementCard[] = [
     roles: ['admin'],
   },
   {
-    id: 'security',
-    title: 'Security',
-    href: './admin/security',
-    icon: Shield,
+    id: 'settings',
+    title: 'Settings',
+    href: './admin/settings',
+    icon: Settings,
     roles: ['admin'],
   },
   {

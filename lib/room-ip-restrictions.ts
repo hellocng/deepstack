@@ -11,7 +11,7 @@ export interface RoomIPRestrictions {
 
 /**
  * Get IP restrictions for a room
- * Only accessible by room admins due to RLS policies
+ * Accessible by room admins and superadmins due to RLS policies
  */
 export async function getRoomIPRestrictions(
   supabase: SupabaseClient<Database>,
@@ -38,7 +38,7 @@ export async function getRoomIPRestrictions(
 
 /**
  * Create or update IP restrictions for a room
- * Only accessible by room admins due to RLS policies
+ * Accessible by room admins and superadmins due to RLS policies
  */
 export async function upsertRoomIPRestrictions(
   supabase: SupabaseClient<Database>,
@@ -73,7 +73,7 @@ export async function upsertRoomIPRestrictions(
 
 /**
  * Delete IP restrictions for a room
- * Only accessible by room admins due to RLS policies
+ * Accessible by room admins and superadmins due to RLS policies
  */
 export async function deleteRoomIPRestrictions(
   supabase: SupabaseClient<Database>,

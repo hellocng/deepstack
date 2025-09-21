@@ -39,7 +39,8 @@ CREATE TABLE room_ip_restrictions (
 
 The `room_ip_restrictions` table has strict RLS policies that ensure:
 
-- **Only room admins** can view, insert, update, or delete IP restrictions for their room
+- **Room admins and superadmins** can view, insert, update, or delete IP restrictions for their room
+- **Superadmins** have access to IP restrictions for all rooms
 - **No public access** to IP restriction data
 - **Automatic cleanup** when rooms are deleted (CASCADE)
 - **One-to-one relationship** with rooms (UNIQUE constraint on room_id)
@@ -76,8 +77,9 @@ The `room_ip_restrictions` table has strict RLS policies that ensure:
 The `room_ip_restrictions` table implements strict RLS policies:
 
 ```sql
--- Only room admins can view IP restrictions for their room
-CREATE POLICY "Room admins can view their room IP restrictions" ON room_ip_restrictions
+-- Room admins and superadmins can view IP restrictions for their room
+-- Superadmins can view IP restrictions for all rooms
+CREATE POLICY "Room admins and superadmins can view room IP restrictions" ON room_ip_restrictions
   FOR SELECT
   USING (
     room_id IN (
@@ -86,6 +88,13 @@ CREATE POLICY "Room admins can view their room IP restrictions" ON room_ip_restr
       INNER JOIN operators o ON o.room_id = r.id
       WHERE o.auth_id = auth.uid()
       AND o.role IN ('admin', 'superadmin')
+      AND o.is_active = true
+    )
+    OR
+    EXISTS (
+      SELECT 1 FROM operators o
+      WHERE o.auth_id = auth.uid()
+      AND o.role = 'superadmin'
       AND o.is_active = true
     )
   );
@@ -124,6 +133,24 @@ This function:
 - Validates room existence and active status
 - Is accessible to authenticated users for middleware validation
 
+## Management Interface
+
+### Superadmin Management
+
+IP restrictions are now managed centrally by superadmins through the room management interface:
+
+- **Location**: Superadmin Dashboard → Manage Room → IP Restrictions
+- **Access**: Only superadmins can modify IP restrictions for any room
+- **Benefits**: Centralized control, better security oversight, consistent policies
+
+### Room Admin Access
+
+Room admins can no longer directly modify IP restrictions:
+
+- **Security Page**: Shows informational message about the change
+- **Contact**: Room admins should contact superadmin for IP restriction changes
+- **Rationale**: Prevents unauthorized access and ensures consistent security policies
+
 ## Implementation Details
 
 ### 1. Middleware Integration
@@ -147,7 +174,10 @@ if (isAdminRoute(pathname)) {
   }
 
   if (validation && !validation.isAllowed) {
-    const signinPath = await roomResolver.buildRoomPath(context.id, '/admin/signin')
+    const signinPath = await roomResolver.buildRoomPath(
+      context.id,
+      '/admin/signin'
+    )
     const errorUrl = new URL(signinPath, req.url)
     errorUrl.searchParams.set('error', 'ip_restricted')
     errorUrl.searchParams.set('ip', validation.clientIP)

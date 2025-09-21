@@ -62,6 +62,7 @@ interface RoomFormProps {
   submitLabel?: string
   showSecuritySettings?: boolean
   showActions?: boolean
+  isSuperAdmin?: boolean
 }
 
 export function RoomForm({
@@ -72,6 +73,7 @@ export function RoomForm({
   submitLabel = 'Create Room',
   showSecuritySettings = false,
   showActions = true,
+  isSuperAdmin = false,
 }: RoomFormProps): JSX.Element {
   const {
     register,
@@ -243,8 +245,8 @@ export function RoomForm({
           </CardContent>
         </Card>
 
-        {/* Security Settings - Only show for room operators */}
-        {showSecuritySettings && (
+        {/* Security Settings - Show for room operators or superadmin */}
+        {(showSecuritySettings || isSuperAdmin) && (
           <Card>
             <CardHeader>
               <CardTitle className='flex items-center gap-2'>

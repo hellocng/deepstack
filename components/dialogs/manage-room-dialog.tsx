@@ -20,6 +20,7 @@ import {
   upsertRoomIPRestrictions,
 } from '@/lib/room-ip-restrictions'
 import { Building2, Trash2, Power, PowerOff } from 'lucide-react'
+import { RoomIPRestrictions } from '@/components/superadmin/room-ip-restrictions'
 
 type Room = Tables<'rooms'>
 
@@ -299,17 +300,23 @@ export function ManageRoomDialog({
           </DialogTitle>
         </DialogHeader>
         {superAdmin ? (
-          <RoomBasicForm
-            initialData={{
-              name: room.name,
-              code: room.code,
-            }}
-            onSubmit={handleBasicSubmit}
-            onCancel={() => onOpenChange(false)}
-            isLoading={isLoading}
-            submitLabel='Update Room'
-            showActions={false}
-          />
+          <div className='space-y-6'>
+            <RoomBasicForm
+              initialData={{
+                name: room.name,
+                code: room.code,
+              }}
+              onSubmit={handleBasicSubmit}
+              onCancel={() => onOpenChange(false)}
+              isLoading={isLoading}
+              submitLabel='Update Room'
+              showActions={false}
+            />
+            <RoomIPRestrictions
+              room={room}
+              onUpdated={onRoomUpdated}
+            />
+          </div>
         ) : (
           <RoomForm
             initialData={{
@@ -329,6 +336,7 @@ export function ManageRoomDialog({
             submitLabel='Update Room'
             showSecuritySettings={!!roomAdmin}
             showActions={false}
+            isSuperAdmin={!!superAdmin}
           />
         )}
 
