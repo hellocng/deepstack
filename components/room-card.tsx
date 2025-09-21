@@ -187,10 +187,10 @@ export function RoomCard({ room }: RoomCardProps): JSX.Element {
           </div>
         )}
 
-        {/* Description */}
-        {room.description && (
+        {/* Address */}
+        {room.address && (
           <p className='text-sm text-muted-foreground line-clamp-2'>
-            {room.description}
+            {room.address}
           </p>
         )}
 

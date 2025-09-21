@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useOperator } from '@/lib/auth/user-context'
 import { Button } from '@/components/ui/button'
@@ -18,16 +18,10 @@ import {
 import { useRouter } from 'next/navigation'
 import { WaitlistPlayerDialog } from '@/components/admin/waitlist-player-dialog'
 import { OpenTableDialog } from '@/components/admin/open-table-dialog'
+import { WaitlistReorderButtons } from '@/components/admin/waitlist-reorder-buttons'
+import type { Database } from '@/types/database'
 
-interface WaitlistEntry {
-  id: string
-  player_id: string | null
-  game_id: string | null
-  room_id: string | null
-  status: 'waiting' | 'called' | 'seated' | 'cancelled' | null
-  notes: string | null
-  created_at: string | null
-  updated_at: string | null
+type WaitlistEntry = Database['public']['Tables']['waitlist_entries']['Row'] & {
   player: {
     id: string
     alias: string | null
@@ -75,80 +69,146 @@ export default function WaitlistPage(): JSX.Element {
   const operator = useOperator()
   const router = useRouter()
 
+  const handleOptimisticReorder = (entryId: string, action: string): void => {
+    setWaitlistEntries((prevEntries) => {
+      const newEntries = [...prevEntries]
+
+      // Find the entry to move
+      const entryIndex = newEntries.findIndex((entry) => entry.id === entryId)
+      if (entryIndex === -1) return prevEntries
+
+      const entry = newEntries[entryIndex]
+
+      // Find other entries in the same game
+      const gameEntries = newEntries.filter(
+        (e) => e.game_id === entry.game_id && e.status === 'waiting'
+      )
+      const gameEntryIndices = gameEntries
+        .map((e) => newEntries.indexOf(e))
+        .sort((a, b) => a - b)
+      const currentGameIndex = gameEntryIndices.indexOf(entryIndex)
+
+      if (action === 'move-up' && currentGameIndex > 0) {
+        // Move up: swap with the entry directly above (1 position)
+        const aboveIndex = gameEntryIndices[currentGameIndex - 1]
+        const temp = newEntries[entryIndex]
+        newEntries[entryIndex] = newEntries[aboveIndex]
+        newEntries[aboveIndex] = temp
+      } else if (
+        action === 'move-down' &&
+        currentGameIndex < gameEntryIndices.length - 1
+      ) {
+        // Move down: swap with the entry directly below (1 position)
+        const belowIndex = gameEntryIndices[currentGameIndex + 1]
+        const temp = newEntries[entryIndex]
+        newEntries[entryIndex] = newEntries[belowIndex]
+        newEntries[belowIndex] = temp
+      }
+
+      return newEntries
+    })
+  }
+
+  const fetchData = useCallback(async (): Promise<void> => {
+    if (!operator?.profile?.room_id) return
+
+    try {
+      const supabase = createClient()
+
+      // Fetch active waitlist entries with player and game data
+      const { data: waitlistData, error: waitlistError } = await supabase
+        .from('waitlist_entries')
+        .select(
+          `
+          *,
+          player:players(id, alias, avatar_url),
+          game:games(id, name, game_type, small_blind, big_blind)
+        `
+        )
+        .eq('room_id', operator.profile.room_id)
+        .in('status', ['waiting', 'called'])
+        .order('position', { ascending: true })
+
+      // Fetch voided waitlist entries
+      const { data: voidedData, error: voidedError } = await supabase
+        .from('waitlist_entries')
+        .select(
+          `
+          *,
+          player:players(id, alias, avatar_url),
+          game:games(id, name, game_type, small_blind, big_blind)
+        `
+        )
+        .eq('room_id', operator.profile.room_id)
+        .in('status', ['cancelled'])
+        .order('created_at', { ascending: false })
+
+      if (waitlistError) {
+        console.error('Error fetching waitlist entries:', waitlistError)
+      }
+
+      if (voidedError) {
+        console.error('Error fetching voided entries:', voidedError)
+      }
+
+      // Fetch active table sessions
+      const { data: tableSessionsData, error: tableSessionsError } =
+        await supabase
+          .from('table_sessions')
+          .select(
+            `
+          *,
+          table:tables(id, name, seat_count, is_active),
+          game:games(id, name, game_type)
+        `
+          )
+          .eq('room_id', operator.profile.room_id)
+          .is('end_time', null)
+          .order('start_time', { ascending: true })
+
+      if (tableSessionsError) {
+        console.error('Error fetching table sessions:', tableSessionsError)
+      }
+
+      setWaitlistEntries(waitlistData || [])
+      setVoidedEntries(voidedData || [])
+      setActiveTables(tableSessionsData || [])
+    } catch (error) {
+      console.error('Error fetching data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [operator?.profile?.room_id])
+
   useEffect(() => {
-    const fetchData = async (): Promise<void> => {
-      if (!operator?.profile?.room_id) return
+    fetchData()
 
-      try {
-        const supabase = createClient()
+    // Set up real-time subscription for waitlist changes
+    if (operator?.profile?.room_id) {
+      const supabase = createClient()
 
-        // Fetch active waitlist entries with player and game data
-        const { data: waitlistData, error: waitlistError } = await supabase
-          .from('waitlist_entries')
-          .select(
-            `
-            *,
-            player:players(id, alias, avatar_url),
-            game:games(id, name, game_type, small_blind, big_blind)
-          `
-          )
-          .eq('room_id', operator.profile.room_id)
-          .in('status', ['waiting', 'called'])
-          .order('created_at', { ascending: true })
+      const subscription = supabase
+        .channel('waitlist-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'waitlist_entries',
+            filter: `room_id=eq.${operator.profile.room_id}`,
+          },
+          (_payload) => {
+            // Refetch data when any waitlist entry changes
+            fetchData()
+          }
+        )
+        .subscribe()
 
-        // Fetch voided waitlist entries
-        const { data: voidedData, error: voidedError } = await supabase
-          .from('waitlist_entries')
-          .select(
-            `
-            *,
-            player:players(id, alias, avatar_url),
-            game:games(id, name, game_type, small_blind, big_blind)
-          `
-          )
-          .eq('room_id', operator.profile.room_id)
-          .in('status', ['cancelled'])
-          .order('created_at', { ascending: false })
-
-        if (waitlistError) {
-          console.error('Error fetching waitlist entries:', waitlistError)
-        }
-
-        if (voidedError) {
-          console.error('Error fetching voided entries:', voidedError)
-        }
-
-        // Fetch active table sessions
-        const { data: tableSessionsData, error: tableSessionsError } =
-          await supabase
-            .from('table_sessions')
-            .select(
-              `
-            *,
-            table:tables(id, name, seat_count, is_active),
-            game:games(id, name, game_type)
-          `
-            )
-            .eq('room_id', operator.profile.room_id)
-            .is('end_time', null)
-            .order('start_time', { ascending: true })
-
-        if (tableSessionsError) {
-          console.error('Error fetching table sessions:', tableSessionsError)
-        }
-
-        setWaitlistEntries(waitlistData || [])
-        setVoidedEntries(voidedData || [])
-        setActiveTables(tableSessionsData || [])
-      } catch (error) {
-        console.error('Error fetching data:', error)
-      } finally {
-        setLoading(false)
+      return (): void => {
+        subscription.unsubscribe()
       }
     }
-
-    fetchData()
-  }, [operator])
+  }, [operator, fetchData])
 
   const handleRowClick = (entry: WaitlistEntry): void => {
     setSelectedEntry(entry)
@@ -297,7 +357,7 @@ export default function WaitlistPage(): JSX.Element {
         <CardContent>
           <div className='space-y-4'>
             {waitlistEntries.length > 0 ? (
-              // Group entries by game and sort by created_at
+              // Group entries by game and sort by position
               Object.entries(
                 waitlistEntries.reduce(
                   (acc, entry) => {
@@ -317,19 +377,35 @@ export default function WaitlistPage(): JSX.Element {
                   >
                 )
               )
-                .map(([_gameId, gameData]) => ({
-                  ...gameData,
-                  entries: gameData.entries.sort(
-                    (a, b) =>
-                      new Date(a.created_at || '').getTime() -
-                      new Date(b.created_at || '').getTime()
-                  ),
-                }))
-                .sort(
-                  (a, b) =>
-                    new Date(a.entries[0].created_at || '').getTime() -
-                    new Date(b.entries[0].created_at || '').getTime()
-                )
+                .map(([_gameId, gameData]) => {
+                  // Use the order from waitlistEntries state (which includes optimistic updates)
+                  // instead of sorting by position from database
+                  const sortedEntries = gameData.entries.sort((a, b) => {
+                    const aIndex = waitlistEntries.findIndex(
+                      (entry) => entry.id === a.id
+                    )
+                    const bIndex = waitlistEntries.findIndex(
+                      (entry) => entry.id === b.id
+                    )
+                    return aIndex - bIndex
+                  })
+                  return {
+                    ...gameData,
+                    entries: sortedEntries,
+                  }
+                })
+                .sort((a, b) => {
+                  // Sort games by the first entry's position in the waitlistEntries state
+                  const aFirstEntry = a.entries[0]
+                  const bFirstEntry = b.entries[0]
+                  const aIndex = waitlistEntries.findIndex(
+                    (entry) => entry.id === aFirstEntry.id
+                  )
+                  const bIndex = waitlistEntries.findIndex(
+                    (entry) => entry.id === bFirstEntry.id
+                  )
+                  return aIndex - bIndex
+                })
                 .map((gameData) => (
                   <div
                     key={gameData.game?.id || 'unknown'}
@@ -358,12 +434,14 @@ export default function WaitlistPage(): JSX.Element {
                     <div className='divide-y'>
                       {gameData.entries.map((entry) => (
                         <div
-                          key={entry.id}
-                          className='px-4 py-3 hover:bg-muted/30 cursor-pointer transition-colors'
-                          onClick={() => handleRowClick(entry)}
+                          key={`${entry.id}-${entry.position}`}
+                          className='px-4 py-3 hover:bg-muted/30 transition-colors group'
                         >
                           <div className='flex items-center justify-between'>
-                            <div className='flex items-center gap-3'>
+                            <div
+                              className='flex items-center gap-3 flex-1 cursor-pointer'
+                              onClick={() => handleRowClick(entry)}
+                            >
                               <span className='font-medium'>
                                 {entry.player?.alias || 'Unknown Player'}
                               </span>
@@ -378,6 +456,12 @@ export default function WaitlistPage(): JSX.Element {
                                   entry.created_at || ''
                                 ).toLocaleTimeString()}
                               </span>
+                              <WaitlistReorderButtons
+                                entryId={entry.id}
+                                onReorder={fetchData}
+                                onOptimisticReorder={handleOptimisticReorder}
+                                className='opacity-0 group-hover:opacity-100 transition-opacity'
+                              />
                             </div>
                           </div>
                         </div>
@@ -413,7 +497,7 @@ export default function WaitlistPage(): JSX.Element {
         <CardContent>
           <div className='space-y-4'>
             {voidedEntries.length > 0 ? (
-              // Group entries by game and sort by created_at
+              // Group entries by game and sort by created_at (voided entries keep created_at sorting)
               Object.entries(
                 voidedEntries.reduce(
                   (acc, entry) => {
@@ -437,14 +521,14 @@ export default function WaitlistPage(): JSX.Element {
                   ...gameData,
                   entries: gameData.entries.sort(
                     (a, b) =>
-                      new Date(a.created_at || '').getTime() -
-                      new Date(b.created_at || '').getTime()
+                      new Date(b.created_at || '').getTime() -
+                      new Date(a.created_at || '').getTime()
                   ),
                 }))
                 .sort(
                   (a, b) =>
-                    new Date(a.entries[0].created_at || '').getTime() -
-                    new Date(b.entries[0].created_at || '').getTime()
+                    new Date(b.entries[0].created_at || '').getTime() -
+                    new Date(a.entries[0].created_at || '').getTime()
                 )
                 .map((gameData) => (
                   <div

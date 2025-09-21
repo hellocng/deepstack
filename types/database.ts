@@ -275,7 +275,6 @@ export type Database = {
           code: string
           contact_email: string | null
           created_at: string | null
-          description: string | null
           id: string
           is_active: boolean | null
           logo_url: string | null
@@ -289,7 +288,6 @@ export type Database = {
           code: string
           contact_email?: string | null
           created_at?: string | null
-          description?: string | null
           id?: string
           is_active?: boolean | null
           logo_url?: string | null
@@ -303,7 +301,6 @@ export type Database = {
           code?: string
           contact_email?: string | null
           created_at?: string | null
-          description?: string | null
           id?: string
           is_active?: boolean | null
           logo_url?: string | null
@@ -526,31 +523,43 @@ export type Database = {
       }
       waitlist_entries: {
         Row: {
+          cancelled_at: string | null
+          cancelled_by: Database['public']['Enums']['cancelled_by_type'] | null
+          checked_in_at: string | null
           created_at: string | null
           game_id: string | null
           id: string
-          notes: string | null
+          notified_at: string | null
           player_id: string | null
+          position: number | null
           room_id: string | null
           status: Database['public']['Enums']['waitlist_status'] | null
           updated_at: string | null
         }
         Insert: {
+          cancelled_at?: string | null
+          cancelled_by?: Database['public']['Enums']['cancelled_by_type'] | null
+          checked_in_at?: string | null
           created_at?: string | null
-          id?: string
           game_id?: string | null
-          notes?: string | null
+          id?: string
+          notified_at?: string | null
           player_id?: string | null
+          position?: number | null
           room_id?: string | null
           status?: Database['public']['Enums']['waitlist_status'] | null
           updated_at?: string | null
         }
         Update: {
+          cancelled_at?: string | null
+          cancelled_by?: Database['public']['Enums']['cancelled_by_type'] | null
+          checked_in_at?: string | null
           created_at?: string | null
-          id?: string
           game_id?: string | null
-          notes?: string | null
+          id?: string
+          notified_at?: string | null
           player_id?: string | null
+          position?: number | null
           room_id?: string | null
           status?: Database['public']['Enums']['waitlist_status'] | null
           updated_at?: string | null
@@ -675,7 +684,15 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_user_operator_role: {
+        Args: Record<PropertyKey, never>
+        Returns: Database['public']['Enums']['operator_role']
+      }
       get_user_room_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      get_user_room_id_safe: {
         Args: Record<PropertyKey, never>
         Returns: string
       }
@@ -693,6 +710,7 @@ export type Database = {
       }
     }
     Enums: {
+      cancelled_by_type: 'player' | 'staff' | 'system'
       friendship_status: 'pending' | 'accepted' | 'blocked'
       game_type:
         | 'texas_holdem'
@@ -713,7 +731,13 @@ export type Database = {
         | 'in_progress'
         | 'completed'
         | 'cancelled'
-      waitlist_status: 'waiting' | 'called' | 'seated' | 'cancelled'
+      waitlist_status:
+        | 'waiting'
+        | 'called'
+        | 'seated'
+        | 'cancelled'
+        | 'notified'
+        | 'no_show'
     }
     CompositeTypes: {
       [_ in never]: never
@@ -841,6 +865,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      cancelled_by_type: ['player', 'staff', 'system'],
       friendship_status: ['pending', 'accepted', 'blocked'],
       game_type: [
         'texas_holdem',
@@ -864,7 +889,14 @@ export const Constants = {
         'completed',
         'cancelled',
       ],
-      waitlist_status: ['waiting', 'called', 'seated', 'cancelled'],
+      waitlist_status: [
+        'waiting',
+        'called',
+        'seated',
+        'cancelled',
+        'notified',
+        'no_show',
+      ],
     },
   },
 } as const

@@ -53,8 +53,6 @@ export default function RoomsPage(): JSX.Element {
         id: '1',
         code: 'the-card-room',
         name: 'The Card Room',
-        description:
-          'Premium poker room with 20+ tables and professional dealers',
         address: '123 Main St, Downtown',
         phone: '555-0123',
         contact_email: 'info@thecardroom.com',
@@ -106,7 +104,6 @@ export default function RoomsPage(): JSX.Element {
         id: '2',
         code: 'lucky-7-casino',
         name: 'Lucky 7 Casino',
-        description: 'Full service casino with dedicated poker room',
         address: '456 Casino Blvd, Entertainment District',
         phone: '555-0456',
         contact_email: 'info@lucky7casino.com',
@@ -146,7 +143,6 @@ export default function RoomsPage(): JSX.Element {
         id: '3',
         code: 'players-club',
         name: 'Players Club',
-        description: 'Members-only poker club with high-stakes games',
         address: '789 Club Ave, Uptown',
         phone: '555-0789',
         contact_email: 'info@playersclub.com',
@@ -282,7 +278,7 @@ export default function RoomsPage(): JSX.Element {
                 <div>
                   <CardTitle className='text-xl'>{room.name}</CardTitle>
                   <CardDescription className='mt-1'>
-                    {room.description}
+                    {room.address}
                   </CardDescription>
                 </div>
                 <Badge variant={room.is_active ? 'default' : 'secondary'}>

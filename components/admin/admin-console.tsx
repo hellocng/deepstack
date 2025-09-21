@@ -19,7 +19,7 @@ import {
   LucideIcon,
 } from 'lucide-react'
 
-interface DashboardStats {
+interface ConsoleStats {
   totalGames: number
   activeGames: number
   totalTables: number
@@ -111,13 +111,6 @@ const managementCards: ManagementCard[] = [
     roles: ['admin', 'supervisor'],
   },
   {
-    id: 'tournaments',
-    title: 'Tournaments',
-    href: './admin/tournaments',
-    icon: Trophy,
-    roles: ['admin', 'supervisor'],
-  },
-  {
     id: 'waitlists',
     title: 'Waitlists',
     href: './admin/waitlists',
@@ -138,10 +131,17 @@ const managementCards: ManagementCard[] = [
     icon: Gift,
     roles: ['admin', 'supervisor'],
   },
+  {
+    id: 'tournaments',
+    title: 'Tournaments',
+    href: './admin/tournaments',
+    icon: Trophy,
+    roles: ['admin', 'supervisor'],
+  },
 ]
 
 export function AdminConsole(): JSX.Element {
-  const [stats, setStats] = useState<DashboardStats>({
+  const [stats, setStats] = useState<ConsoleStats>({
     totalGames: 0,
     activeGames: 0,
     totalTables: 0,
@@ -200,7 +200,7 @@ export function AdminConsole(): JSX.Element {
           waitlistEntries: waitlistResult.data?.length || 0,
         })
       } catch (_error) {
-        // Error fetching dashboard stats - handled by error state
+        // Error fetching console stats - handled by error state
       } finally {
         setLoading(false)
       }
@@ -214,7 +214,7 @@ export function AdminConsole(): JSX.Element {
       <div className='flex items-center justify-center h-64'>
         <Loading
           size='md'
-          text='Loading dashboard...'
+          text='Loading console...'
         />
       </div>
     )
@@ -226,7 +226,7 @@ export function AdminConsole(): JSX.Element {
         <h1 className='text-3xl font-bold tracking-tight'>
           {operator?.profile?.role === 'supervisor'
             ? 'Supervisor Console'
-            : 'Admin Dashboard'}
+            : 'Admin Console'}
         </h1>
         <p className='text-muted-foreground'>
           Overview of your poker room operations
@@ -260,6 +260,16 @@ export function AdminConsole(): JSX.Element {
 
         <Card>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+            <CardTitle className='text-sm font-medium'>Waitlist</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className='text-2xl font-bold'>{stats.waitlistEntries}</div>
+            <p className='text-xs text-muted-foreground'>players waiting</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
             <CardTitle className='text-sm font-medium'>Tournaments</CardTitle>
           </CardHeader>
           <CardContent>
@@ -267,16 +277,6 @@ export function AdminConsole(): JSX.Element {
             <p className='text-xs text-muted-foreground'>
               {stats.activeTournaments} in progress
             </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium'>Waitlist</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className='text-2xl font-bold'>{stats.waitlistEntries}</div>
-            <p className='text-xs text-muted-foreground'>players waiting</p>
           </CardContent>
         </Card>
       </div>

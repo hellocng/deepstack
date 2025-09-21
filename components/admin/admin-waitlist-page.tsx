@@ -61,7 +61,7 @@ export function AdminWaitlistPage(): JSX.Element {
           `
           )
           .eq('room_id', roomId)
-          .order('created_at', { ascending: true })
+          .order('position', { ascending: true })
 
         if (error) {
           // Error fetching waitlist entries - handled by error state
@@ -126,11 +126,6 @@ export function AdminWaitlistPage(): JSX.Element {
                     Game: {entry.games?.name} ({entry.games?.game_type}) • $
                     {entry.games?.small_blind}/${entry.games?.big_blind}
                   </div>
-                  {entry.notes && (
-                    <div className='text-sm text-muted-foreground'>
-                      Notes: {entry.notes}
-                    </div>
-                  )}
                 </div>
                 <div className='flex gap-2'>
                   <Button

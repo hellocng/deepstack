@@ -13,15 +13,9 @@ import { Badge } from '@/components/ui/badge'
 import { Label } from '@/components/ui/label'
 import { Phone, Users, CheckCircle } from 'lucide-react'
 
-interface WaitlistEntry {
-  id: string
-  player_id: string | null
-  game_id: string | null
-  room_id: string | null
-  status: 'waiting' | 'called' | 'seated' | 'cancelled' | null
-  notes: string | null
-  created_at: string | null
-  updated_at: string | null
+import type { Database } from '@/types/database'
+
+type WaitlistEntry = Database['public']['Tables']['waitlist_entries']['Row'] & {
   player: {
     id: string
     alias: string | null
