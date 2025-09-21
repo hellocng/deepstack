@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -12,7 +12,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -42,7 +41,9 @@ interface Game {
   game_type: string
   small_blind: number
   big_blind: number
-  is_active: boolean
+  is_active: boolean | null
+  created_at: string | null
+  updated_at: string | null
 }
 
 interface TableSession {
@@ -86,13 +87,7 @@ export function OpenTableDialog({
     },
   })
 
-  useEffect(() => {
-    if (open && roomId) {
-      fetchData()
-    }
-  }, [open, roomId])
-
-  const fetchData = async (): Promise<void> => {
+  const fetchData = useCallback(async (): Promise<void> => {
     setLoading(true)
     try {
       const supabase = createClient()
@@ -128,7 +123,13 @@ export function OpenTableDialog({
     } finally {
       setLoading(false)
     }
-  }
+  }, [roomId])
+
+  useEffect(() => {
+    if (open && roomId) {
+      fetchData()
+    }
+  }, [open, roomId, fetchData])
 
   const onSubmit = async (data: OpenTableFormData): Promise<void> => {
     if (!roomId) return

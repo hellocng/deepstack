@@ -22,8 +22,9 @@ interface Table {
   name: string
   seat_count: number
   is_active: boolean
-  created_at: string
-  updated_at: string
+  room_id: string | null
+  created_at: string | null
+  updated_at: string | null
 }
 
 const columnHelper = createColumnHelper<Table>()

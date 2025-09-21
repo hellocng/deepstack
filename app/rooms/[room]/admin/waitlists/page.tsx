@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useOperator } from '@/lib/auth/user-context'
 import { Button } from '@/components/ui/button'
@@ -21,24 +21,25 @@ import { OpenTableDialog } from '@/components/admin/open-table-dialog'
 
 interface WaitlistEntry {
   id: string
-  player_id: string
-  game_id: string
-  room_id: string
-  status: 'waiting' | 'notified' | 'seated' | 'cancelled' | 'no_show'
-  created_at: string
-  updated_at: string
+  player_id: string | null
+  game_id: string | null
+  room_id: string | null
+  status: 'waiting' | 'called' | 'seated' | 'cancelled' | null
+  notes: string | null
+  created_at: string | null
+  updated_at: string | null
   player: {
     id: string
-    alias: string
+    alias: string | null
     avatar_url: string | null
-  }
+  } | null
   game: {
     id: string
     name: string
     game_type: string
     small_blind: number
     big_blind: number
-  }
+  } | null
 }
 
 interface Table {
@@ -92,7 +93,7 @@ export default function WaitlistPage(): JSX.Element {
           `
           )
           .eq('room_id', operator.profile.room_id)
-          .in('status', ['waiting', 'notified'])
+          .in('status', ['waiting', 'called'])
           .order('created_at', { ascending: true })
 
         // Fetch voided waitlist entries
@@ -106,7 +107,7 @@ export default function WaitlistPage(): JSX.Element {
           `
           )
           .eq('room_id', operator.profile.room_id)
-          .in('status', ['cancelled', 'no_show'])
+          .in('status', ['cancelled'])
           .order('created_at', { ascending: false })
 
         if (waitlistError) {
@@ -161,7 +162,7 @@ export default function WaitlistPage(): JSX.Element {
 
   const handleEntryUpdated = (updatedEntry: WaitlistEntry): void => {
     // Update the appropriate list based on status
-    if (['waiting', 'notified'].includes(updatedEntry.status)) {
+    if (['waiting', 'called'].includes(updatedEntry.status || 'waiting')) {
       setWaitlistEntries((prev) =>
         prev.map((entry) =>
           entry.id === updatedEntry.id ? updatedEntry : entry
@@ -189,10 +190,9 @@ export default function WaitlistPage(): JSX.Element {
   const getStatusBadge = (status: string): JSX.Element => {
     const statusConfig = {
       waiting: { variant: 'secondary' as const, label: 'Waiting' },
-      notified: { variant: 'default' as const, label: 'Notified' },
+      called: { variant: 'default' as const, label: 'Called' },
       seated: { variant: 'outline' as const, label: 'Seated' },
       cancelled: { variant: 'secondary' as const, label: 'Cancelled' },
-      no_show: { variant: 'secondary' as const, label: 'No Show' },
     }
 
     const config =
@@ -301,7 +301,7 @@ export default function WaitlistPage(): JSX.Element {
               Object.entries(
                 waitlistEntries.reduce(
                   (acc, entry) => {
-                    const gameId = entry.game.id
+                    const gameId = entry.game?.id || 'unknown'
                     if (!acc[gameId]) {
                       acc[gameId] = {
                         game: entry.game,
@@ -311,25 +311,28 @@ export default function WaitlistPage(): JSX.Element {
                     acc[gameId].entries.push(entry)
                     return acc
                   },
-                  {} as Record<string, { game: any; entries: WaitlistEntry[] }>
+                  {} as Record<
+                    string,
+                    { game: WaitlistEntry['game']; entries: WaitlistEntry[] }
+                  >
                 )
               )
-                .map(([gameId, gameData]) => ({
+                .map(([_gameId, gameData]) => ({
                   ...gameData,
                   entries: gameData.entries.sort(
                     (a, b) =>
-                      new Date(a.created_at).getTime() -
-                      new Date(b.created_at).getTime()
+                      new Date(a.created_at || '').getTime() -
+                      new Date(b.created_at || '').getTime()
                   ),
                 }))
                 .sort(
                   (a, b) =>
-                    new Date(a.entries[0].created_at).getTime() -
-                    new Date(b.entries[0].created_at).getTime()
+                    new Date(a.entries[0].created_at || '').getTime() -
+                    new Date(b.entries[0].created_at || '').getTime()
                 )
                 .map((gameData) => (
                   <div
-                    key={gameData.game.id}
+                    key={gameData.game?.id || 'unknown'}
                     className='border rounded-lg'
                   >
                     {/* Game Header */}
@@ -337,11 +340,11 @@ export default function WaitlistPage(): JSX.Element {
                       <div className='flex items-center justify-between'>
                         <div>
                           <h3 className='font-semibold'>
-                            {gameData.game.name}
+                            {gameData.game?.name || 'Unknown Game'}
                           </h3>
                           <p className='text-sm text-muted-foreground'>
-                            ${gameData.game.small_blind}/$
-                            {gameData.game.big_blind}
+                            ${gameData.game?.small_blind || 0}/$
+                            {gameData.game?.big_blind || 0}
                           </p>
                         </div>
                         <Badge variant='outline'>
@@ -362,17 +365,17 @@ export default function WaitlistPage(): JSX.Element {
                           <div className='flex items-center justify-between'>
                             <div className='flex items-center gap-3'>
                               <span className='font-medium'>
-                                {entry.player.alias}
+                                {entry.player?.alias || 'Unknown Player'}
                               </span>
-                              {entry.status === 'notified' && (
+                              {entry.status === 'called' && (
                                 <Phone className='h-4 w-4 text-blue-500' />
                               )}
                             </div>
                             <div className='flex items-center gap-2'>
-                              {getStatusBadge(entry.status)}
+                              {getStatusBadge(entry.status || 'waiting')}
                               <span className='text-sm text-muted-foreground'>
                                 {new Date(
-                                  entry.created_at
+                                  entry.created_at || ''
                                 ).toLocaleTimeString()}
                               </span>
                             </div>
@@ -404,10 +407,6 @@ export default function WaitlistPage(): JSX.Element {
                 {voidedEntries.filter((e) => e.status === 'cancelled').length}{' '}
                 Cancelled
               </Badge>
-              <Badge variant='secondary'>
-                {voidedEntries.filter((e) => e.status === 'no_show').length} No
-                Show
-              </Badge>
             </div>
           </div>
         </CardHeader>
@@ -418,7 +417,7 @@ export default function WaitlistPage(): JSX.Element {
               Object.entries(
                 voidedEntries.reduce(
                   (acc, entry) => {
-                    const gameId = entry.game.id
+                    const gameId = entry.game?.id || 'unknown'
                     if (!acc[gameId]) {
                       acc[gameId] = {
                         game: entry.game,
@@ -428,25 +427,28 @@ export default function WaitlistPage(): JSX.Element {
                     acc[gameId].entries.push(entry)
                     return acc
                   },
-                  {} as Record<string, { game: any; entries: WaitlistEntry[] }>
+                  {} as Record<
+                    string,
+                    { game: WaitlistEntry['game']; entries: WaitlistEntry[] }
+                  >
                 )
               )
-                .map(([gameId, gameData]) => ({
+                .map(([_gameId, gameData]) => ({
                   ...gameData,
                   entries: gameData.entries.sort(
                     (a, b) =>
-                      new Date(a.created_at).getTime() -
-                      new Date(b.created_at).getTime()
+                      new Date(a.created_at || '').getTime() -
+                      new Date(b.created_at || '').getTime()
                   ),
                 }))
                 .sort(
                   (a, b) =>
-                    new Date(a.entries[0].created_at).getTime() -
-                    new Date(b.entries[0].created_at).getTime()
+                    new Date(a.entries[0].created_at || '').getTime() -
+                    new Date(b.entries[0].created_at || '').getTime()
                 )
                 .map((gameData) => (
                   <div
-                    key={gameData.game.id}
+                    key={gameData.game?.id || 'unknown'}
                     className='border rounded-lg'
                   >
                     {/* Game Header */}
@@ -454,11 +456,11 @@ export default function WaitlistPage(): JSX.Element {
                       <div className='flex items-center justify-between'>
                         <div>
                           <h3 className='font-semibold'>
-                            {gameData.game.name}
+                            {gameData.game?.name || 'Unknown Game'}
                           </h3>
                           <p className='text-sm text-muted-foreground'>
-                            ${gameData.game.small_blind}/$
-                            {gameData.game.big_blind}
+                            ${gameData.game?.small_blind || 0}/$
+                            {gameData.game?.big_blind || 0}
                           </p>
                         </div>
                         <Badge variant='outline'>
@@ -479,14 +481,14 @@ export default function WaitlistPage(): JSX.Element {
                           <div className='flex items-center justify-between'>
                             <div className='flex items-center gap-3'>
                               <span className='font-medium'>
-                                {entry.player.alias}
+                                {entry.player?.alias || 'Unknown Player'}
                               </span>
                             </div>
                             <div className='flex items-center gap-2'>
-                              {getStatusBadge(entry.status)}
+                              {getStatusBadge(entry.status || 'waiting')}
                               <span className='text-sm text-muted-foreground'>
                                 {new Date(
-                                  entry.created_at
+                                  entry.created_at || ''
                                 ).toLocaleTimeString()}
                               </span>
                             </div>

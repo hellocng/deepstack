@@ -49,10 +49,10 @@ interface Game {
   min_buy_in: number
   max_buy_in: number
   rake: string | null
-  max_players: number
-  is_active: boolean
-  created_at: string
-  updated_at: string
+  max_players: number | null
+  is_active: boolean | null
+  created_at: string | null
+  updated_at: string | null
 }
 
 interface GameDialogProps {
@@ -106,9 +106,9 @@ export function GameDialog({
         big_blind: game.big_blind,
         min_buy_in: game.min_buy_in,
         max_buy_in: game.max_buy_in,
-        max_players: game.max_players,
+        max_players: game.max_players || 9,
         rake: game.rake || '',
-        is_active: game.is_active,
+        is_active: game.is_active || false,
       })
     } else {
       form.reset({
@@ -134,7 +134,13 @@ export function GameDialog({
 
       const gameData = {
         name: data.name,
-        game_type: data.game_type,
+        game_type: data.game_type as
+          | 'texas_holdem'
+          | 'omaha'
+          | 'seven_card_stud'
+          | 'five_card_draw'
+          | 'razr'
+          | 'stud_hi_lo',
         small_blind: data.small_blind,
         big_blind: data.big_blind,
         min_buy_in: data.min_buy_in,

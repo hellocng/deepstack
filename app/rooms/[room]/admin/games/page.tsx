@@ -26,10 +26,10 @@ interface Game {
   min_buy_in: number
   max_buy_in: number
   rake: string | null
-  max_players: number
-  is_active: boolean
-  created_at: string
-  updated_at: string
+  max_players: number | null
+  is_active: boolean | null
+  created_at: string | null
+  updated_at: string | null
 }
 
 const columnHelper = createColumnHelper<Game>()
@@ -161,7 +161,7 @@ export default function GamesPage(): JSX.Element {
       }),
       columnHelper.accessor('max_players', {
         header: 'Max Players',
-        cell: (info) => info.getValue(),
+        cell: (info) => info.getValue() || '-',
       }),
       columnHelper.accessor('rake', {
         header: 'Rake',
@@ -173,7 +173,7 @@ export default function GamesPage(): JSX.Element {
           const game = info.row.original
           return (
             <Switch
-              checked={info.getValue()}
+              checked={info.getValue() || false}
               onCheckedChange={(checked) =>
                 handleToggleActive(game.id, checked)
               }

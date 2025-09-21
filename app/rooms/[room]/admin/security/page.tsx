@@ -16,7 +16,9 @@ interface IPRestriction {
   id: string
   room_id: string
   allowed_ips: string[] | null
-  ip_restriction_enabled: boolean
+  ip_restriction_enabled: boolean | null
+  created_at: string | null
+  updated_at: string | null
 }
 
 export default function SecurityPage(): JSX.Element {

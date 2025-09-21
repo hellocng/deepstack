@@ -11,35 +11,29 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Phone, Users, CheckCircle } from 'lucide-react'
 
 interface WaitlistEntry {
   id: string
-  player_id: string
-  game_id: string
-  room_id: string
-  status: 'waiting' | 'notified' | 'seated' | 'cancelled' | 'no_show'
-  created_at: string
-  updated_at: string
+  player_id: string | null
+  game_id: string | null
+  room_id: string | null
+  status: 'waiting' | 'called' | 'seated' | 'cancelled' | null
+  notes: string | null
+  created_at: string | null
+  updated_at: string | null
   player: {
     id: string
-    alias: string
+    alias: string | null
     avatar_url: string | null
-  }
+  } | null
   game: {
     id: string
     name: string
     game_type: string
     small_blind: number
     big_blind: number
-  }
+  } | null
 }
 
 interface TableSession {
@@ -78,7 +72,7 @@ export function WaitlistPlayerDialog({
   activeTables,
 }: WaitlistPlayerDialogProps): JSX.Element {
   const [saving, setSaving] = useState(false)
-  const [selectedSeat, setSelectedSeat] = useState<number | null>(null)
+  const [_selectedSeat, setSelectedSeat] = useState<number | null>(null)
 
   useEffect(() => {
     if (entry) {
@@ -96,7 +90,7 @@ export function WaitlistPlayerDialog({
       const { data: updatedEntry, error } = await supabase
         .from('waitlist_entries')
         .update({
-          status: newStatus as any,
+          status: newStatus as WaitlistEntry['status'],
           updated_at: new Date().toISOString(),
         })
         .eq('id', entry.id)
@@ -133,7 +127,7 @@ export function WaitlistPlayerDialog({
       const supabase = createClient()
 
       // Create player session
-      const { data: playerSession, error: sessionError } = await supabase
+      const { data: _playerSession, error: sessionError } = await supabase
         .from('player_sessions')
         .insert({
           table_session_id: tableSessionId,
@@ -192,7 +186,7 @@ export function WaitlistPlayerDialog({
   const getStatusActions = (): JSX.Element => {
     if (!entry) return <div />
 
-    switch (entry.status) {
+    switch (entry.status || 'waiting') {
       case 'waiting':
         return (
           <div className='space-y-4'>
@@ -203,7 +197,7 @@ export function WaitlistPlayerDialog({
               </span>
             </div>
             <Button
-              onClick={() => handleStatusChange('notified')}
+              onClick={() => handleStatusChange('called')}
               disabled={saving}
               className='w-full'
             >
@@ -213,13 +207,13 @@ export function WaitlistPlayerDialog({
           </div>
         )
 
-      case 'notified':
+      case 'called':
         return (
           <div className='space-y-4'>
             <div className='flex items-center gap-2'>
               <CheckCircle className='h-4 w-4 text-green-500' />
               <span className='text-sm text-muted-foreground'>
-                Player has been notified. They can now be seated or marked as no
+                Player has been called. They can now be seated or marked as no
                 show.
               </span>
             </div>
@@ -273,7 +267,7 @@ export function WaitlistPlayerDialog({
               </Button>
               <Button
                 variant='destructive'
-                onClick={() => handleStatusChange('no_show')}
+                onClick={() => handleStatusChange('cancelled')}
                 disabled={saving}
                 className='flex-1'
               >
@@ -302,7 +296,7 @@ export function WaitlistPlayerDialog({
             </div>
             <Button
               variant='outline'
-              onClick={() => handleStatusChange('notified')}
+              onClick={() => handleStatusChange('called')}
               disabled={saving}
               className='w-full'
             >
@@ -325,7 +319,9 @@ export function WaitlistPlayerDialog({
     >
       <DialogContent className='max-w-2xl max-h-[90vh] overflow-y-auto'>
         <DialogHeader>
-          <DialogTitle>Manage Player: {entry.player.alias}</DialogTitle>
+          <DialogTitle>
+            Manage Player: {entry.player?.alias || 'Unknown Player'}
+          </DialogTitle>
         </DialogHeader>
 
         <div className='space-y-6'>
@@ -334,15 +330,19 @@ export function WaitlistPlayerDialog({
             <div className='space-y-2'>
               <Label>Player</Label>
               <div className='p-3 border rounded-lg'>
-                <p className='font-medium'>{entry.player.alias}</p>
+                <p className='font-medium'>
+                  {entry.player?.alias || 'Unknown Player'}
+                </p>
               </div>
             </div>
             <div className='space-y-2'>
               <Label>Game</Label>
               <div className='p-3 border rounded-lg'>
-                <p className='font-medium'>{entry.game.name}</p>
+                <p className='font-medium'>
+                  {entry.game?.name || 'Unknown Game'}
+                </p>
                 <p className='text-sm text-muted-foreground'>
-                  ${entry.game.small_blind}/${entry.game.big_blind}
+                  ${entry.game?.small_blind || 0}/${entry.game?.big_blind || 0}
                 </p>
               </div>
             </div>
@@ -354,18 +354,19 @@ export function WaitlistPlayerDialog({
             <div className='flex items-center gap-2'>
               <Badge
                 variant={
-                  entry.status === 'waiting'
+                  (entry.status || 'waiting') === 'waiting'
                     ? 'secondary'
-                    : entry.status === 'called'
+                    : (entry.status || 'waiting') === 'called'
                       ? 'default'
-                      : entry.status === 'seated'
+                      : (entry.status || 'waiting') === 'seated'
                         ? 'outline'
                         : 'destructive'
                 }
               >
-                {entry.status.charAt(0).toUpperCase() + entry.status.slice(1)}
+                {(entry.status || 'waiting').charAt(0).toUpperCase() +
+                  (entry.status || 'waiting').slice(1)}
               </Badge>
-              {entry.status === 'called' && (
+              {(entry.status || 'waiting') === 'called' && (
                 <Phone className='h-4 w-4 text-blue-500' />
               )}
             </div>
