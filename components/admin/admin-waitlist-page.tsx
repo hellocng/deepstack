@@ -61,6 +61,7 @@ export function AdminWaitlistPage(): JSX.Element {
           `
           )
           .eq('room_id', roomId)
+          .in('status', ['waiting', 'calledin', 'notified'])
           .order('position', { ascending: true })
 
         if (error) {

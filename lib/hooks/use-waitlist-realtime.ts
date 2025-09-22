@@ -54,7 +54,7 @@ export function useWaitlistRealtime({
         `
         )
         .eq('room_id', roomId)
-        .in('status', ['waiting', 'called'])
+        .in('status', ['waiting', 'calledin', 'notified'])
         .order('position', { ascending: true })
 
       if (fetchError) {

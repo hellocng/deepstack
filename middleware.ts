@@ -19,6 +19,7 @@ function isPublicRoute(pathname: string): boolean {
     pathname === '/rooms' ||
     pathname === '/profile' ||
     pathname === '/superadmin/signin' ||
+    pathname === '/admin' ||
     pathname.startsWith('/api/') ||
     pathname.startsWith('/_next/') ||
     pathname.startsWith('/favicon') ||
@@ -46,7 +47,7 @@ function isSuperAdminRoute(pathname: string): boolean {
 }
 
 function isSigninRoute(pathname: string): boolean {
-  return pathname.endsWith('/signin')
+  return pathname.endsWith('/signin') || pathname === '/admin'
 }
 
 function extractRoomFromPath(pathname: string): string | null {

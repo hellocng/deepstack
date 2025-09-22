@@ -7,12 +7,13 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Label } from '@/components/ui/label'
-import { Phone, Users, CheckCircle } from 'lucide-react'
-
+import { Phone, Users, CheckCircle, UserCheck } from 'lucide-react'
+import { type WaitlistStatus } from '@/lib/waitlist-status-utils'
 import type { Database } from '@/types/database'
 
 type WaitlistEntry = Database['public']['Tables']['waitlist_entries']['Row'] & {
@@ -74,19 +75,42 @@ export function WaitlistPlayerDialog({
     }
   }, [entry])
 
-  const handleStatusChange = async (newStatus: string): Promise<void> => {
+  const handleStatusChange = async (
+    newStatus: WaitlistStatus
+  ): Promise<void> => {
     if (!entry) return
 
     setSaving(true)
     try {
       const supabase = createClient()
+      const now = new Date().toISOString()
+
+      const updateData: {
+        status: WaitlistStatus
+        updated_at: string
+        notified_at?: string
+        cancelled_at?: string
+        cancelled_by?: 'player' | 'staff' | 'system' | null
+      } = {
+        status: newStatus,
+        updated_at: now,
+      }
+
+      // Set appropriate timestamps based on status
+      if (newStatus === 'calledin') {
+        // For 'calledin' status, we don't set notified_at
+        // The countdown starts from created_at timestamp
+      } else if (newStatus === 'notified') {
+        // Set notified_at when player checks in (moves to notified status)
+        updateData.notified_at = now
+      } else if (newStatus === 'cancelled') {
+        updateData.cancelled_at = now
+        updateData.cancelled_by = 'staff'
+      }
 
       const { data: updatedEntry, error } = await supabase
         .from('waitlist_entries')
-        .update({
-          status: newStatus as WaitlistEntry['status'],
-          updated_at: new Date().toISOString(),
-        })
+        .update(updateData)
         .eq('id', entry.id)
         .select(
           `
@@ -180,35 +204,52 @@ export function WaitlistPlayerDialog({
   const getStatusActions = (): JSX.Element => {
     if (!entry) return <div />
 
-    switch (entry.status || 'waiting') {
-      case 'waiting':
-        return (
-          <div className='space-y-4'>
-            <div className='flex items-center gap-2'>
-              <Phone className='h-4 w-4 text-blue-500' />
-              <span className='text-sm text-muted-foreground'>
-                Player is waiting. Notify them about available seats.
-              </span>
-            </div>
-            <Button
-              onClick={() => handleStatusChange('called')}
-              disabled={saving}
-              className='w-full'
-            >
-              <Phone className='h-4 w-4 mr-2' />
-              Notify Player
-            </Button>
-          </div>
-        )
-
-      case 'called':
+    switch (entry.status || 'calledin') {
+      case 'calledin':
         return (
           <div className='space-y-4'>
             <div className='flex items-center gap-2'>
               <CheckCircle className='h-4 w-4 text-green-500' />
               <span className='text-sm text-muted-foreground'>
-                Player has been called. They can now be seated or marked as no
-                show.
+                Player has been called in. They have 90 minutes to check in.
+              </span>
+            </div>
+            <Button
+              onClick={() => handleStatusChange('notified')}
+              disabled={saving}
+              className='w-full'
+            >
+              <CheckCircle className='h-4 w-4 mr-2' />
+              Check In Player
+            </Button>
+            <div className='flex gap-2'>
+              <Button
+                variant='outline'
+                onClick={() => handleStatusChange('waiting')}
+                disabled={saving}
+                className='flex-1'
+              >
+                Back to Waiting
+              </Button>
+              <Button
+                variant='destructive'
+                onClick={() => handleStatusChange('cancelled')}
+                disabled={saving}
+                className='flex-1'
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        )
+
+      case 'notified':
+        return (
+          <div className='space-y-4'>
+            <div className='flex items-center gap-2'>
+              <UserCheck className='h-4 w-4 text-blue-500' />
+              <span className='text-sm text-muted-foreground'>
+                Player has been notified. They have 5 minutes to respond.
               </span>
             </div>
 
@@ -265,14 +306,6 @@ export function WaitlistPlayerDialog({
                 disabled={saving}
                 className='flex-1'
               >
-                No Show
-              </Button>
-              <Button
-                variant='destructive'
-                onClick={() => handleStatusChange('cancelled')}
-                disabled={saving}
-                className='flex-1'
-              >
                 Cancel
               </Button>
             </div>
@@ -290,11 +323,11 @@ export function WaitlistPlayerDialog({
             </div>
             <Button
               variant='outline'
-              onClick={() => handleStatusChange('called')}
+              onClick={() => handleStatusChange('calledin')}
               disabled={saving}
               className='w-full'
             >
-              Move Back to Notified
+              Move Back to Called In
             </Button>
           </div>
         )
@@ -316,6 +349,9 @@ export function WaitlistPlayerDialog({
           <DialogTitle>
             Manage Player: {entry.player?.alias || 'Unknown Player'}
           </DialogTitle>
+          <DialogDescription>
+            Manage waitlist status and assign player to available tables.
+          </DialogDescription>
         </DialogHeader>
 
         <div className='space-y-6'>
@@ -348,20 +384,32 @@ export function WaitlistPlayerDialog({
             <div className='flex items-center gap-2'>
               <Badge
                 variant={
-                  (entry.status || 'waiting') === 'waiting'
+                  (entry.status || 'calledin') === 'calledin'
                     ? 'secondary'
-                    : (entry.status || 'waiting') === 'called'
+                    : (entry.status || 'calledin') === 'notified'
                       ? 'default'
-                      : (entry.status || 'waiting') === 'seated'
+                      : (entry.status || 'calledin') === 'seated'
                         ? 'outline'
-                        : 'destructive'
+                        : 'secondary'
                 }
               >
-                {(entry.status || 'waiting').charAt(0).toUpperCase() +
-                  (entry.status || 'waiting').slice(1)}
+                {(entry.status || 'calledin') === 'calledin'
+                  ? 'Called In'
+                  : (entry.status || 'calledin') === 'notified'
+                    ? 'Notified'
+                    : (entry.status || 'calledin') === 'seated'
+                      ? 'Seated'
+                      : (entry.status || 'calledin') === 'cancelled'
+                        ? 'Cancelled'
+                        : (entry.status || 'calledin') === 'expired'
+                          ? 'Expired'
+                          : 'Unknown'}
               </Badge>
-              {(entry.status || 'waiting') === 'called' && (
+              {(entry.status || 'calledin') === 'calledin' && (
                 <Phone className='h-4 w-4 text-blue-500' />
+              )}
+              {(entry.status || 'calledin') === 'notified' && (
+                <Phone className='h-4 w-4 text-red-500' />
               )}
             </div>
           </div>

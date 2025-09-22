@@ -771,11 +771,11 @@ export type Database = {
         | 'cancelled'
       waitlist_status:
         | 'waiting'
-        | 'called'
+        | 'calledin'
         | 'seated'
         | 'cancelled'
         | 'notified'
-        | 'no_show'
+        | 'expired'
     }
     CompositeTypes: {
       [_ in never]: never
@@ -929,11 +929,11 @@ export const Constants = {
       ],
       waitlist_status: [
         'waiting',
-        'called',
+        'calledin',
         'seated',
         'cancelled',
         'notified',
-        'no_show',
+        'expired',
       ],
     },
   },

@@ -295,22 +295,11 @@ interface JoinWaitlistRequest {
 }
 ```
 
-### PUT /api/[tenant]/waitlist/[id]
-
-Update waitlist entry status (Admin/Operator only).
-
-**Request Body:**
-
-```typescript
-interface UpdateWaitlistRequest {
-  status: 'waiting' | 'called' | 'seated' | 'cancelled'
-  notes?: string
-}
-```
-
 ### DELETE /api/[tenant]/waitlist/[id]
 
 Remove from waitlist.
+
+**Note:** Waitlist entry status updates are handled via direct Supabase client calls in the frontend, not through API routes.
 
 ## Tournaments API
 

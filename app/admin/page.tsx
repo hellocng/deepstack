@@ -12,10 +12,11 @@ export default function AdminSignInPage(): JSX.Element {
     <Suspense fallback={<div>Loading...</div>}>
       <OperatorSignInForm
         title='Admin Sign In'
-        description='Sign in to access the admin dashboard'
+        description='Sign in to access your poker room admin dashboard'
         role='admin'
-        showIpRestriction={true}
+        showIpRestriction={false}
       />
     </Suspense>
   )
 }
+

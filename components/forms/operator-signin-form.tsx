@@ -147,7 +147,7 @@ export function OperatorSignInForm({
   }, []) // eslint-disable-line react-hooks/exhaustive-deps -- Empty dependency array to run only once
 
   // Determine redirect path based on role and props
-  const getRedirectPath = async (): Promise<string> => {
+  const _getRedirectPath = async (): Promise<string> => {
     if (redirectPath) {
       return redirectPath
     }
@@ -165,7 +165,9 @@ export function OperatorSignInForm({
       return `/rooms/${roomSlug}/admin`
     }
 
-    return '/rooms'
+    // For root admin sign-in, we'll redirect to the operator's room admin page
+    // This will be handled in the onSubmit function after we get the operator data
+    return '/admin/signin'
   }
 
   // We'll get the redirect path when we need it in the onSubmit function
@@ -207,7 +209,7 @@ export function OperatorSignInForm({
         // Build the query based on role
         let query = supabase
           .from('operators')
-          .select('id, role, room_id')
+          .select('id, role, room_id, room:rooms(code)')
           .eq('auth_id', authData.user.id)
           .eq('is_active', true)
 
@@ -231,15 +233,35 @@ export function OperatorSignInForm({
           return
         }
 
-        // Get the redirect path first
-        const redirectPath = await getRedirectPath()
+        // Determine redirect path based on role and operator data
+        let finalRedirectPath: string
+
+        if (role === 'superadmin') {
+          finalRedirectPath = '/superadmin'
+        } else if (redirectPath) {
+          finalRedirectPath = redirectPath
+        } else if (redirectParam && redirectParam.startsWith('/')) {
+          finalRedirectPath = redirectParam
+        } else if (roomSlug) {
+          finalRedirectPath = `/rooms/${roomSlug}/admin`
+        } else if (operator.room && operator.room.code) {
+          // For root admin sign-in, redirect to the operator's room admin page
+          finalRedirectPath = `/rooms/${operator.room.code}/admin`
+        } else {
+          // Fallback if no room is found
+          setError('No room assigned to this operator account.')
+          setLoading(false)
+          setIsSubmitting(false)
+          isSubmittingRef.current = false
+          return
+        }
 
         // Redirect immediately - the auth state change listener will handle user context update
         // This prevents the loading state from interfering with the redirect
         if (role === 'superadmin') {
-          router.push(redirectPath)
+          router.push(finalRedirectPath)
         } else {
-          router.replace(redirectPath)
+          router.replace(finalRedirectPath)
         }
         return
       }

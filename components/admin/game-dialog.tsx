@@ -10,6 +10,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -198,6 +199,11 @@ export function GameDialog({
       <DialogContent className='max-w-2xl max-h-[90vh] overflow-y-auto'>
         <DialogHeader>
           <DialogTitle>{isEditing ? 'Edit Game' : 'Add New Game'}</DialogTitle>
+          <DialogDescription>
+            {isEditing
+              ? 'Update game settings and configuration.'
+              : 'Create a new poker game with custom settings.'}
+          </DialogDescription>
         </DialogHeader>
 
         <form

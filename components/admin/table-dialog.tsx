@@ -10,6 +10,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -143,6 +144,11 @@ export function TableDialog({
           <DialogTitle>
             {isEditing ? 'Edit Table' : 'Add New Table'}
           </DialogTitle>
+          <DialogDescription>
+            {isEditing
+              ? 'Update table settings and configuration.'
+              : 'Create a new poker table with custom settings.'}
+          </DialogDescription>
         </DialogHeader>
 
         <form

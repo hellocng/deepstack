@@ -10,6 +10,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -184,6 +185,9 @@ export function OpenTableDialog({
       <DialogContent className='max-w-2xl max-h-[90vh] overflow-y-auto'>
         <DialogHeader>
           <DialogTitle>Open New Table</DialogTitle>
+          <DialogDescription>
+            Create a new table session for the selected game and table.
+          </DialogDescription>
         </DialogHeader>
 
         <form
