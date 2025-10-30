@@ -101,8 +101,7 @@ export function Navigation(): JSX.Element {
         router.push('/superadmin')
       } else if (user.room) {
         // Route operators to their room admin page
-        const roomIdentifier = user.room.code || user.room.id
-        router.push(`/rooms/${roomIdentifier}/admin`)
+        router.push(`/admin`)
       }
     } else {
       // Players go to profile

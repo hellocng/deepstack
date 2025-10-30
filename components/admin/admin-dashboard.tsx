@@ -9,13 +9,10 @@ import { useOperator } from '@/lib/auth/user-context'
 import {
   Building2,
   Shield,
-  BarChart3,
   Club,
   Table,
   Clock,
   Users,
-  Gift,
-  Trophy,
   LucideIcon,
 } from 'lucide-react'
 
@@ -24,8 +21,6 @@ interface DashboardStats {
   activeGames: number
   totalTables: number
   activeTables: number
-  totalTournaments: number
-  activeTournaments: number
   waitlistEntries: number
 }
 
@@ -37,11 +32,6 @@ interface GameData {
 interface TableData {
   id: string
   is_active: boolean
-}
-
-interface TournamentData {
-  id: string
-  status: string | null
 }
 
 interface ManagementCard {
@@ -77,65 +67,44 @@ const managementCards: ManagementCard[] = [
   {
     id: 'room-info',
     title: 'Room Info',
-    href: './admin/info',
+    href: '/admin/info',
     icon: Building2,
     roles: ['admin'],
   },
   {
     id: 'security',
     title: 'Security',
-    href: './admin/security',
+    href: '/admin/security',
     icon: Shield,
-    roles: ['admin'],
-  },
-  {
-    id: 'reports',
-    title: 'Reports',
-    href: '#',
-    icon: BarChart3,
     roles: ['admin'],
   },
   // Supervisor and Admin cards
   {
     id: 'games',
     title: 'Games',
-    href: './admin/games',
+    href: '/admin/games',
     icon: Club,
     roles: ['admin', 'supervisor'],
   },
   {
     id: 'tables',
     title: 'Tables',
-    href: './admin/tables',
+    href: '/admin/tables',
     icon: Table,
-    roles: ['admin', 'supervisor'],
-  },
-  {
-    id: 'tournaments',
-    title: 'Tournaments',
-    href: './admin/tournaments',
-    icon: Trophy,
     roles: ['admin', 'supervisor'],
   },
   {
     id: 'waitlists',
     title: 'Waitlists',
-    href: './admin/waitlists',
+    href: '/admin/waitlists',
     icon: Clock,
     roles: ['admin', 'supervisor'],
   },
   {
     id: 'players',
     title: 'Players',
-    href: './admin/players',
+    href: '/admin/players',
     icon: Users,
-    roles: ['admin', 'supervisor'],
-  },
-  {
-    id: 'promos',
-    title: 'Promos',
-    href: './admin/promos',
-    icon: Gift,
     roles: ['admin', 'supervisor'],
   },
 ]
@@ -146,8 +115,6 @@ export function AdminConsole(): JSX.Element {
     activeGames: 0,
     totalTables: 0,
     activeTables: 0,
-    totalTournaments: 0,
-    activeTournaments: 0,
     waitlistEntries: 0,
   })
   const [loading, setLoading] = useState(true)
@@ -163,25 +130,11 @@ export function AdminConsole(): JSX.Element {
         const roomId = operator.profile.room_id
 
         // Fetch stats for the operator's room
-        const [gamesResult, tablesResult, tournamentsResult, waitlistResult] =
-          await Promise.all([
-            supabase
-              .from('games')
-              .select('id, is_active')
-              .eq('room_id', roomId),
-            supabase
-              .from('tables')
-              .select('id, is_active')
-              .eq('room_id', roomId),
-            supabase
-              .from('tournaments')
-              .select('id, status')
-              .eq('room_id', roomId),
-            supabase
-              .from('waitlist_entries')
-              .select('id')
-              .eq('room_id', roomId),
-          ])
+        const [gamesResult, tablesResult, waitlistResult] = await Promise.all([
+          supabase.from('games').select('id, is_active').eq('room_id', roomId),
+          supabase.from('tables').select('id, is_active').eq('room_id', roomId),
+          supabase.from('waitlist_entries').select('id').eq('room_id', roomId),
+        ])
 
         setStats({
           totalGames: gamesResult.data?.length || 0,
@@ -192,11 +145,6 @@ export function AdminConsole(): JSX.Element {
           activeTables:
             tablesResult.data?.filter((t: TableData) => t.is_active === true)
               .length || 0,
-          totalTournaments: tournamentsResult.data?.length || 0,
-          activeTournaments:
-            tournamentsResult.data?.filter(
-              (t: TournamentData) => t.status === 'in_progress'
-            ).length || 0,
           waitlistEntries: waitlistResult.data?.length || 0,
         })
       } catch (_error) {
@@ -228,12 +176,9 @@ export function AdminConsole(): JSX.Element {
             ? 'Supervisor Console'
             : 'Admin Dashboard'}
         </h1>
-        <p className='text-muted-foreground'>
-          Overview of your poker room operations
-        </p>
       </div>
 
-      <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-4'>
+      <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
         <Card>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
             <CardTitle className='text-sm font-medium'>Total Games</CardTitle>
@@ -254,18 +199,6 @@ export function AdminConsole(): JSX.Element {
             <div className='text-2xl font-bold'>{stats.totalTables}</div>
             <p className='text-xs text-muted-foreground'>
               {stats.activeTables} open
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium'>Tournaments</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className='text-2xl font-bold'>{stats.totalTournaments}</div>
-            <p className='text-xs text-muted-foreground'>
-              {stats.activeTournaments} in progress
             </p>
           </CardContent>
         </Card>

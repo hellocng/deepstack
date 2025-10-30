@@ -79,6 +79,7 @@ export function OpenTableDialog({
   const [tables, setTables] = useState<Table[]>([])
   const [games, setGames] = useState<Game[]>([])
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const form = useForm<OpenTableFormData>({
     resolver: zodResolver(openTableSchema),
@@ -139,6 +140,24 @@ export function OpenTableDialog({
     try {
       const supabase = createClient()
 
+      // Safeguard: prevent opening a new session if one is already active for the table
+      const { data: existingActive, error: activeCheckError } = await supabase
+        .from('table_sessions')
+        .select('id')
+        .eq('table_id', data.table_id)
+        .is('end_time', null)
+        .maybeSingle()
+
+      if (activeCheckError) {
+        setError('Failed to verify existing table sessions')
+        return
+      }
+
+      if (existingActive) {
+        setError('This table already has an active session. Please close it before opening a new one.')
+        return
+      }
+
       const tableSessionData = {
         table_id: data.table_id,
         game_id: data.game_id,
@@ -163,6 +182,7 @@ export function OpenTableDialog({
         return
       }
 
+      setError(null)
       onTableOpened(newTableSession)
       form.reset()
     } catch (error) {
@@ -194,6 +214,11 @@ export function OpenTableDialog({
           onSubmit={form.handleSubmit(onSubmit)}
           className='space-y-6'
         >
+          {error && (
+            <div className='text-sm text-destructive'>
+              {error}
+            </div>
+          )}
           <div className='grid gap-4 md:grid-cols-2'>
             <div className='space-y-2'>
               <Label htmlFor='table_id'>Table *</Label>

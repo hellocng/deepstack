@@ -1,22 +1,12 @@
-import { Suspense } from 'react'
-import { OperatorSignInForm } from '@/components/forms/operator-signin-form'
+import { AdminConsole } from '@/components/admin/admin-console'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Admin Sign In | DeepStack',
-  description: 'Sign in to access poker room administration features.',
+  title: 'Admin Console | DeepStack',
+  description:
+    'Manage your poker room operations, games, tables, and waitlists.',
 }
 
-export default function AdminSignInPage(): JSX.Element {
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <OperatorSignInForm
-        title='Admin Sign In'
-        description='Sign in to access your poker room admin dashboard'
-        role='admin'
-        showIpRestriction={false}
-      />
-    </Suspense>
-  )
+export default function AdminPage(): JSX.Element {
+  return <AdminConsole />
 }
-

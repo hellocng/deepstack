@@ -209,6 +209,7 @@ export type Database = {
           alias: string | null
           auth_id: string | null
           avatar_url: string | null
+          phone_number: string | null
           created_at: string | null
           id: string
           preferences: Json | null
@@ -218,6 +219,7 @@ export type Database = {
           alias?: string | null
           auth_id?: string | null
           avatar_url?: string | null
+          phone_number?: string | null
           created_at?: string | null
           id?: string
           preferences?: Json | null
@@ -227,6 +229,7 @@ export type Database = {
           alias?: string | null
           auth_id?: string | null
           avatar_url?: string | null
+          phone_number?: string | null
           created_at?: string | null
           id?: string
           preferences?: Json | null

@@ -1,29 +1,28 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { CountdownBadge } from '@/components/ui/countdown-badge'
 import {
   Phone,
-  CheckCircle,
   UserCheck,
-  X,
-  MoreHorizontal,
-  ArrowUp,
-  ArrowDown,
-  MoveUp,
-  MoveDown,
-  Undo2,
   Clock,
   MessageSquare,
+  MapPin,
+  MessageCircle,
+  CircleSlash,
+  ChevronUp,
+  ChevronDown,
+  ChevronsUp,
+  ChevronsDown,
+  ListChevronsUpDown,
 } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu'
 import {
   getStatusConfig,
@@ -37,6 +36,7 @@ type WaitlistEntry = Database['public']['Tables']['waitlist_entries']['Row'] & {
     id: string
     alias: string | null
     avatar_url: string | null
+    phone_number?: string | null
   } | null
   game: {
     id: string
@@ -74,6 +74,7 @@ export function WaitlistRow({
     entry.notified_at || entry.checked_in_at,
     entry.created_at
   )
+  const canNotify = Boolean(entry.player?.phone_number)
 
   const handleAction = async (action: string): Promise<void> => {
     setLoading(true)
@@ -103,48 +104,80 @@ export function WaitlistRow({
     }
   }
 
-  const _getActionButton = (action: string): JSX.Element => {
-    const actionConfig = {
-      call: { icon: Phone, label: 'Call In', variant: 'default' as const },
-      checkin: {
-        icon: CheckCircle,
-        label: 'Check In',
-        variant: 'default' as const,
-      },
-      assign: {
-        icon: UserCheck,
-        label: 'Assign Seat',
-        variant: 'default' as const,
-      },
-      cancel: { icon: X, label: 'Cancel', variant: 'destructive' as const },
+  const getActionButtons = (): JSX.Element[] => {
+    const buttons: JSX.Element[] = []
+
+    if (status === 'calledin') {
+      // Call In status: Check In, Seat, Cancel
+      buttons.push(
+        <Button
+          key='checkin'
+          size='sm'
+          variant='outline'
+          onClick={() => handleAction('checkin')}
+          disabled={loading}
+          className='h-8 w-8 p-0'
+          title='Check In'
+        >
+          <MapPin className='h-4 w-4' />
+        </Button>
+      )
+    } else if (status === 'waiting') {
+      // Waiting status: Notify, Seat, Cancel
+      buttons.push(
+        <Button
+          key='notify'
+          size='sm'
+          variant='outline'
+          onClick={() => handleAction('notify')}
+          disabled={loading || !canNotify}
+          className='h-8 w-8 p-0'
+          title={canNotify ? 'Notify' : 'Player has no phone number'}
+        >
+          <MessageCircle className='h-4 w-4' />
+        </Button>
+      )
     }
 
-    const {
-      icon: Icon,
-      label,
-      variant,
-    } = actionConfig[action as keyof typeof actionConfig]
-
-    return (
+    // Seat button (common for both statuses)
+    buttons.push(
       <Button
+        key='assign'
         size='sm'
-        variant={variant}
-        onClick={() => handleAction(action)}
+        variant='outline'
+        onClick={() => handleAction('assign')}
         disabled={loading}
-        className='h-8'
+        className='h-8 w-8 p-0'
+        title='Seat Player'
       >
-        <Icon className='h-3 w-3 mr-1' />
-        {label}
+        <UserCheck className='h-4 w-4' />
       </Button>
     )
+
+    // Cancel button (common for both statuses)
+    buttons.push(
+      <Button
+        key='cancel'
+        size='sm'
+        variant='destructive'
+        onClick={() => handleAction('cancel')}
+        disabled={loading}
+        className='h-8 w-8 p-0'
+        title='Cancel Entry'
+      >
+        <CircleSlash className='h-4 w-4' />
+      </Button>
+    )
+
+    return buttons
   }
 
   return (
     <div className='px-4 py-3 hover:bg-muted/30 transition-colors group'>
       <div className='grid grid-cols-12 items-center gap-4'>
-        {/* Player Name - 4 columns */}
+        {/* Player Name - 3 columns */}
         <div
-          className='col-span-4 flex items-center cursor-pointer'
+          className='col-span-3 flex items-center cursor-pointer'
           onClick={() => onRowClick(entry)}
         >
           <span className='font-medium truncate'>
@@ -174,8 +207,8 @@ export function WaitlistRow({
           </span>
         </div>
 
-        {/* Status Badge - 2 columns */}
-        <div className='col-span-2 flex items-center justify-center'>
+        {/* Status Badge - 1 column */}
+        <div className='col-span-1 flex items-center justify-center'>
           <Badge
             variant={config.variant}
             className='flex items-center gap-1'
@@ -187,86 +220,73 @@ export function WaitlistRow({
           </Badge>
         </div>
 
-        {/* Action Dropdown - 2 columns */}
-        <div className='col-span-2 flex items-center justify-end'>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                size='sm'
-                variant='outline'
-                className='h-8 w-8 p-0'
-                disabled={loading}
-              >
-                <MoreHorizontal className='h-3 w-3' />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align='end'>
-              {/* Move Actions */}
-              <DropdownMenuItem
-                onClick={() => onReorder?.(entry.id, 'moveToTop')}
-                disabled={loading}
-              >
-                <MoveUp className='h-3 w-3 mr-2' />
-                Move to Top
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => onReorder?.(entry.id, 'moveUp')}
-                disabled={loading}
-              >
-                <ArrowUp className='h-3 w-3 mr-2' />
-                Move Up
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => onReorder?.(entry.id, 'moveDown')}
-                disabled={loading}
-              >
-                <ArrowDown className='h-3 w-3 mr-2' />
-                Move Down
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => onReorder?.(entry.id, 'moveToBottom')}
-                disabled={loading}
-              >
-                <MoveDown className='h-3 w-3 mr-2' />
-                Move to Bottom
-              </DropdownMenuItem>
+        {/* All Buttons Grouped - 4 columns */}
+        <div className='col-span-4 flex items-center justify-end'>
+          <div className='flex items-center'>
+            {/* Action Buttons */}
+            {getActionButtons().map((button, index) => {
+              const isLast = index === getActionButtons().length - 1
+              const isFirst = index === 0
+              const isSeatButton = button.key === 'assign'
 
-              <DropdownMenuSeparator />
+              return (
+                <div key={button.key}>
+                  {React.cloneElement(button, {
+                    className: `h-8 w-8 p-0 ${isFirst ? 'rounded-l-none' : ''} ${isLast ? 'rounded-r-none' : 'rounded-none'}`,
+                  })}
 
-              {/* Status Actions */}
-              {config.actions.map((action) => (
-                <DropdownMenuItem
-                  key={action}
-                  onClick={() => handleAction(action)}
-                  disabled={loading}
-                >
-                  {action === 'checkin' && (
-                    <CheckCircle className='h-3 w-3 mr-2' />
+                  {/* Insert Move Controls after Seat button */}
+                  {isSeatButton && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          size='sm'
+                          variant='outline'
+                          className='h-8 w-8 p-0 rounded-none'
+                          disabled={loading}
+                          title='Move Player'
+                        >
+                          <ListChevronsUpDown className='h-4 w-4' />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align='end'>
+                        <DropdownMenuItem
+                          onClick={() => onReorder?.(entry.id, 'move-to-top')}
+                          disabled={loading}
+                        >
+                          <ChevronsUp className='h-4 w-4 mr-2' />
+                          Move to Top
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => onReorder?.(entry.id, 'move-up')}
+                          disabled={loading}
+                        >
+                          <ChevronUp className='h-4 w-4 mr-2' />
+                          Move Up
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => onReorder?.(entry.id, 'move-down')}
+                          disabled={loading}
+                        >
+                          <ChevronDown className='h-4 w-4 mr-2' />
+                          Move Down
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() =>
+                            onReorder?.(entry.id, 'move-to-bottom')
+                          }
+                          disabled={loading}
+                        >
+                          <ChevronsDown className='h-4 w-4 mr-2' />
+                          Move to Bottom
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   )}
-                  {action === 'notify' && <Phone className='h-3 w-3 mr-2' />}
-                  {action === 'recall' && <Undo2 className='h-3 w-3 mr-2' />}
-                  {action === 'assign' && (
-                    <UserCheck className='h-3 w-3 mr-2' />
-                  )}
-                  {action === 'cancel' && <X className='h-3 w-3 mr-2' />}
-                  {action === 'call' && <Phone className='h-3 w-3 mr-2' />}
-                  {action === 'checkin'
-                    ? 'Check In'
-                    : action === 'notify'
-                      ? 'Notify'
-                      : action === 'recall'
-                        ? 'Recall'
-                        : action === 'assign'
-                          ? 'Assign Seat'
-                          : action === 'cancel'
-                            ? 'Cancel'
-                            : action === 'call'
-                              ? 'Call In'
-                              : action}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                </div>
+              )
+            })}
+          </div>
         </div>
       </div>
     </div>

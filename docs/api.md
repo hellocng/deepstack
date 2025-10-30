@@ -2,13 +2,13 @@
 
 ## Overview
 
-The poker room management system uses Next.js API routes with Supabase for backend functionality. All API endpoints are tenant-aware and include proper authentication and authorization.
+The poker room management system uses Next.js API routes with Supabase for backend functionality. All API endpoints are room-aware and include proper authentication and authorization.
 
 ## Authentication
 
 ### Supabase Auth Integration
 
-All API routes use Supabase authentication. The user must be authenticated and have access to the specified tenant.
+All API routes use Supabase authentication. The user must be authenticated and have access to the specified room.
 
 ```typescript
 // lib/auth/api-auth.ts
@@ -31,20 +31,20 @@ export async function getAuthenticatedUser(request: NextRequest) {
   return user
 }
 
-export async function requireTenantAccess(
+export async function requireRoomAccess(
   request: NextRequest,
-  tenantCode: string
+  roomCode: string
 ) {
   const user = await getAuthenticatedUser(request)
   const supabase = createRouteHandlerClient({ cookies })
 
   const { data: userData } = await supabase
     .from('operators')
-    .select('tenant_id, role')
+    .select('room_id, role')
     .eq('auth_id', user.id)
     .single()
 
-  if (!userData || userData.tenant_id !== tenantCode) {
+  if (!userData || userData.room_id !== roomCode) {
     throw new Error('Access denied')
   }
 
@@ -62,7 +62,7 @@ app/api/
 │   ├── login/route.ts
 │   ├── logout/route.ts
 │   └── callback/route.ts
-├── [tenant]/
+├── [room]/
 │   ├── games/
 │   │   ├── route.ts          # GET, POST
 │   │   └── [id]/route.ts     # GET, PUT, DELETE
@@ -83,13 +83,13 @@ app/api/
 
 ## Games API
 
-### GET /api/[tenant]/games
+### GET /api/[room]/games
 
-Get all games for a tenant.
+Get all games for a room.
 
 **Parameters:**
 
-- `tenant` (path): Tenant code
+- `room` (path): Room code
 
 **Query Parameters:**
 
@@ -107,7 +107,7 @@ interface Game {
   max_players: number
   rake?: string
   description?: string
-  tenant_id: string
+  room_id: string
   is_active: boolean
   created_at: string
   updated_at: string
@@ -126,7 +126,7 @@ interface Game {
 GET /api/royal/games?active=true&game_type=texas_holdem
 ```
 
-### POST /api/[tenant]/games
+### POST /api/[room]/games
 
 Create a new game (Admin/Operator only).
 
@@ -152,7 +152,7 @@ interface CreateGameRequest {
 }
 ```
 
-### PUT /api/[tenant]/games/[id]
+### PUT /api/[room]/games/[id]
 
 Update a game (Admin/Operator only).
 
@@ -169,7 +169,7 @@ interface UpdateGameRequest {
 }
 ```
 
-### DELETE /api/[tenant]/games/[id]
+### DELETE /api/[room]/games/[id]
 
 Delete a game (Admin/Operator only).
 
@@ -183,9 +183,9 @@ Delete a game (Admin/Operator only).
 
 ## Tables API
 
-### GET /api/[tenant]/tables
+### GET /api/[room]/tables
 
-Get all tables for a tenant.
+Get all tables for a room.
 
 **Query Parameters:**
 
@@ -202,7 +202,7 @@ interface Table {
   seat_count: number
   current_players: number
   status: 'available' | 'occupied' | 'maintenance' | 'closed'
-  tenant_id: string
+  room_id: string
   created_at: string
   updated_at: string
   game?: Game
@@ -219,7 +219,7 @@ interface TableSeat {
 }
 ```
 
-### POST /api/[tenant]/tables
+### POST /api/[room]/tables
 
 Create a new table (Admin/Operator only).
 
@@ -233,15 +233,15 @@ interface CreateTableRequest {
 }
 ```
 
-### PUT /api/[tenant]/tables/[id]
+### PUT /api/[room]/tables/[id]
 
 Update a table (Admin/Operator only).
 
-### GET /api/[tenant]/tables/[id]/seats
+### GET /api/[room]/tables/[id]/seats
 
 Get seats for a specific table.
 
-### POST /api/[tenant]/tables/[id]/seats
+### POST /api/[room]/tables/[id]/seats
 
 Assign a player to a seat (Admin/Operator only).
 
@@ -256,56 +256,148 @@ interface AssignSeatRequest {
 
 ## Waitlist API
 
-### GET /api/[tenant]/waitlist
+### GET /api/rooms/[room]/waitlist/status
 
-Get waitlist entries for a tenant.
-
-**Query Parameters:**
-
-- `game_id` (optional): Filter by game ID
-- `status` (optional): Filter by status
-
-**Response:**
+Return the authenticated player's waitlist entries for a room. Results are
+limited to `waiting`, `calledin`, and `notified` statuses and are sorted by
+position.
 
 ```typescript
-interface WaitlistEntry {
-  id: string
-  player_id: string
-  game_id: string
-  status: 'waiting' | 'called' | 'seated' | 'cancelled'
-  notes?: string
-  room_id: string
-  created_at: string
-  updated_at: string
-  player: Player
-  game: Game
+type WaitlistStatusResponse = {
+  success: boolean
+  entries: Array<{
+    id: string
+    status: 'waiting' | 'calledin' | 'notified'
+    position: number | null
+    created_at: string | null
+    checked_in_at: string | null
+    notified_at: string | null
+    notes: string | null
+    game: {
+      id: string
+      name: string
+      game_type: string
+      small_blind: number
+      big_blind: number
+    } | null
+  }>
 }
 ```
 
-### POST /api/[tenant]/waitlist
+### POST /api/rooms/[room]/waitlist/join
 
-Join the waitlist for a game.
-
-**Request Body:**
+Create waitlist entries for the signed-in player.
 
 ```typescript
-interface JoinWaitlistRequest {
-  game_id: string
+type JoinWaitlistRequest = {
+  gameIds: string[]
   notes?: string
+}
+
+type JoinWaitlistResponse = {
+  success: boolean
+  entries: Array<{
+    id: string
+    game_id: string
+    status: 'calledin'
+    created_at: string
+  }>
+  message: string
 }
 ```
 
-### DELETE /api/[tenant]/waitlist/[id]
+### POST /api/rooms/[room]/waitlist/cancel
 
-Remove from waitlist.
+Allow players to opt out of a waitlist entry they created.
 
-**Note:** Waitlist entry status updates are handled via direct Supabase client calls in the frontend, not through API routes.
+```typescript
+type CancelWaitlistRequest = {
+  entryId: string
+}
+
+type CancelWaitlistResponse = {
+  success: boolean
+  message: string
+}
+```
+
+### GET /api/rooms/[room]/waitlist/[id]/status
+
+Fetch a single waitlist entry (used by the operator detail dialog). Requires
+operator access to the room.
+
+### POST /api/rooms/[room]/waitlist/[id]/status
+
+Update a waitlist entry's status. Valid transitions are enforced by
+`WaitlistStatusManager`.
+
+```typescript
+type UpdateStatusRequest = {
+  status:
+    | 'waiting'
+    | 'calledin'
+    | 'notified'
+    | 'cancelled'
+    | 'seated'
+    | 'expired'
+  notes?: string
+  cancelledBy?: 'player' | 'staff' | 'system'
+}
+```
+
+### Reordering Endpoints
+
+Operators can adjust fractional positions with the following endpoints:
+
+- `POST /api/rooms/[room]/waitlist/[id]/move-up`
+- `POST /api/rooms/[room]/waitlist/[id]/move-down`
+- `POST /api/rooms/[room]/waitlist/[id]/move-to-top`
+- `POST /api/rooms/[room]/waitlist/[id]/move-to-bottom`
+
+### GET /api/rooms/[room]/waitlist/[id]/position
+
+Returns the current fractional index for a waitlist entry. Requires operator
+access. Example response:
+
+```typescript
+type WaitlistPositionResponse = {
+  position: number
+}
+```
+
+### POST /api/rooms/[room]/waitlist/auto-assign
+
+Assign the next player in line to an available seat for the specified game. The
+request body mirrors the admin "Auto Assign" action:
+
+```typescript
+type AutoAssignRequest = {
+  gameId: string
+  assignedBy: string
+}
+```
+
+### POST /api/rooms/[room]/waitlist/expiry/process
+
+Run the expiry sweep for a room. Operators can trigger this manually in
+addition to the scheduled background job handled by the UI.
+
+### GET /api/rooms/[room]/waitlist/analytics
+
+Return aggregated waitlist metrics for the specified room. Query parameters:
+
+- `timeRange`: `'24h' | '7d' | '30d'` (default `7d`)
+- `gameId`: optional UUID to scope results to a single game
+- `startDate` / `endDate`: ISO strings overriding `timeRange`
+
+The response includes counts by status, hourly/daily distributions, conversion
+rates, and top games, matching the admin analytics dashboard.
 
 ## Tournaments API
 
-### GET /api/[tenant]/tournaments
+### GET /api/[room]/tournaments
 
-Get tournaments for a tenant.
+Get tournaments for a room.
 
 **Query Parameters:**
 
@@ -331,7 +423,7 @@ interface Tournament {
   prize_pool: number
   rake?: string
   description?: string
-  tenant_id: string
+  room_id: string
   created_at: string
   updated_at: string
   entries?: TournamentEntry[]
@@ -348,7 +440,7 @@ interface TournamentEntry {
 }
 ```
 
-### POST /api/[tenant]/tournaments
+### POST /api/[room]/tournaments
 
 Create a new tournament (Admin/Operator only).
 
@@ -366,17 +458,17 @@ interface CreateTournamentRequest {
 }
 ```
 
-### POST /api/[tenant]/tournaments/[id]/register
+### POST /api/[room]/tournaments/[id]/register
 
 Register for a tournament.
 
-### PUT /api/[tenant]/tournaments/[id]/checkin
+### PUT /api/[room]/tournaments/[id]/checkin
 
 Check in for a tournament.
 
 ## Users API
 
-### GET /api/[tenant]/players
+### GET /api/[room]/players
 
 Get players (Admin/Operator only).
 
@@ -407,7 +499,7 @@ interface Operator {
   last_name: string
   phone_number?: string
   avatar_url?: string
-  tenant_id: string
+  room_id: string
   role: 'admin' | 'supervisor' | 'dealer'
   is_active: boolean
   last_login?: string
@@ -416,11 +508,11 @@ interface Operator {
 }
 ```
 
-### GET /api/[tenant]/players/[id]
+### GET /api/[room]/players/[id]
 
 Get a specific player.
 
-### PUT /api/[tenant]/players/[id]
+### PUT /api/[room]/players/[id]
 
 Update player profile.
 
@@ -436,20 +528,20 @@ interface UpdatePlayerRequest {
 
 ## Operators API
 
-### GET /api/[tenant]/operators
+### GET /api/[room]/operators
 
-Get operators for a tenant (Admin only).
+Get operators for a room (Admin only).
 
 **Query Parameters:**
 
 - `role` (optional): Filter by operator role
 - `active` (optional): Filter by active status
 
-### GET /api/[tenant]/operators/[id]
+### GET /api/[room]/operators/[id]
 
 Get a specific operator.
 
-### POST /api/[tenant]/operators
+### POST /api/[room]/operators
 
 Create a new operator (Admin only).
 
@@ -466,7 +558,7 @@ interface CreateOperatorRequest {
 }
 ```
 
-### PUT /api/[tenant]/operators/[id]
+### PUT /api/[room]/operators/[id]
 
 Update operator profile (Admin only).
 
@@ -503,7 +595,7 @@ const subscription = supabase
       event: '*',
       schema: 'public',
       table: 'tables',
-      filter: `tenant_id=eq.${tenantId}`,
+      filter: `room_id=eq.${roomId}`,
     },
     (payload) => {
       console.log('Table update:', payload)
@@ -605,13 +697,13 @@ export function rateLimit(
 ```typescript
 // __tests__/api/games.test.ts
 import { createMocks } from 'node-mocks-http'
-import handler from '@/app/api/[tenant]/games/route'
+import handler from '@/app/api/[room]/games/route'
 
-describe('/api/[tenant]/games', () => {
-  it('should return games for a tenant', async () => {
+describe('/api/[room]/games', () => {
+  it('should return games for a room', async () => {
     const { req, res } = createMocks({
       method: 'GET',
-      query: { tenant: 'royal' },
+      query: { room: 'royal' },
     })
 
     await handler(req, res)
@@ -640,9 +732,9 @@ describe('/api/[tenant]/games', () => {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/api/{{tenant}}/games",
+              "raw": "{{base_url}}/api/{{room}}/games",
               "host": ["{{base_url}}"],
-              "path": ["api", "{{tenant}}", "games"]
+              "path": ["api", "{{room}}", "games"]
             }
           }
         }
@@ -655,7 +747,7 @@ describe('/api/[tenant]/games', () => {
       "value": "http://localhost:3000"
     },
     {
-      "key": "tenant",
+      "key": "room",
       "value": "royal"
     }
   ]

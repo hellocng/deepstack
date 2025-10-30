@@ -214,7 +214,6 @@ export default function RoomInfoPage(): JSX.Element {
                 <Input
                   id='name'
                   {...form.register('name')}
-                  placeholder='Enter room name'
                 />
                 {form.formState.errors.name && (
                   <p className='text-sm text-destructive'>
@@ -228,7 +227,6 @@ export default function RoomInfoPage(): JSX.Element {
                 <Input
                   id='code'
                   {...form.register('code')}
-                  placeholder='Enter room code'
                   onBlur={(e) => {
                     const code = e.target.value.trim()
                     if (code && code !== roomData?.code) {
@@ -253,7 +251,6 @@ export default function RoomInfoPage(): JSX.Element {
                 <Input
                   id='address'
                   {...form.register('address')}
-                  placeholder='123 Main St, City, State 12345'
                 />
                 {form.formState.errors.address && (
                   <p className='text-sm text-destructive'>
@@ -267,7 +264,6 @@ export default function RoomInfoPage(): JSX.Element {
                 <Input
                   id='phone'
                   {...form.register('phone')}
-                  placeholder='(555) 123-4567'
                 />
                 {form.formState.errors.phone && (
                   <p className='text-sm text-destructive'>
@@ -281,7 +277,6 @@ export default function RoomInfoPage(): JSX.Element {
                 <Input
                   id='website_url'
                   {...form.register('website_url')}
-                  placeholder='https://example.com'
                 />
                 {form.formState.errors.website_url && (
                   <p className='text-sm text-destructive'>
@@ -296,7 +291,6 @@ export default function RoomInfoPage(): JSX.Element {
                   id='contact_email'
                   type='email'
                   {...form.register('contact_email')}
-                  placeholder='contact@example.com'
                 />
                 {form.formState.errors.contact_email && (
                   <p className='text-sm text-destructive'>

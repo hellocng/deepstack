@@ -1,9 +1,12 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Loading } from '@/components/ui/loading'
 import { Clock, User, X, RotateCcw } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 import type { Database } from '@/types/database'
 
 type WaitlistEntry = Database['public']['Tables']['waitlist_entries']['Row'] & {
@@ -22,14 +25,91 @@ type WaitlistEntry = Database['public']['Tables']['waitlist_entries']['Row'] & {
 }
 
 interface ExpiredWaitlistTableProps {
-  entries: WaitlistEntry[]
+  roomId: string
   onRejoinWaitlist?: (entry: WaitlistEntry) => void
 }
 
 export function ExpiredWaitlistTable({
-  entries,
+  roomId,
   onRejoinWaitlist,
 }: ExpiredWaitlistTableProps): JSX.Element {
+  const [entries, setEntries] = useState<WaitlistEntry[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!roomId) return
+
+    const fetchExpiredEntries = async (): Promise<void> => {
+      try {
+        setLoading(true)
+        setError(null)
+        const supabase = createClient()
+
+        const { data, error: fetchError } = await supabase
+          .from('waitlist_entries')
+          .select(
+            `
+            *,
+            player:players(id, alias, avatar_url),
+            game:games(id, name, game_type, small_blind, big_blind)
+          `
+          )
+          .eq('room_id', roomId)
+          .in('status', ['expired', 'cancelled'])
+          .order('updated_at', { ascending: false })
+          .limit(50)
+
+        if (fetchError) {
+          throw fetchError
+        }
+
+        setEntries(data || [])
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : 'Failed to fetch expired entries'
+        )
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchExpiredEntries()
+  }, [roomId])
+
+  if (!roomId) {
+    return (
+      <Card>
+        <CardContent className='p-6 text-center'>
+          <p className='text-muted-foreground'>Room ID not available</p>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className='p-6'>
+          <Loading
+            size='md'
+            text='Loading expired entries...'
+          />
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardContent className='p-6 text-center'>
+          <p className='text-red-600'>{error}</p>
+        </CardContent>
+      </Card>
+    )
+  }
+
   const getCancelledByLabel = (cancelledBy: string | null): string => {
     switch (cancelledBy) {
       case 'player':

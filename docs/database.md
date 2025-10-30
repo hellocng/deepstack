@@ -2,7 +2,7 @@
 
 ## Overview
 
-The poker room management system uses Supabase (PostgreSQL) with a multitenant architecture. Each poker room (tenant) has isolated data with proper Row Level Security (RLS) policies.
+The poker room management system uses Supabase (PostgreSQL) with a multitenant architecture. Each poker room has isolated data with proper Row Level Security (RLS) policies.
 
 ## Core Tables
 
@@ -29,8 +29,8 @@ CREATE TABLE tenants (
 
 Unified player table supporting both registered and anonymous players.
 
-**Registered Players**: `auth_id` is NOT NULL, have Supabase Auth entry, can visit any tenant
-**Anonymous Players**: `auth_id` is NULL, no Supabase Auth entry, tenant-specific, managed by operators
+**Registered Players**: `auth_id` is NOT NULL, have Supabase Auth entry, can visit any room
+**Anonymous Players**: `auth_id` is NULL, no Supabase Auth entry, room-specific, managed by operators
 
 ```sql
 CREATE TABLE players (
@@ -61,7 +61,7 @@ CREATE TABLE games (
   max_buy_in DECIMAL(10,2) NOT NULL,
   rake TEXT,
   description TEXT,
-  tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
+  room_id UUID REFERENCES rooms(id) ON DELETE CASCADE,
   is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -79,7 +79,7 @@ CREATE TABLE tables (
   game_id UUID REFERENCES games(id) ON DELETE SET NULL,
   seat_count INTEGER NOT NULL, -- Maximum physical seats
   status table_status DEFAULT 'open',
-  tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
+  room_id UUID REFERENCES rooms(id) ON DELETE CASCADE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -95,7 +95,7 @@ CREATE TABLE table_sessions (
   table_id UUID NOT NULL REFERENCES tables(id) ON DELETE CASCADE,
   start_time TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   end_time TIMESTAMP WITH TIME ZONE, -- NULL = currently active session
-  tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
+  room_id UUID REFERENCES rooms(id) ON DELETE CASCADE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -128,16 +128,75 @@ CREATE TABLE player_sessions (
 
 ### Waitlist Entries
 
-Player waitlist management.
+Player waitlist management with enhanced status tracking and multi-game support.
 
 ```sql
 CREATE TABLE waitlist_entries (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   player_id UUID REFERENCES players(id) ON DELETE CASCADE,
   game_id UUID REFERENCES games(id) ON DELETE CASCADE,
-  status waitlist_status DEFAULT 'waiting',
-  notes TEXT,
   room_id UUID REFERENCES rooms(id) ON DELETE CASCADE,
+  status waitlist_status DEFAULT 'calledin',
+  position DECIMAL(20,10) DEFAULT EXTRACT(EPOCH FROM NOW()),
+
+  -- Timestamps for status tracking
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  checked_in_at TIMESTAMP WITH TIME ZONE,
+  notified_at TIMESTAMP WITH TIME ZONE,
+  cancelled_at TIMESTAMP WITH TIME ZONE,
+
+  -- Cancellation tracking
+  cancelled_by cancelled_by_type,
+
+  -- Notes and preferences
+  notes TEXT,
+  entry_method entry_method_type DEFAULT 'callin',
+  check_in_immediately BOOLEAN DEFAULT FALSE,
+
+  -- Multi-game support
+  other_game_entries UUID[] DEFAULT '{}',
+  keep_other_entries BOOLEAN DEFAULT TRUE
+);
+
+-- Waitlist status enum
+CREATE TYPE waitlist_status AS ENUM (
+  'waiting',    -- Checked in and waiting
+  'calledin',   -- Called in remotely, needs check-in
+  'notified',   -- Notified of seat availability
+  'seated',     -- Seated at table
+  'cancelled',  -- Cancelled by player or staff
+  'expired'     -- Expired due to time limits
+);
+
+-- Entry method enum
+CREATE TYPE entry_method_type AS ENUM (
+  'callin',     -- Remote call-in
+  'inperson'    -- In-person at desk
+);
+
+-- Cancellation tracking enum
+CREATE TYPE cancelled_by_type AS ENUM (
+  'player',     -- Player cancelled
+  'staff',      -- Staff cancelled
+  'system'      -- System cancelled (expired)
+);
+```
+
+### Room Settings
+
+Room-specific configuration for waitlist time limits and behavior.
+
+```sql
+CREATE TABLE room_settings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  room_id UUID REFERENCES rooms(id) ON DELETE CASCADE UNIQUE,
+
+  -- Time limits (in minutes)
+  call_in_expiry_minutes INTEGER DEFAULT 90,
+  notify_expiry_minutes INTEGER DEFAULT 5,
+  grace_period_minutes INTEGER DEFAULT 2,
+
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -159,7 +218,7 @@ CREATE TABLE tournaments (
   prize_pool DECIMAL(10,2) DEFAULT 0,
   rake TEXT,
   description TEXT,
-  tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
+  room_id UUID REFERENCES rooms(id) ON DELETE CASCADE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -178,7 +237,7 @@ CREATE TABLE tournament_entries (
   position INTEGER,
   prize_amount DECIMAL(10,2) DEFAULT 0,
   status tournament_entry_status DEFAULT 'registered',
-  tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
+  room_id UUID REFERENCES rooms(id) ON DELETE CASCADE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   CONSTRAINT check_tournament_entry_player_type CHECK (
@@ -201,7 +260,7 @@ CREATE TABLE operators (
   last_name VARCHAR(100) NOT NULL,
   phone_number VARCHAR(20),
   avatar_url TEXT,
-  tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
+  room_id UUID REFERENCES rooms(id) ON DELETE CASCADE,
   role operator_role NOT NULL,
   is_active BOOLEAN DEFAULT true,
   last_login TIMESTAMP WITH TIME ZONE,
@@ -297,14 +356,14 @@ CREATE INDEX idx_players_alias ON players(alias);
 CREATE INDEX idx_players_auth_id ON players(auth_id);
 
 CREATE INDEX idx_operators_email ON operators(email);
-CREATE INDEX idx_operators_tenant_id ON operators(tenant_id);
+CREATE INDEX idx_operators_room_id ON operators(room_id);
 CREATE INDEX idx_operators_role ON operators(role);
-CREATE INDEX idx_operators_tenant_role ON operators(tenant_id, role);
+CREATE INDEX idx_operators_tenant_role ON operators(room_id, role);
 
-CREATE INDEX idx_games_tenant_id ON games(tenant_id);
-CREATE INDEX idx_games_active ON games(tenant_id, is_active);
+CREATE INDEX idx_games_room_id ON games(room_id);
+CREATE INDEX idx_games_active ON games(room_id, is_active);
 
-CREATE INDEX idx_tables_tenant_id ON tables(tenant_id);
+CREATE INDEX idx_tables_room_id ON tables(room_id);
 CREATE INDEX idx_tables_game_id ON tables(game_id);
 CREATE INDEX idx_tables_status ON tables(status);
 
@@ -314,12 +373,12 @@ CREATE INDEX idx_player_sessions_start_time ON player_sessions(start_time);
 CREATE INDEX idx_player_sessions_end_time ON player_sessions(end_time);
 CREATE INDEX idx_player_sessions_active ON player_sessions(table_id, end_time) WHERE end_time IS NULL;
 
-CREATE INDEX idx_waitlist_entries_tenant_id ON waitlist_entries(tenant_id);
+CREATE INDEX idx_waitlist_entries_room_id ON waitlist_entries(room_id);
 CREATE INDEX idx_waitlist_entries_game_id ON waitlist_entries(game_id);
 CREATE INDEX idx_waitlist_entries_player_id ON waitlist_entries(player_id);
 CREATE INDEX idx_waitlist_entries_created_at ON waitlist_entries(game_id, created_at);
 
-CREATE INDEX idx_tournaments_tenant_id ON tournaments(tenant_id);
+CREATE INDEX idx_tournaments_room_id ON tournaments(room_id);
 CREATE INDEX idx_tournaments_start_time ON tournaments(start_time);
 CREATE INDEX idx_tournaments_status ON tournaments(status);
 
@@ -385,8 +444,8 @@ CREATE POLICY "Players can insert their own profile" ON players
 CREATE POLICY "Operators can manage anonymous players in their tenant" ON players
   FOR ALL USING (
     auth_id IS NULL AND
-    tenant_id IN (
-      SELECT tenant_id FROM operators
+    room_id IN (
+      SELECT room_id FROM operators
       WHERE auth_id = auth.uid()
       AND role IN ('admin', 'supervisor', 'dealer')
     )
@@ -399,8 +458,8 @@ CREATE POLICY "Operators can manage anonymous players in their tenant" ON player
 -- Operators can view operators in their tenant
 CREATE POLICY "Operators can view operators in their tenant" ON operators
   FOR SELECT USING (
-    tenant_id IN (
-      SELECT tenant_id FROM operators
+    room_id IN (
+      SELECT room_id FROM operators
       WHERE auth_id = auth.uid()
     )
   );
@@ -414,8 +473,8 @@ CREATE POLICY "Operators can update their own profile" ON operators
 -- Admins can manage operators in their tenant
 CREATE POLICY "Admins can manage operators in their tenant" ON operators
   FOR ALL USING (
-    tenant_id IN (
-      SELECT tenant_id FROM operators
+    room_id IN (
+      SELECT room_id FROM operators
       WHERE auth_id = auth.uid()
       AND role = 'admin'
     )
@@ -432,8 +491,8 @@ CREATE POLICY "Users can view games" ON games
 -- Operators can manage games in their tenant
 CREATE POLICY "Operators can manage games in their tenant" ON games
   FOR ALL USING (
-    tenant_id IN (
-      SELECT tenant_id FROM operators
+    room_id IN (
+      SELECT room_id FROM operators
       WHERE auth_id = auth.uid()
       AND role IN ('admin', 'supervisor')
     )
@@ -450,8 +509,8 @@ CREATE POLICY "Users can view tables" ON tables
 -- Operators can manage tables in their tenant
 CREATE POLICY "Operators can manage tables in their tenant" ON tables
   FOR ALL USING (
-    tenant_id IN (
-      SELECT tenant_id FROM operators
+    room_id IN (
+      SELECT room_id FROM operators
       WHERE auth_id = auth.uid()
       AND role IN ('admin', 'supervisor', 'dealer')
     )
@@ -465,8 +524,8 @@ CREATE POLICY "Operators can manage tables in their tenant" ON tables
 CREATE POLICY "Players can manage their waitlist entries" ON waitlist_entries
   FOR ALL USING (
     player_id = auth.uid()
-    OR tenant_id IN (
-      SELECT tenant_id FROM operators
+    OR room_id IN (
+      SELECT room_id FROM operators
       WHERE auth_id = auth.uid()
       AND role IN ('admin', 'supervisor', 'dealer')
     )
@@ -483,8 +542,8 @@ CREATE POLICY "Users can view tournaments" ON tournaments
 -- Operators can manage tournaments in their tenant
 CREATE POLICY "Operators can manage tournaments in their tenant" ON tournaments
   FOR ALL USING (
-    tenant_id IN (
-      SELECT tenant_id FROM operators
+    room_id IN (
+      SELECT room_id FROM operators
       WHERE auth_id = auth.uid()
       AND role IN ('admin', 'supervisor')
     )
@@ -498,8 +557,8 @@ CREATE POLICY "Operators can manage tournaments in their tenant" ON tournaments
 CREATE POLICY "Players can manage their tournament entries" ON tournament_entries
   FOR ALL USING (
     player_id = auth.uid()
-    OR tenant_id IN (
-      SELECT tenant_id FROM operators
+    OR room_id IN (
+      SELECT room_id FROM operators
       WHERE auth_id = auth.uid()
       AND role IN ('admin', 'supervisor', 'dealer')
     )
@@ -594,7 +653,7 @@ RETURNS UUID AS $$
 DECLARE
   new_session_id UUID;
 BEGIN
-  INSERT INTO table_sessions (table_id, tenant_id, start_time)
+  INSERT INTO table_sessions (table_id, room_id, start_time)
   VALUES (table_uuid, tenant_uuid, NOW())
   RETURNING id INTO new_session_id;
 
@@ -738,7 +797,7 @@ INSERT INTO tenants (name, code, description) VALUES
 ### Insert Sample Games
 
 ```sql
-INSERT INTO games (name, game_type, buy_in, max_players, rake, tenant_id) VALUES
+INSERT INTO games (name, game_type, buy_in, max_players, rake, room_id) VALUES
 ('Texas Hold''em $1/$2', 'texas_holdem', 200.00, 9, '5% rake, $5 max', (SELECT id FROM tenants WHERE code = 'royal')),
 ('Omaha $2/$5', 'omaha', 500.00, 8, '5% rake, $10 max', (SELECT id FROM tenants WHERE code = 'royal')),
 ('Seven Card Stud $5/$10', 'seven_card_stud', 1000.00, 7, '5% rake, $15 max', (SELECT id FROM tenants WHERE code = 'ace'));
@@ -747,7 +806,7 @@ INSERT INTO games (name, game_type, buy_in, max_players, rake, tenant_id) VALUES
 ### Insert Sample Tables
 
 ```sql
-INSERT INTO tables (name, game_id, seat_count, tenant_id) VALUES
+INSERT INTO tables (name, game_id, seat_count, room_id) VALUES
 ('Table 1', (SELECT id FROM games WHERE name = 'Texas Hold''em $1/$2'), 9, (SELECT id FROM tenants WHERE code = 'royal')),
 ('Table 2', (SELECT id FROM games WHERE name = 'Texas Hold''em $1/$2'), 9, (SELECT id FROM tenants WHERE code = 'royal')),
 ('Table 3', (SELECT id FROM games WHERE name = 'Omaha $2/$5'), 8, (SELECT id FROM tenants WHERE code = 'royal'));

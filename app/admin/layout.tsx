@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams, useRouter, usePathname } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { useUser, useOperator } from '@/lib/auth/user-context'
 import { Loading } from '@/components/ui/loading'
 
@@ -14,11 +14,9 @@ export default function AdminLayout({
   const operator = useOperator()
   const router = useRouter()
   const pathname = usePathname()
-  const params = useParams<{ room?: string }>()
   const [mounted, setMounted] = useState(false)
-  const roomSlug = params?.room ?? ''
 
-  // Check if we're on the signin page
+  // Check if we're on the signin page (/admin/signin)
   const isSigninPage = pathname?.endsWith('/admin/signin')
 
   // Handle hydration
@@ -31,17 +29,13 @@ export default function AdminLayout({
 
     if (isSigninPage) {
       if (operator) {
-        const destination = roomSlug
-          ? `/rooms/${roomSlug}/admin`
-          : '/rooms'
-        router.replace(destination)
+        router.replace('/admin')
       }
       return
     }
 
-    if (!authUser) {
-      const fallback = roomSlug ? `/rooms/${roomSlug}/admin/signin` : '/signin'
-      router.replace(fallback)
+    if (!authUser && !user) {
+      router.replace('/admin/signin')
       return
     }
 
@@ -54,7 +48,6 @@ export default function AdminLayout({
     loading,
     mounted,
     operator,
-    roomSlug,
     router,
     user,
   ])

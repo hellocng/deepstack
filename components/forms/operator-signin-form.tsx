@@ -162,7 +162,7 @@ export function OperatorSignInForm({
     }
 
     if (roomSlug) {
-      return `/rooms/${roomSlug}/admin`
+      return `/admin`
     }
 
     // For root admin sign-in, we'll redirect to the operator's room admin page
@@ -243,10 +243,10 @@ export function OperatorSignInForm({
         } else if (redirectParam && redirectParam.startsWith('/')) {
           finalRedirectPath = redirectParam
         } else if (roomSlug) {
-          finalRedirectPath = `/rooms/${roomSlug}/admin`
+          finalRedirectPath = `/admin`
         } else if (operator.room && operator.room.code) {
-          // For root admin sign-in, redirect to the operator's room admin page
-          finalRedirectPath = `/rooms/${operator.room.code}/admin`
+          // For root admin sign-in, redirect to flat admin
+          finalRedirectPath = `/admin`
         } else {
           // Fallback if no room is found
           setError('No room assigned to this operator account.')

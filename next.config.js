@@ -38,9 +38,12 @@ const nextConfig = {
 
   // Redirects
   async redirects() {
-    return [
-      // No redirects needed - admin routes are now /rooms/[room]/admin
-    ]
+    return []
+  },
+
+  // Rewrites: allow new preferred URLs to hit existing route files
+  async rewrites() {
+    return []
   },
 
   // External packages for server components

@@ -92,9 +92,7 @@ export default function GamesPage(): JSX.Element {
       }
 
       setGames((prev) =>
-        prev.map((game) =>
-          game.id === gameId ? { ...game, is_active: isActive } : game
-        )
+        prev.map((game) => (game.id === gameId ? { ...game, is_active: isActive } : game))
       )
     } catch (error) {
       console.error('Error updating game:', error)
@@ -120,12 +118,8 @@ export default function GamesPage(): JSX.Element {
 
   const handleGameSaved = (savedGame: Game): void => {
     if (selectedGame) {
-      // Update existing game
-      setGames((prev) =>
-        prev.map((game) => (game.id === savedGame.id ? savedGame : game))
-      )
+      setGames((prev) => prev.map((game) => (game.id === savedGame.id ? savedGame : game)))
     } else {
-      // Add new game
       setGames((prev) => [savedGame, ...prev])
     }
     handleDialogClose()
@@ -174,9 +168,7 @@ export default function GamesPage(): JSX.Element {
           return (
             <Switch
               checked={info.getValue() || false}
-              onCheckedChange={(checked) =>
-                handleToggleActive(game.id, checked)
-              }
+              onCheckedChange={(checked) => handleToggleActive(game.id, checked)}
               disabled={updating === game.id}
             />
           )
@@ -299,3 +291,5 @@ export default function GamesPage(): JSX.Element {
     </div>
   )
 }
+
+

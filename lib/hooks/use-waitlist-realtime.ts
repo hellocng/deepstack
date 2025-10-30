@@ -7,6 +7,7 @@ type WaitlistEntry = Database['public']['Tables']['waitlist_entries']['Row'] & {
     id: string
     alias: string | null
     avatar_url: string | null
+    phone_number?: string | null
   } | null
   game: {
     id: string
@@ -44,18 +45,51 @@ export function useWaitlistRealtime({
 
       const supabase = createClient()
 
-      const { data, error: fetchError } = await supabase
-        .from('waitlist_entries')
-        .select(
-          `
-          *,
-          player:players(id, alias, avatar_url),
-          game:games(id, name, game_type, small_blind, big_blind)
-        `
+      const selectWithPhone = `
+        *,
+        player:players(id, alias, avatar_url, phone_number),
+        game:games(id, name, game_type, small_blind, big_blind)
+      `
+
+      const selectFallback = `
+        *,
+        player:players(id, alias, avatar_url),
+        game:games(id, name, game_type, small_blind, big_blind)
+      `
+
+      let data: WaitlistEntry[] | null
+      let fetchError: unknown
+
+      {
+        const result = await supabase
+          .from('waitlist_entries')
+          .select(selectWithPhone)
+          .eq('room_id', roomId)
+          .in('status', ['waiting', 'calledin', 'notified'])
+          .order('position', { ascending: true })
+        data = (result.data as unknown as WaitlistEntry[]) || null
+        fetchError = result.error
+      }
+
+      if (
+        fetchError &&
+        typeof fetchError === 'object' &&
+        fetchError !== null &&
+        'message' in fetchError &&
+        String((fetchError as { message?: string }).message || '').includes(
+          'phone_number'
         )
-        .eq('room_id', roomId)
-        .in('status', ['waiting', 'calledin', 'notified'])
-        .order('position', { ascending: true })
+      ) {
+        const fallback = await supabase
+          .from('waitlist_entries')
+          .select(selectFallback)
+          .eq('room_id', roomId)
+          .in('status', ['waiting', 'calledin', 'notified'])
+          .order('position', { ascending: true })
+
+        data = (fallback.data as unknown as WaitlistEntry[]) || null
+        fetchError = fallback.error
+      }
 
       if (fetchError) {
         throw fetchError

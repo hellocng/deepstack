@@ -10,7 +10,6 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
 import { User } from 'lucide-react'
 import type { Database } from '@/types/database'
 
@@ -149,7 +148,6 @@ export function PlayerAssignmentDialog({
                   </div>
 
                   <div className='flex items-center gap-2'>
-                    <Badge variant='outline'>{entry.status}</Badge>
                     <Button
                       size='sm'
                       onClick={() => handleAssignPlayer(entry)}

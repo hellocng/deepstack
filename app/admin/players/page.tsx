@@ -79,6 +79,7 @@ export default function PlayersPage(): JSX.Element {
             )
           `
           )
+          .not('table_session_id', 'is', null)
           .eq('table_session.room_id', operator.profile.room_id)
           .is('end_time', null)
           .order('start_time', { ascending: false })
@@ -188,9 +189,6 @@ export default function PlayersPage(): JSX.Element {
         </Button>
         <div>
           <h1 className='text-3xl font-bold tracking-tight'>Active Players</h1>
-          <p className='text-muted-foreground'>
-            View all players currently seated at tables
-          </p>
         </div>
       </div>
 
