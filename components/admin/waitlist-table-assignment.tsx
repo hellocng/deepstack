@@ -25,7 +25,6 @@ import {
   AlertCircle,
   Clock,
 } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
 import { WaitlistStatusManager } from '@/lib/waitlist-status-manager'
 import type { Database } from '@/types/database'
 import { WaitlistTableIntegration } from '@/lib/waitlist-table-integration'
@@ -49,6 +48,7 @@ type WaitlistEntry = Database['public']['Tables']['waitlist_entries']['Row'] & {
 type Table = Database['public']['Tables']['tables']['Row'] & {
   available_seats: number
   current_players: number
+  game_id: string
 }
 
 interface WaitlistTableAssignmentProps {
@@ -110,8 +110,6 @@ export function WaitlistTableAssignment({
     setError(null)
 
     try {
-      const supabase = createClient()
-
       // Check if seat is still available
       const isAvailable = await WaitlistTableIntegration.isSeatAvailable(
         selectedTable,
@@ -178,7 +176,7 @@ export function WaitlistTableAssignment({
 
     void loadSeatAvailability()
 
-    return () => {
+    return (): void => {
       isActive = false
     }
   }, [open, relevantTables])

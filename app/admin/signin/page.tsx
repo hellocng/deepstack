@@ -11,7 +11,7 @@ export default function AdminSignInPage(): JSX.Element {
     <OperatorSignInForm
       title='Admin Sign In'
       description='Sign in to manage your room'
-      role='operator'
+      role='admin'
       redirectPath='/admin'
     />
   )

@@ -313,7 +313,7 @@ export default function WaitlistPage(): JSX.Element {
     if (index === -1) return
 
     const moved = next[index]
-    const isActiveStatus = (s: string | null) =>
+    const isActiveStatus = (s: string | null): boolean =>
       ['waiting', 'calledin', 'notified'].includes(s || '')
     const sameGroup = next
       .filter((e) => e.game_id === moved.game_id && isActiveStatus(e.status))
