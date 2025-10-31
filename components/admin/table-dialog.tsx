@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/client'
@@ -13,8 +13,13 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 
 const tableFormSchema = z.object({
@@ -155,47 +160,77 @@ export function TableDialog({
           onSubmit={form.handleSubmit(onSubmit)}
           className='space-y-6'
         >
-          <div className='grid gap-4 md:grid-cols-2'>
-            <div className='space-y-2'>
-              <Label htmlFor='name'>Table Name *</Label>
-              <Input
-                id='name'
-                {...form.register('name')}
-                placeholder='Enter table name'
+          <FieldGroup>
+            <div className='grid gap-4 md:grid-cols-2'>
+              <Controller
+                name='name'
+                control={form.control}
+                render={({ field, fieldState }): JSX.Element => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor='name'>Table Name *</FieldLabel>
+                    <Input
+                      id='name'
+                      placeholder='Enter table name'
+                      aria-invalid={fieldState.invalid}
+                      {...field}
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
               />
-              {form.formState.errors.name && (
-                <p className='text-sm text-destructive'>
-                  {form.formState.errors.name.message}
-                </p>
-              )}
+
+              <Controller
+                name='seat_count'
+                control={form.control}
+                render={({ field, fieldState }): JSX.Element => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor='seat_count'>Seat Count *</FieldLabel>
+                    <Input
+                      id='seat_count'
+                      type='number'
+                      min='2'
+                      max='10'
+                      placeholder='9'
+                      aria-invalid={fieldState.invalid}
+                      {...field}
+                      onChange={(e): void => {
+                        field.onChange(Number(e.target.value))
+                      }}
+                      value={field.value}
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
             </div>
 
-            <div className='space-y-2'>
-              <Label htmlFor='seat_count'>Seat Count *</Label>
-              <Input
-                id='seat_count'
-                type='number'
-                min='2'
-                max='10'
-                {...form.register('seat_count', { valueAsNumber: true })}
-                placeholder='9'
-              />
-              {form.formState.errors.seat_count && (
-                <p className='text-sm text-destructive'>
-                  {form.formState.errors.seat_count.message}
-                </p>
+            <Controller
+              name='is_active'
+              control={form.control}
+              render={({ field, fieldState }): JSX.Element => (
+                <Field
+                  orientation='horizontal'
+                  data-invalid={fieldState.invalid}
+                  className='flex items-center space-x-2'
+                >
+                  <Switch
+                    id='is_active'
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    aria-invalid={fieldState.invalid}
+                  />
+                  <FieldLabel htmlFor='is_active'>Table is active</FieldLabel>
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
               )}
-            </div>
-          </div>
-
-          <div className='flex items-center space-x-2'>
-            <Switch
-              id='is_active'
-              checked={form.watch('is_active')}
-              onCheckedChange={(checked) => form.setValue('is_active', checked)}
             />
-            <Label htmlFor='is_active'>Table is active</Label>
-          </div>
+          </FieldGroup>
 
           <div className='flex gap-4 pt-4 justify-end'>
             <Button

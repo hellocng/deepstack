@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/client'
@@ -13,8 +13,13 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import {
   Select,
@@ -210,152 +215,227 @@ export function GameDialog({
           onSubmit={form.handleSubmit(onSubmit)}
           className='space-y-6'
         >
-          <div className='grid gap-4 md:grid-cols-2'>
-            <div className='space-y-2'>
-              <Label htmlFor='name'>Game Name *</Label>
-              <Input
-                id='name'
-                {...form.register('name')}
-                placeholder='Enter game name'
+          <FieldGroup>
+            <div className='grid gap-4 md:grid-cols-2'>
+              <Controller
+                name='name'
+                control={form.control}
+                render={({ field, fieldState }): JSX.Element => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor='name'>Game Name *</FieldLabel>
+                    <Input
+                      id='name'
+                      placeholder='Enter game name'
+                      aria-invalid={fieldState.invalid}
+                      {...field}
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
               />
-              {form.formState.errors.name && (
-                <p className='text-sm text-destructive'>
-                  {form.formState.errors.name.message}
-                </p>
-              )}
-            </div>
 
-            <div className='space-y-2'>
-              <Label htmlFor='game_type'>Game Type *</Label>
-              <Select
-                value={form.watch('game_type')}
-                onValueChange={(value) => form.setValue('game_type', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder='Select game type' />
-                </SelectTrigger>
-                <SelectContent>
-                  {gameTypes.map((type) => (
-                    <SelectItem
-                      key={type.value}
-                      value={type.value}
+              <Controller
+                name='game_type'
+                control={form.control}
+                render={({ field, fieldState }): JSX.Element => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor='game_type'>Game Type *</FieldLabel>
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
                     >
-                      {type.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {form.formState.errors.game_type && (
-                <p className='text-sm text-destructive'>
-                  {form.formState.errors.game_type.message}
-                </p>
-              )}
-            </div>
-
-            <div className='space-y-2'>
-              <Label htmlFor='small_blind'>Small Blind *</Label>
-              <Input
-                id='small_blind'
-                type='number'
-                step='0.01'
-                {...form.register('small_blind', { valueAsNumber: true })}
-                placeholder='0.00'
+                      <SelectTrigger aria-invalid={fieldState.invalid}>
+                        <SelectValue placeholder='Select game type' />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {gameTypes.map((type) => (
+                          <SelectItem
+                            key={type.value}
+                            value={type.value}
+                          >
+                            {type.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
               />
-              {form.formState.errors.small_blind && (
-                <p className='text-sm text-destructive'>
-                  {form.formState.errors.small_blind.message}
-                </p>
-              )}
-            </div>
 
-            <div className='space-y-2'>
-              <Label htmlFor='big_blind'>Big Blind *</Label>
-              <Input
-                id='big_blind'
-                type='number'
-                step='0.01'
-                {...form.register('big_blind', { valueAsNumber: true })}
-                placeholder='0.00'
+              <Controller
+                name='small_blind'
+                control={form.control}
+                render={({ field, fieldState }): JSX.Element => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor='small_blind'>Small Blind *</FieldLabel>
+                    <Input
+                      id='small_blind'
+                      type='number'
+                      step='0.01'
+                      placeholder='0.00'
+                      aria-invalid={fieldState.invalid}
+                      {...field}
+                      onChange={(e): void => {
+                        field.onChange(Number(e.target.value))
+                      }}
+                      value={field.value}
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
               />
-              {form.formState.errors.big_blind && (
-                <p className='text-sm text-destructive'>
-                  {form.formState.errors.big_blind.message}
-                </p>
-              )}
-            </div>
 
-            <div className='space-y-2'>
-              <Label htmlFor='min_buy_in'>Min Buy-in *</Label>
-              <Input
-                id='min_buy_in'
-                type='number'
-                step='0.01'
-                {...form.register('min_buy_in', { valueAsNumber: true })}
-                placeholder='0.00'
+              <Controller
+                name='big_blind'
+                control={form.control}
+                render={({ field, fieldState }): JSX.Element => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor='big_blind'>Big Blind *</FieldLabel>
+                    <Input
+                      id='big_blind'
+                      type='number'
+                      step='0.01'
+                      placeholder='0.00'
+                      aria-invalid={fieldState.invalid}
+                      {...field}
+                      onChange={(e): void => {
+                        field.onChange(Number(e.target.value))
+                      }}
+                      value={field.value}
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
               />
-              {form.formState.errors.min_buy_in && (
-                <p className='text-sm text-destructive'>
-                  {form.formState.errors.min_buy_in.message}
-                </p>
-              )}
-            </div>
 
-            <div className='space-y-2'>
-              <Label htmlFor='max_buy_in'>Max Buy-in *</Label>
-              <Input
-                id='max_buy_in'
-                type='number'
-                step='0.01'
-                {...form.register('max_buy_in', { valueAsNumber: true })}
-                placeholder='0.00'
+              <Controller
+                name='min_buy_in'
+                control={form.control}
+                render={({ field, fieldState }): JSX.Element => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor='min_buy_in'>Min Buy-in *</FieldLabel>
+                    <Input
+                      id='min_buy_in'
+                      type='number'
+                      step='0.01'
+                      placeholder='0.00'
+                      aria-invalid={fieldState.invalid}
+                      {...field}
+                      onChange={(e): void => {
+                        field.onChange(Number(e.target.value))
+                      }}
+                      value={field.value}
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
               />
-              {form.formState.errors.max_buy_in && (
-                <p className='text-sm text-destructive'>
-                  {form.formState.errors.max_buy_in.message}
-                </p>
-              )}
-            </div>
 
-            <div className='space-y-2'>
-              <Label htmlFor='max_players'>Max Players *</Label>
-              <Input
-                id='max_players'
-                type='number'
-                min='2'
-                max='10'
-                {...form.register('max_players', { valueAsNumber: true })}
-                placeholder='9'
+              <Controller
+                name='max_buy_in'
+                control={form.control}
+                render={({ field, fieldState }): JSX.Element => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor='max_buy_in'>Max Buy-in *</FieldLabel>
+                    <Input
+                      id='max_buy_in'
+                      type='number'
+                      step='0.01'
+                      placeholder='0.00'
+                      aria-invalid={fieldState.invalid}
+                      {...field}
+                      onChange={(e): void => {
+                        field.onChange(Number(e.target.value))
+                      }}
+                      value={field.value}
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
               />
-              {form.formState.errors.max_players && (
-                <p className='text-sm text-destructive'>
-                  {form.formState.errors.max_players.message}
-                </p>
-              )}
-            </div>
 
-            <div className='space-y-2'>
-              <Label htmlFor='rake'>Rake</Label>
-              <Input
-                id='rake'
-                {...form.register('rake')}
-                placeholder='e.g., 5% or $5 max'
+              <Controller
+                name='max_players'
+                control={form.control}
+                render={({ field, fieldState }): JSX.Element => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor='max_players'>Max Players *</FieldLabel>
+                    <Input
+                      id='max_players'
+                      type='number'
+                      min='2'
+                      max='10'
+                      placeholder='9'
+                      aria-invalid={fieldState.invalid}
+                      {...field}
+                      onChange={(e): void => {
+                        field.onChange(Number(e.target.value))
+                      }}
+                      value={field.value}
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
               />
-              {form.formState.errors.rake && (
-                <p className='text-sm text-destructive'>
-                  {form.formState.errors.rake.message}
-                </p>
-              )}
-            </div>
-          </div>
 
-          <div className='flex items-center space-x-2'>
-            <Switch
-              id='is_active'
-              checked={form.watch('is_active')}
-              onCheckedChange={(checked) => form.setValue('is_active', checked)}
+              <Controller
+                name='rake'
+                control={form.control}
+                render={({ field, fieldState }): JSX.Element => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor='rake'>Rake</FieldLabel>
+                    <Input
+                      id='rake'
+                      placeholder='e.g., 5% or $5 max'
+                      aria-invalid={fieldState.invalid}
+                      {...field}
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
+            </div>
+
+            <Controller
+              name='is_active'
+              control={form.control}
+              render={({ field, fieldState }): JSX.Element => (
+                <Field
+                  orientation='horizontal'
+                  data-invalid={fieldState.invalid}
+                  className='flex items-center space-x-2'
+                >
+                  <Switch
+                    id='is_active'
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    aria-invalid={fieldState.invalid}
+                  />
+                  <FieldLabel htmlFor='is_active'>Game is active</FieldLabel>
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
             />
-            <Label htmlFor='is_active'>Game is active</Label>
-          </div>
+          </FieldGroup>
 
           <div className='flex gap-4 pt-4 justify-end'>
             <Button

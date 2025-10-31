@@ -17,42 +17,49 @@ This directory contains Cursor rules for the DeepStack project. These rules prov
 - **Purpose**: Provides comprehensive ESLint configuration guidance and best practices
 - **Key Topics**: TypeScript rules, React rules, Next.js rules, code quality standards
 
-### 2. `fix-eslint-warnings.mdc` - Fix Current ESLint Warnings
+### 2. `component-patterns.mdc` - Component Patterns & UI Standards
+
+- **Type**: Applied to component files
+- **Scope**: Components and UI files (`**/components/**/*`, `**/app/**/*`)
+- **Purpose**: Provides patterns for shadcn/ui components, forms, loading states, error handling, and accessibility
+- **Key Topics**: Form patterns with Field components, React Hook Form integration, component composition, responsive design
+
+### 3. `fix-eslint-warnings.mdc` - Fix Current ESLint Warnings
 
 - **Type**: Manual (use @fix-eslint-warnings to invoke)
 - **Scope**: All TypeScript/JavaScript files
 - **Purpose**: Specific guidance for fixing current ESLint warnings in the project
 - **Key Topics**: Return type annotations, console statements, unused variables, any types
 
-### 3. `nextjs-lint-migration.mdc` - Next.js Lint Migration
+### 4. `nextjs-lint-migration.mdc` - Next.js Lint Migration
 
 - **Type**: Manual (use @nextjs-lint-migration to invoke)
 - **Scope**: Configuration files
 - **Purpose**: Guide for migrating from deprecated `next lint` to ESLint CLI
 - **Key Topics**: Migration commands, configuration updates, CI/CD changes
 
-### 4. `code-quality-standards.mdc` - Code Quality Standards
+### 5. `code-quality-standards.mdc` - Code Quality Standards
 
 - **Type**: Always Applied
 - **Scope**: All TypeScript/JavaScript files
 - **Purpose**: Comprehensive code quality standards and ESLint integration
 - **Key Topics**: Function return types, unused variables, console statements, TypeScript types
 
-### 5. `database-safety.mdc` - Database Safety Rules
+### 6. `database-safety.mdc` - Database Safety Rules
 
 - **Type**: Always Applied
 - **Scope**: Database, API, and configuration files
 - **Purpose**: Critical safety rules for database operations
 - **Key Topics**: Never reset production database, migration safety, backup procedures
 
-### 6. `file-protection.mdc` - File Protection Rules
+### 7. `file-protection.mdc` - File Protection Rules
 
 - **Type**: Always Applied
 - **Scope**: All files and directories
 - **Purpose**: Protection rules for gitignore files and build artifacts
 - **Key Topics**: Never delete gitignore files, safe cleanup procedures, file monitoring
 
-### 7. `debugging-cleanup.mdc` - Debugging and Console Log Cleanup
+### 8. `debugging-cleanup.mdc` - Debugging and Console Log Cleanup
 
 - **Type**: Always Applied
 - **Scope**: All TypeScript/JavaScript files

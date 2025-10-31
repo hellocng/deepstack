@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/client'
@@ -13,7 +13,12 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from '@/components/ui/field'
 import {
   Select,
   SelectContent,
@@ -219,61 +224,71 @@ export function OpenTableDialog({
               {error}
             </div>
           )}
-          <div className='grid gap-4 md:grid-cols-2'>
-            <div className='space-y-2'>
-              <Label htmlFor='table_id'>Table *</Label>
-              <Select
-                value={form.watch('table_id')}
-                onValueChange={(value) => form.setValue('table_id', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder='Select a table' />
-                </SelectTrigger>
-                <SelectContent>
-                  {tables.map((table) => (
-                    <SelectItem
-                      key={table.id}
-                      value={table.id}
+          <FieldGroup>
+            <div className='grid gap-4 md:grid-cols-2'>
+              <Controller
+                name='table_id'
+                control={form.control}
+                render={({ field, fieldState }): JSX.Element => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor='table_id'>Table *</FieldLabel>
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
                     >
-                      {table.name} ({table.seat_count} seats)
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {form.formState.errors.table_id && (
-                <p className='text-sm text-destructive'>
-                  {form.formState.errors.table_id.message}
-                </p>
-              )}
-            </div>
+                      <SelectTrigger aria-invalid={fieldState.invalid}>
+                        <SelectValue placeholder='Select a table' />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {tables.map((table) => (
+                          <SelectItem
+                            key={table.id}
+                            value={table.id}
+                          >
+                            {table.name} ({table.seat_count} seats)
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
 
-            <div className='space-y-2'>
-              <Label htmlFor='game_id'>Game *</Label>
-              <Select
-                value={form.watch('game_id')}
-                onValueChange={(value) => form.setValue('game_id', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder='Select a game' />
-                </SelectTrigger>
-                <SelectContent>
-                  {games.map((game) => (
-                    <SelectItem
-                      key={game.id}
-                      value={game.id}
+              <Controller
+                name='game_id'
+                control={form.control}
+                render={({ field, fieldState }): JSX.Element => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor='game_id'>Game *</FieldLabel>
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
                     >
-                      {game.name} (${game.small_blind}/${game.big_blind})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {form.formState.errors.game_id && (
-                <p className='text-sm text-destructive'>
-                  {form.formState.errors.game_id.message}
-                </p>
-              )}
+                      <SelectTrigger aria-invalid={fieldState.invalid}>
+                        <SelectValue placeholder='Select a game' />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {games.map((game) => (
+                          <SelectItem
+                            key={game.id}
+                            value={game.id}
+                          >
+                            {game.name} (${game.small_blind}/${game.big_blind})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
             </div>
-          </div>
+          </FieldGroup>
 
           {loading && (
             <div className='text-center py-4 text-muted-foreground'>

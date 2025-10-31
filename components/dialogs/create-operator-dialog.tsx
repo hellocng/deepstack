@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/client'
@@ -15,8 +15,13 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
@@ -160,92 +165,107 @@ export function CreateOperatorDialog({
           onSubmit={form.handleSubmit(onSubmit)}
           className='space-y-4'
         >
-          <div className='space-y-2'>
-            <Label htmlFor='email'>Email</Label>
-            <Input
-              id='email'
-              type='email'
-              {...form.register('email')}
-              placeholder='operator@example.com'
-            />
-            {form.formState.errors.email && (
-              <p className='text-sm text-destructive'>
-                {form.formState.errors.email.message}
-              </p>
-            )}
-          </div>
-
-          <div className='space-y-2'>
-            <Label htmlFor='password'>Password</Label>
-            <Input
-              id='password'
-              type='password'
-              {...form.register('password')}
-              placeholder='Enter password'
-            />
-            {form.formState.errors.password && (
-              <p className='text-sm text-destructive'>
-                {form.formState.errors.password.message}
-              </p>
-            )}
-          </div>
-
-          <div className='space-y-2'>
-            <Label htmlFor='role'>Role</Label>
-            <Select
-              value={form.watch('role')}
-              onValueChange={(value) =>
-                form.setValue(
-                  'role',
-                  value as 'admin' | 'supervisor' | 'dealer' | 'superadmin'
-                )
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder='Select a role' />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value='dealer'>Dealer</SelectItem>
-                <SelectItem value='supervisor'>Supervisor</SelectItem>
-                <SelectItem value='admin'>Admin</SelectItem>
-                <SelectItem value='superadmin'>Super Admin</SelectItem>
-              </SelectContent>
-            </Select>
-            {form.formState.errors.role && (
-              <p className='text-sm text-destructive'>
-                {form.formState.errors.role.message}
-              </p>
-            )}
-          </div>
-
-          {form.watch('role') !== 'superadmin' && (
-            <div className='space-y-2'>
-              <Label htmlFor='roomId'>Room</Label>
-              <Select
-                value={form.watch('roomId')}
-                onValueChange={(value) => form.setValue('roomId', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder='Select a room' />
-                </SelectTrigger>
-                <SelectContent>
-                  {rooms.map((room) => (
-                    <SelectItem
-                      key={room.id}
-                      value={room.id}
-                    >
-                      {room.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {form.formState.errors.roomId && (
-                <p className='text-sm text-destructive'>
-                  {form.formState.errors.roomId.message}
-                </p>
+          <FieldGroup>
+            <Controller
+              name='email'
+              control={form.control}
+              render={({ field, fieldState }): JSX.Element => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor='email'>Email</FieldLabel>
+                  <Input
+                    id='email'
+                    type='email'
+                    placeholder='operator@example.com'
+                    aria-invalid={fieldState.invalid}
+                    {...field}
+                  />
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
               )}
-            </div>
-          )}
+            />
+
+            <Controller
+              name='password'
+              control={form.control}
+              render={({ field, fieldState }): JSX.Element => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor='password'>Password</FieldLabel>
+                  <Input
+                    id='password'
+                    type='password'
+                    placeholder='Enter password'
+                    aria-invalid={fieldState.invalid}
+                    {...field}
+                  />
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
+            />
+
+            <Controller
+              name='role'
+              control={form.control}
+              render={({ field, fieldState }): JSX.Element => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor='role'>Role</FieldLabel>
+                  <Select
+                    value={field.value}
+                    onValueChange={field.onChange}
+                  >
+                    <SelectTrigger aria-invalid={fieldState.invalid}>
+                      <SelectValue placeholder='Select a role' />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value='dealer'>Dealer</SelectItem>
+                      <SelectItem value='supervisor'>Supervisor</SelectItem>
+                      <SelectItem value='admin'>Admin</SelectItem>
+                      <SelectItem value='superadmin'>Super Admin</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
+            />
+
+            {form.watch('role') !== 'superadmin' && (
+              <Controller
+                name='roomId'
+                control={form.control}
+                render={({ field, fieldState }): JSX.Element => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor='roomId'>Room</FieldLabel>
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger aria-invalid={fieldState.invalid}>
+                        <SelectValue placeholder='Select a room' />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {rooms.map((room) => (
+                          <SelectItem
+                            key={room.id}
+                            value={room.id}
+                          >
+                            {room.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
+            )}
+          </FieldGroup>
 
           {error && (
             <div className='text-sm text-destructive text-center py-2'>

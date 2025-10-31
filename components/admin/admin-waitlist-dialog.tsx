@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Button } from '@/components/ui/button'
@@ -12,13 +12,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form'
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -215,134 +213,145 @@ export function AdminWaitlistDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className='space-y-8'
-          >
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className='space-y-8'
+        >
+          <FieldGroup>
             {/* Player Info */}
             <div className='grid gap-4 md:grid-cols-2'>
-              <FormField
-                control={form.control}
+              <Controller
                 name='alias'
-                render={({ field }): JSX.Element => (
-                  <FormItem>
-                    <FormLabel>Alias</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder='Enter player alias'
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+                control={form.control}
+                render={({ field, fieldState }): JSX.Element => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor='alias'>Alias</FieldLabel>
+                    <Input
+                      id='alias'
+                      placeholder='Enter player alias'
+                      aria-invalid={fieldState.invalid}
+                      {...field}
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
                 )}
               />
-              <FormField
-                control={form.control}
+              <Controller
                 name='phone'
-                render={({ field }): JSX.Element => (
-                  <FormItem>
-                    <FormLabel>Phone Number</FormLabel>
-                    <FormControl>
-                      <Input
-                        type='tel'
-                        placeholder='Enter phone number'
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+                control={form.control}
+                render={({ field, fieldState }): JSX.Element => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor='phone'>Phone Number</FieldLabel>
+                    <Input
+                      id='phone'
+                      type='tel'
+                      placeholder='Enter phone number'
+                      aria-invalid={fieldState.invalid}
+                      {...field}
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
                 )}
               />
             </div>
 
             {/* Game Selection */}
-            <FormField
-              control={form.control}
+            <Controller
               name='selectedGames'
-              render={({ field }): JSX.Element => (
-                <FormItem>
-                  <FormLabel>Select Games</FormLabel>
-                  <FormControl>
-                    <div className='grid gap-4 md:grid-cols-2'>
-                      {availableGames.map((game) => (
-                        <div
-                          key={game.id}
-                          className='flex items-center space-x-2'
-                        >
-                          <Checkbox
-                            id={game.id}
-                            checked={field.value.includes(game.id)}
-                            onCheckedChange={(checked) => {
-                              const current = field.value
-                              if (checked) {
-                                form.setValue('selectedGames', [
-                                  ...current,
-                                  game.id,
-                                ])
-                              } else {
-                                form.setValue(
-                                  'selectedGames',
-                                  current.filter((id) => id !== game.id)
-                                )
-                              }
-                            }}
-                          />
-                          <div className='flex-1 min-w-0'>
-                            <label
-                              htmlFor={game.id}
-                              className='text-sm font-medium cursor-pointer'
-                            >
-                              {game.name}
-                            </label>
-                          </div>
+              control={form.control}
+              render={({ field, fieldState }): JSX.Element => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel>Select Games</FieldLabel>
+                  <div className='grid gap-4 md:grid-cols-2'>
+                    {availableGames.map((game) => (
+                      <div
+                        key={game.id}
+                        className='flex items-center space-x-2'
+                      >
+                        <Checkbox
+                          id={game.id}
+                          checked={field.value.includes(game.id)}
+                          onCheckedChange={(checked): void => {
+                            const current = field.value
+                            if (checked) {
+                              field.onChange([...current, game.id])
+                            } else {
+                              field.onChange(
+                                current.filter((id) => id !== game.id)
+                              )
+                            }
+                          }}
+                          aria-invalid={fieldState.invalid}
+                        />
+                        <div className='flex-1 min-w-0'>
+                          <label
+                            htmlFor={game.id}
+                            className='text-sm font-medium cursor-pointer'
+                          >
+                            {game.name}
+                          </label>
                         </div>
-                      ))}
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+                      </div>
+                    ))}
+                  </div>
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
               )}
             />
 
             {/* Notes */}
-            <FormField
-              control={form.control}
+            <Controller
               name='notes'
-              render={({ field }): JSX.Element => (
-                <FormItem>
-                  <FormLabel>Notes (Optional)</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder='Any notes...'
-                      rows={3}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+              control={form.control}
+              render={({ field, fieldState }): JSX.Element => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor='notes'>Notes (Optional)</FieldLabel>
+                  <Textarea
+                    id='notes'
+                    placeholder='Any notes...'
+                    rows={3}
+                    aria-invalid={fieldState.invalid}
+                    {...field}
+                  />
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
               )}
             />
 
             {/* Check In Immediately */}
-            <FormField
-              control={form.control}
+            <Controller
               name='checkInImmediately'
-              render={({ field }): JSX.Element => (
-                <FormItem className='flex flex-row items-center justify-end space-x-3 space-y-0'>
-                  <div className='space-y-1 leading-none'>
-                    <FormLabel className='text-sm'>Check in</FormLabel>
-                  </div>
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
+              control={form.control}
+              render={({ field, fieldState }): JSX.Element => (
+                <Field
+                  orientation='horizontal'
+                  data-invalid={fieldState.invalid}
+                  className='flex items-center justify-end'
+                >
+                  <FieldLabel htmlFor='checkInImmediately' className='text-sm'>
+                    Check in
+                  </FieldLabel>
+                  <Checkbox
+                    id='checkInImmediately'
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    aria-invalid={fieldState.invalid}
+                  />
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
               )}
             />
+          </FieldGroup>
 
             {/* Error Message */}
             {error && <div className='text-red-600 text-sm'>{error}</div>}
@@ -373,7 +382,6 @@ export function AdminWaitlistDialog({
               </Button>
             </div>
           </form>
-        </Form>
       </DialogContent>
     </Dialog>
   )

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Button } from '@/components/ui/button'
@@ -13,13 +13,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form'
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from '@/components/ui/field'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
@@ -139,93 +137,91 @@ export function WaitlistJoinDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className='space-y-6'
-          >
-            <FormField
-              control={form.control}
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className='space-y-6'
+        >
+          <FieldGroup>
+            <Controller
               name='selectedGames'
-              render={(): JSX.Element => (
-                <FormItem>
-                  <FormLabel>Select Games</FormLabel>
-                  <FormControl>
-                    <div className='space-y-3'>
-                      {availableGames.map((game) => (
-                        <div
-                          key={game.id}
-                          className='flex items-start space-x-3 p-3 border rounded-lg hover:bg-gray-50'
-                        >
-                          <Checkbox
-                            id={game.id}
-                            checked={form
-                              .watch('selectedGames')
-                              .includes(game.id)}
-                            onCheckedChange={(checked): void => {
-                              const current = form.getValues('selectedGames')
-                              if (checked) {
-                                form.setValue('selectedGames', [
-                                  ...current,
-                                  game.id,
-                                ])
-                              } else {
-                                form.setValue(
-                                  'selectedGames',
-                                  current.filter((id) => id !== game.id)
-                                )
-                              }
-                            }}
-                          />
-                          <div className='flex-1 min-w-0'>
-                            <label
-                              htmlFor={game.id}
-                              className='text-sm font-medium cursor-pointer'
+              control={form.control}
+              render={({ field, fieldState }): JSX.Element => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel>Select Games</FieldLabel>
+                  <div className='space-y-3'>
+                    {availableGames.map((game) => (
+                      <div
+                        key={game.id}
+                        className='flex items-start space-x-3 p-3 border rounded-lg hover:bg-gray-50'
+                      >
+                        <Checkbox
+                          id={game.id}
+                          checked={field.value.includes(game.id)}
+                          onCheckedChange={(checked): void => {
+                            const current = field.value
+                            if (checked) {
+                              field.onChange([...current, game.id])
+                            } else {
+                              field.onChange(
+                                current.filter((id) => id !== game.id)
+                              )
+                            }
+                          }}
+                          aria-invalid={fieldState.invalid}
+                        />
+                        <div className='flex-1 min-w-0'>
+                          <label
+                            htmlFor={game.id}
+                            className='text-sm font-medium cursor-pointer'
+                          >
+                            {game.name}
+                          </label>
+                          <div className='flex items-center gap-2 mt-1'>
+                            <Badge
+                              variant='outline'
+                              className='text-xs'
                             >
-                              {game.name}
-                            </label>
-                            <div className='flex items-center gap-2 mt-1'>
-                              <Badge
-                                variant='outline'
-                                className='text-xs'
-                              >
-                                {game.game_type.replace('_', ' ').toUpperCase()}
-                              </Badge>
-                              <Badge
-                                variant='secondary'
-                                className='text-xs'
-                              >
-                                ${game.small_blind}/${game.big_blind}
-                              </Badge>
-                            </div>
+                              {game.game_type.replace('_', ' ').toUpperCase()}
+                            </Badge>
+                            <Badge
+                              variant='secondary'
+                              className='text-xs'
+                            >
+                              ${game.small_blind}/${game.big_blind}
+                            </Badge>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+                      </div>
+                    ))}
+                  </div>
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
               )}
             />
 
-            <FormField
-              control={form.control}
+            <Controller
               name='notes'
-              render={({ field }): JSX.Element => (
-                <FormItem>
-                  <FormLabel>Notes (Optional)</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder='Any special requests or notes...'
-                      className='resize-none'
-                      rows={3}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+              control={form.control}
+              render={({ field, fieldState }): JSX.Element => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor='notes'>Notes (Optional)</FieldLabel>
+                  <Textarea
+                    id='notes'
+                    placeholder='Any special requests or notes...'
+                    className='resize-none'
+                    rows={3}
+                    aria-invalid={fieldState.invalid}
+                    {...field}
+                  />
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
               )}
             />
+          </FieldGroup>
 
             {error && (
               <div className='p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md'>
@@ -258,7 +254,6 @@ export function WaitlistJoinDialog({
               </Button>
             </div>
           </form>
-        </Form>
       </DialogContent>
     </Dialog>
   )
